@@ -21,7 +21,7 @@ def pencil(window):
 
 
 def drawcircle(pen, x, y, r, color):
-    filledCircleColor(pen, x, y, r, color)
+    filledCircleColor(pen, int(x), int(y), r, color)
 
 
 def update(window):
@@ -51,7 +51,7 @@ def main():
     event = SDL_Event()
     while running:
 
-        drawcircle(pen, int(xsize/2), int(ysize/2), 4, red)
+        drawcircle(pen, xsize/2, ysize/2, 4, red)
 
         update(screen)
         pause(12)
