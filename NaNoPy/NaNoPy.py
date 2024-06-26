@@ -44,19 +44,19 @@ class pen:
 
 
     def drawPixel(self,x,y,color):
-        pixelColor(self.renderer,x,y,color)
+        pixelColor(self.renderer,int(x),int(y),color)
 
     def drawLine(self,x1,y1,x2,y2,color):
-        aalineColor(self.renderer, x1, y1, x2, y2, color)
+        aalineColor(self.renderer, int(x1), int(y1), int(x2), int(y2), color)
 
     def drawThickLine(self,x1,y1,x2,y2,w,color):
-        thickLineColor(self.renderer, x1, y1, x2, y2,w, color)
+        thickLineColor(self.renderer, int(x1), int(y1), int(x2), int(y2),int(w), color)
 
     def drawRectangle(self,x1,y1,w,h,color,filled):
         if filled:
-            boxColor(self.renderer,x1,y1,x1+w,y1+h,color)
+            boxColor(self.renderer,int(x1),int(y1),int(x1+w),int(y1+h),color)
         else:
-            rectangleColor(self.renderer, x1, y1, x1+w,y1+h, color)
+            rectangleColor(self.renderer, int(x1), int(y1), int(x1+w),int(y1+h), color)
 
     def drawCircle(self,x,y,r,color,filled):
         if filled:
