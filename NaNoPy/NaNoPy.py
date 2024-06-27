@@ -10,30 +10,43 @@ class canvas:
 
         SDL_Init(SDL_INIT_VIDEO)
         self.window = SDL_CreateWindow(b"NaNoPy", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, xSize, ySize, SDL_WINDOW_HIDDEN)
+        self.event = SDL_Event()
+        self.running = True
 
     def update(self):
         SDL_ShowWindow(self.window)
         ren = SDL_GetRenderer(self.window)
         SDL_RenderPresent(ren)
 
-
-        self.event = SDL_Event()
-        running = True
-        while running:
-            while SDL_PollEvent(ctypes.byref(self.event)) != 0:
-                if self.event.type == SDL_QUIT:
-                    running = False
-                    break
-        SDL_DestroyWindow(self.window)
-        SDL_Quit()
+        while SDL_PollEvent(ctypes.byref(self.event)) != 0:
+            if self.event.type == SDL_QUIT:
+                self.running = False
+                self.stop()
+                break
 
     def clear(self):
         ren = SDL_GetRenderer(self.window)
         SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
         SDL_RenderClear(ren)
 
-    def pause(time):
+    def pause(self,time):
         SDL_Delay(time)
+
+    def keepWindow(self):
+        while self.running:
+            while SDL_PollEvent(ctypes.byref(self.event)) != 0:
+                if self.event.type == SDL_QUIT:
+                    self.running = False
+                    break
+        SDL_DestroyWindow(self.window)
+        SDL_Quit()
+
+    def stop(self):
+        SDL_DestroyWindow(self.window)
+        SDL_Quit()
+
+
+
 
 class pen:
     def __init__(self,canvas):
