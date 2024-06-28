@@ -54,28 +54,38 @@ class pen:
                 SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
         )
         self.renderer = SDL_CreateRenderer(canvas.window, -1, render_flags)
+        x = list()
+        y = list()
+        x.append(0)
+        y.append(0)
+        xobj = (ctypes.c_int32 * len(x))(*x)
+        yobj = (ctypes.c_int32 * len(y))(*y)
+        SDL_GetWindowSize(canvas.window,xobj,yobj)
+        self.xSize = xobj[0]
+        self.ySize = yobj[0]
+
 
 
     def drawPixel(self,x,y,color):
-        pixelColor(self.renderer,int(x),int(y),color)
+        pixelColor(self.renderer,int(x),int(self.ySize-y),color)
 
     def drawLine(self,x1,y1,x2,y2,color):
-        aalineColor(self.renderer, int(x1), int(y1), int(x2), int(y2), color)
+        aalineColor(self.renderer, int(x1), int(self.ySize-y1), int(x2), int(self.ySize-y2), color)
 
     def drawThickLine(self,x1,y1,x2,y2,w,color):
-        thickLineColor(self.renderer, int(x1), int(y1), int(x2), int(y2),int(w), color)
+        thickLineColor(self.renderer, int(x1), int(self.ySize-y1), int(x2), int(self.ySize-y2),int(w), color)
 
     def drawRectangle(self,x1,y1,w,h,color,filled):
         if filled:
-            boxColor(self.renderer,int(x1),int(y1),int(x1+w),int(y1+h),color)
+            boxColor(self.renderer,int(x1),int(self.ySize-y1),int(x1+w),int((self.ySize-y1)+h),color)
         else:
-            rectangleColor(self.renderer, int(x1), int(y1), int(x1+w),int(y1+h), color)
+            rectangleColor(self.renderer, int(x1), int(y1), int(x1+w),int((self.ySize-y1)+h), color)
 
     def drawCircle(self,x,y,r,color,filled):
         if filled:
-            filledCircleColor(self.renderer,int(x),int(y),int(r),color)
+            filledCircleColor(self.renderer,int(x),int(self.ySize-y),int(r),color)
         else:
-            aacircleColor(self.renderer,int(x),int(y),int(r),color)
+            aacircleColor(self.renderer,int(x),int(self.ySize-y),int(r),color)
 
     def drawStar(self,x,y,r,n,color, filled):
         rads = (2*math.pi)/(2*n)
@@ -85,7 +95,7 @@ class pen:
         for i in range(n*2):
             rad = r / ( (i % 2) + 1 )
             xs.append(int(x+math.cos(rads*i)*rad))
-            ys.append(int(y+math.sin(rads*i)*rad))
+            ys.append(int((self.ySize)-y+math.sin(rads*i)*rad))
 
         vx = (ctypes.c_int16 * len(xs))(*xs)
         vy = (ctypes.c_int16 * len(ys))(*ys)
@@ -96,7 +106,7 @@ class pen:
             aapolygonColor(self.renderer,vx,vy,n*2,color)
 
 class color:
-    def __init__(self,*,r=0,g=0,b=0):
+    def __init__(self):
         self.red = Color(255,0,0,255)
         self.blue = Color(255, 255, 0, 0)
         self.green = Color(255, 0, 255,0 )
@@ -105,9 +115,7 @@ class color:
         self.cyan = Color(255, 255, 255,0 )
         self.white = Color(255,255,255,255)
         self.gray = Color(255,155,155,155)
-        self.r=r
-        self.g=g
-        self.b=b
 
-    def __call__(self):
-        return Color(255,self.b,self.g,self.r)
+
+    def __call__(self,*,r=255,g=0,b=0):
+        return Color(255,b,g,r)

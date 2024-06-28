@@ -6,11 +6,13 @@ ySize = 400
 
 screen = canvas(xSize,ySize)
 pen = pen(screen)
+
 while screen.running:
     pen.drawCircle(100,100,20,color().green,True)
     screen.update()
-    screen.pause(50)
+    screen.pause(500)
     screen.clear()
     screen.update()
+    screen.pause(500)
 
 screen.keepWindow()
