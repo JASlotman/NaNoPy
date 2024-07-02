@@ -6,10 +6,15 @@ import math
 
 
 class canvas:
-    def __init__(self,xSize,ySize):
+    def __init__(self,xSize,ySize,*,xpos=-1,ypos=-1):
 
         SDL_Init(SDL_INIT_VIDEO)
-        self.window = SDL_CreateWindow(b"NaNoPy", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, xSize, ySize, SDL_WINDOW_HIDDEN)
+        if (xpos < 0 or ypos < 0):
+            self.window = SDL_CreateWindow(b"NaNoPy", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, xSize, ySize,
+                                           SDL_WINDOW_HIDDEN)
+        else:
+            self.window = SDL_CreateWindow(b"NaNoPy", xpos, ypos, xSize, ySize, SDL_WINDOW_HIDDEN)
+
         self.event = SDL_Event()
         self.running = True
 
