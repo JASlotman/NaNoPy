@@ -8,7 +8,12 @@ import math
 class canvas:
     def __init__(self,xSize,ySize,*,xpos=-1,ypos=-1):
 
-        SDL_Init(SDL_INIT_VIDEO)
+        if SDL_WasInit(0) == 0:
+            SDL_Init(SDL_INIT_VIDEO)
+            self.mainWindow = True
+        else:
+            self.mainWindow = False
+
         if (xpos < 0 or ypos < 0):
             self.window = SDL_CreateWindow(b"NaNoPy", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, xSize, ySize,
                                            SDL_WINDOW_HIDDEN)
@@ -16,18 +21,26 @@ class canvas:
             self.window = SDL_CreateWindow(b"NaNoPy", xpos, ypos, xSize, ySize, SDL_WINDOW_HIDDEN)
 
         self.event = SDL_Event()
+        self.wasInit = True
         self.running = True
 
     def update(self):
-        SDL_ShowWindow(self.window)
+
+        if SDL_GetWindowFlags(self.window) == SDL_WINDOW_HIDDEN and not self.wasInit:
+            self.running = False
+            if self.mainWindow:
+                self.stop()
+        else:
+            SDL_ShowWindow(self.window)
+            self.wasInit = False
+
         ren = SDL_GetRenderer(self.window)
         SDL_RenderPresent(ren)
 
         while SDL_PollEvent(ctypes.byref(self.event)) != 0:
-            if self.event.type == SDL_QUIT:
-                self.running = False
-                self.stop()
-                break
+            if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE:
+                w = SDL_GetWindowFromID(self.event.window.windowID)
+                SDL_HideWindow(w)
 
     def clear(self):
         ren = SDL_GetRenderer(self.window)
