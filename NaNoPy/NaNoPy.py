@@ -141,6 +141,9 @@ class pen:
         else:
             aapolygonColor(self.renderer,vx,vy,n*2,color)
 
+    def drawString(self,x,y,color,text):
+        stringColor(self.renderer, x, self.ySize - y, str.encode(text), color)
+
 class color:
     def __init__(self):
         self.red = Color(255,0,0,255)
