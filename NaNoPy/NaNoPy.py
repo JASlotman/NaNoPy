@@ -5,80 +5,98 @@ import ctypes
 import math
 
 
-class canvas:
-    def __init__(self,xSize,ySize,*,xpos=-1,ypos=-1):
-
-        if SDL_WasInit(0) == 0:
-            SDL_Init(SDL_INIT_VIDEO)
-            self.mainWindow = True
-        else:
-            self.mainWindow = False
-
-        if (xpos < 0 or ypos < 0):
-            self.window = SDL_CreateWindow(b"NaNoPy", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, xSize, ySize,
-                                           SDL_WINDOW_HIDDEN)
-        else:
-            self.window = SDL_CreateWindow(b"NaNoPy", xpos, ypos, xSize, ySize, SDL_WINDOW_HIDDEN)
-
+class Mainloop:
+    def __init__(self):
+        SDL_Init(SDL_INIT_VIDEO)
         self.event = SDL_Event()
-        self.wasInit = True
         self.running = True
+        self.windowlist = dict()
 
-    def update(self):
 
-        if SDL_GetWindowFlags(self.window) == SDL_WINDOW_HIDDEN and not self.wasInit:
-            self.running = False
-            if self.mainWindow:
-                self.stop()
-        else:
-            SDL_ShowWindow(self.window)
-            self.wasInit = False
+    def addwindow(self,name,window_):
+        self.windowlist[name] = window_
 
-        ren = SDL_GetRenderer(self.window)
+    def update(self,name):
+        window = self.windowlist.get(name)
+        SDL_ShowWindow(window)
+        ren = SDL_GetRenderer(window)
         SDL_RenderPresent(ren)
 
         while SDL_PollEvent(ctypes.byref(self.event)) != 0:
             if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE:
-                w = SDL_GetWindowFromID(self.event.window.windowID)
-                SDL_HideWindow(w)
+                self.stop()
 
-    def clear(self):
-        ren = SDL_GetRenderer(self.window)
+
+    def clear(self,name):
+        ren = SDL_GetRenderer(self.windowlist.get(name))
         SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
         SDL_RenderClear(ren)
 
-    def pause(self,time):
+    def pause(self,name,time):
         SDL_Delay(time)
 
-    def keepWindow(self):
-        while self.running:
-            while SDL_PollEvent(ctypes.byref(self.event)) != 0:
-                if self.event.type == SDL_QUIT:
-                    self.running = False
-                    break
-        SDL_DestroyWindow(self.window)
+    def stop(self):
+        self.running = False
+        for win in self.windowlist:
+            SDL_DestroyWindow(self.windowlist[win])
         SDL_Quit()
 
-    def stop(self):
-        SDL_DestroyWindow(self.window)
-        SDL_Quit()
+    def keep(self):
+        while self.running:
+            while SDL_PollEvent(ctypes.byref(self.event)) != 0:
+                if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE:
+                    self.stop()
+
+
+NNP = Mainloop()
+
+class canvas:
+    def __init__(self,name,xSize,ySize,*,xpos=-1,ypos=-1):
+
+        if (xpos < 0 or ypos < 0):
+            window = SDL_CreateWindow(b"NaNoPy", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, xSize, ySize,SDL_WINDOW_HIDDEN)
+        else:
+            window = SDL_CreateWindow(b"NaNoPy", xpos, ypos, xSize, ySize, SDL_WINDOW_HIDDEN)
+
+        self.name = name
+        NNP.addwindow(name, window)
+
+
+    def update(self):
+        NNP.update(self.name)
+
+    def clear(self):
+        NNP.clear(self.name)
+
+    def pause(self,time):
+        NNP.pause(self.name,time)
+
+    def keepwindow(self):
+        NNP.keep()
+
+    def running(self):
+        return NNP.running
+
+
+
+
 
 
 
 
 class pen:
-    def __init__(self,canvas):
+    def __init__(self,window):
         render_flags = (
                 SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
         )
-        self.renderer = SDL_CreateRenderer(canvas.window, -1, render_flags)
+        self.renderer = SDL_CreateRenderer(NNP.windowlist.get(window.name), -1, render_flags)
         x = list()
         y = list()
         x.append(0)
         y.append(0)
         xobj = (ctypes.c_int32 * len(x))(*x)
         yobj = (ctypes.c_int32 * len(y))(*y)
-        SDL_GetWindowSize(canvas.window,xobj,yobj)
+        SDL_GetWindowSize(NNP.windowlist.get(window.name),xobj,yobj)
         self.xSize = xobj[0]
         self.ySize = yobj[0]
 
