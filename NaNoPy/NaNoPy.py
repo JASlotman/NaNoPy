@@ -142,7 +142,7 @@ class pen:
             aapolygonColor(self.renderer,vx,vy,n*2,color)
 
     def drawString(self,x,y,color,text):
-        stringColor(self.renderer, x, self.ySize - y, str.encode(text), color)
+        stringColor(self.renderer, int(x), int(self.ySize - y), str.encode(text), color)
 
 class color:
     def __init__(self):

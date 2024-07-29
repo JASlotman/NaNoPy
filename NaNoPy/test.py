@@ -12,13 +12,15 @@ pen2 = pen(screen2)
 
 
 while screen.running():
-    pen1.drawCircle(100,100,20,color().green,True)
+    pen1.drawCircle(100,100,60,color().green,True)
+    pen1.drawString(100,100,color().red,"Hello")
     screen.update()
     screen.pause(500)
     screen.clear()
     screen.update()
     screen.pause(500)
-    pen2.drawCircle(100, 100, 20, color().green, True)
+    pen2.drawCircle(100, 100, 60, color().green, True)
+    pen2.drawString(100,100, color().red,"World")
     screen2.update()
     screen2.pause(500)
     screen2.clear()
