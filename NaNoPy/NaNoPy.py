@@ -142,6 +142,7 @@ class pen:
             aapolygonColor(self.renderer,vx,vy,n*2,color)
 
     def drawString(self,x,y,color,text):
+        gfxPrimitivesSetFont(None, 0, 0)
         stringColor(self.renderer, int(x), int(self.ySize - y), str.encode(text), color)
 
 class color:
