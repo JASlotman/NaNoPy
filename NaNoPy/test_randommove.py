@@ -29,6 +29,7 @@ while screen.running():
     for i in range(n):
         pen.drawCircle(x[i],y[i],5,color().green,True)
         pen.drawString(x[i], y[i], color().red,"f:" + str(frame) + " p: " + str(i) + " x:" + str(x[i]) + " y:" + str(y[i]))
+        pen.drawLine(0,y[i],800,y[i],color().red,True)
 
     screen.update()
     screen.pause(50)
