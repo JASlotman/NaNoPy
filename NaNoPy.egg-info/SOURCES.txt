@@ -1,0 +1,11 @@
+LICENCE
+README.md
+pyproject.toml
+NaNoPy/NaNoPy.py
+NaNoPy/__init__.py
+NaNoPy/test.py
+NaNoPy/test_randommove.py
+NaNoPy.egg-info/PKG-INFO
+NaNoPy.egg-info/SOURCES.txt
+NaNoPy.egg-info/dependency_links.txt
+NaNoPy.egg-info/top_level.txt

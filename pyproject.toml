@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptool"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "NaNoPy"
+version = "0.9.42"
+dynamic = ["version"]
+authors = [
+  { name="Johan Slotman", email="j.slotman@erasmusmc.nl" },
+  { name="Bart Geverts", email="b.geverts@erasmusmc.nl"},
+]
+description = "A Graphical pySDL2 based engine for Nanobiology Erasmus MC/TU Delft"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+    "PySDL2",
+    "pysdl2-dll",
+]
+
+[project.urls]
+Homepage = "https://erasmusoic.nl"
