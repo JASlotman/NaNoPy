@@ -1,7 +1,6 @@
 LICENCE
 README.md
 pyproject.toml
-NaNoPy/NaNoPy.py
 NaNoPy/__init__.py
 NaNoPy/test.py
 NaNoPy/test_randommove.py
