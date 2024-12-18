@@ -55,9 +55,9 @@ class canvas:
     def __init__(self,name,xSize,ySize,*,xpos=-1,ypos=-1):
 
         if (xpos < 0 or ypos < 0):
-            window = SDL_CreateWindow(b"NaNoPy", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, xSize, ySize,SDL_WINDOW_HIDDEN)
+            window = SDL_CreateWindow(str.encode(name), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, xSize, ySize,SDL_WINDOW_HIDDEN)
         else:
-            window = SDL_CreateWindow(b"NaNoPy", xpos, ypos, xSize, ySize, SDL_WINDOW_HIDDEN)
+            window = SDL_CreateWindow(str.encode(name), xpos, ypos, xSize, ySize, SDL_WINDOW_HIDDEN)
 
         self.name = name
         NNP.addwindow(name, window)
@@ -106,13 +106,14 @@ class pen:
     def drawPixel(self,x,y,color):
         pixelColor(self.renderer,int(x),int(self.ySize-y),color)
 
-    def drawLine(self,x1,y1,x2,y2,color,GFX):
-        if GFX:
-            aalineColor(self.renderer, int(x1), int(self.ySize-y1), int(x2), int(self.ySize-y2), color)
-        else:
-            SDL_SetRenderDrawBlendMode(self.renderer, SDL_BLENDMODE_NONE)
-            SDL_SetRenderDrawColor(self.renderer, color.a,color.b,color.g,color.r)
-            SDL_RenderDrawLine(self.renderer, int(x1), int(self.ySize-y1), int(x2), int(self.ySize-y2))
+    def drawLine(self,x1,y1,x2,y2,color):
+        
+        aalineColor(self.renderer, int(x1), int(self.ySize-y1), int(x2), int(self.ySize-y2), color)
+        
+        #option not using the gfx library
+        #     SDL_SetRenderDrawBlendMode(self.renderer, SDL_BLENDMODE_NONE)
+        #     SDL_SetRenderDrawColor(self.renderer, color.a,color.b,color.g,color.r)
+        #     SDL_RenderDrawLine(self.renderer, int(x1), int(self.ySize-y1), int(x2), int(self.ySize-y2))
 
     def drawThickLine(self,x1,y1,x2,y2,w,color):
         thickLineColor(self.renderer, int(x1), int(self.ySize-y1), int(x2), int(self.ySize-y2),int(w), color)
