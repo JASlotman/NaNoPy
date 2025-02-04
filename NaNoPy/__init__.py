@@ -120,9 +120,10 @@ class pen:
 
     def drawRectangle(self,x1,y1,w,h,color,filled):
         if filled:
-            boxColor(self.renderer,int(x1),int(self.ySize-y1),int(x1+w),int((self.ySize-y1)+h),color)
+            boxColor(self.renderer,int(x1),int(self.ySize-y1),int(x1+w),int((self.ySize-(y1+h))),color)
         else:
-            rectangleColor(self.renderer, int(x1), int(y1), int(x1+w),int((self.ySize-y1)+h), color)
+            rectangleColor(self.renderer, int(x1), int(self.ySize-y1), int(x1+w),int((self.ySize-(y1+h))), color)
+            
 
     def drawCircle(self,x,y,r,color,filled):
         if filled:
