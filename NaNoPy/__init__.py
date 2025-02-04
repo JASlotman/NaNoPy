@@ -130,7 +130,7 @@ class pen:
             filledCircleColor(self.renderer,int(x),int(self.ySize-y),int(r),color)
         else:
             aacircleColor(self.renderer,int(x),int(self.ySize-y),int(r),color)
-
+                
     def drawStar(self,x,y,r,n,color, filled):
         rads = (2*math.pi)/(2*n)
         xs = list()
