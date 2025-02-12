@@ -1,5 +1,5 @@
 #simple test
-from NaNoPy import *
+from __init__ import *
 
 xSize = 800
 ySize = 400
