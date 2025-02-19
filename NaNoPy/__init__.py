@@ -165,5 +165,5 @@ class color:
         self.gray = Color(255,155,155,155)
 
 
-    def __call__(self,*,r=255,g=0,b=0):
-        return Color(255,b,g,r)
+    def __call__(self,*,r=255,g=0,b=0,a=255):
+        return Color(a,b,g,r)
