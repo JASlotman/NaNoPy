@@ -9,7 +9,7 @@ pen = pen(screen)
 
 #help(canvas)
 #help(pen)
-help(color)
+#help(color)
 
 pen.drawRectangle(50,50,50,50,color().green,False)
 pen.drawRectangle(100,50,50,50,color()(r=0,g=255,a=150),True)

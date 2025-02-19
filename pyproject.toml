@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "NaNoPy"
-version = "0.9.42"
+version = "1.0.42"
 authors = [
   { name="Johan Slotman", email="j.slotman@erasmusmc.nl" },
   { name="Bart Geverts", email="b.geverts@erasmusmc.nl"},
