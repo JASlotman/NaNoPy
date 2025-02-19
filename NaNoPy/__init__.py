@@ -5,7 +5,7 @@ import ctypes
 import math
 
 
-class Mainloop:
+class Mainloop:    
     def __init__(self):
         SDL_Init(SDL_INIT_VIDEO)
         self.event = SDL_Event()
@@ -52,6 +52,16 @@ class Mainloop:
 NNP = Mainloop()
 
 class canvas:
+    """NaNoPy Canvas object
+    
+    canvas(name,xSize,ySize,*,xpos,ypos)
+    name: A string that defines the made canvas, each canvas should have a unique name
+    xSize: The size in x of the canvas in pixels
+    ySize: the size in y of the canvas in pixels
+    xpos: the x position of the window (0 is the left)
+    ypos: the y position of the window (0 is the top)
+
+    """
     def __init__(self,name,xSize,ySize,*,xpos=-1,ypos=-1):
 
         if (xpos < 0 or ypos < 0):
@@ -64,18 +74,23 @@ class canvas:
 
 
     def update(self):
+        """Update the canvas"""
         NNP.update(self.name)
 
     def clear(self):
+        """Clear the canvas """
         NNP.clear(self.name)
 
     def pause(self,time):
+        """Pause the canvas for a time in ms"""
         NNP.pause(self.name,time)
 
     def keepwindow(self):
+        """Keep window on screen if not running any code (for showing a single screen) or finite number of frames"""
         NNP.keep()
 
     def running(self):
+        """method returning if a process is running in the canvas, returns false if window is closed"""
         return NNP.running
 
 
@@ -86,6 +101,11 @@ class canvas:
 
 
 class pen:
+    """Object to draw shapes on a nanopy canvas
+    
+    pen(canvas)
+    canvas: nanopy canvas
+    """
     def __init__(self,window):
         render_flags = (
                 SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
@@ -154,6 +174,18 @@ class pen:
         stringColor(self.renderer, int(x), int(self.ySize - y), str.encode(text), color)
 
 class color:
+    """color object for nanopy shapes
+    
+    Available colors: red, blue, green, yellow, magenta, cyan, white, gray
+
+    Usage example color().red
+
+    For custom colors use color()(r,g,b,a) 
+    r, g and b are colors between 0 and 255
+    a is the alpha (opacity) between 0 and 255
+
+    """
+
     def __init__(self):
         self.red = Color(255,0,0,255)
         self.blue = Color(255, 255, 0, 0)
