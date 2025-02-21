@@ -11,6 +11,7 @@ class Mainloop:
         self.event = SDL_Event()
         self.running = True
         self.windowlist = dict()
+        self.listenerlist = dict()
 
 
     def addwindow(self,name,window_):
@@ -25,6 +26,13 @@ class Mainloop:
         while SDL_PollEvent(ctypes.byref(self.event)) != 0:
             if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE:
                 self.stop()
+            for lstnr in self.listenerlist:
+                self.listenerlist[lstnr].run(self.event)
+        
+        
+
+       
+
 
 
     def clear(self,name):
@@ -47,6 +55,10 @@ class Mainloop:
             while SDL_PollEvent(ctypes.byref(self.event)) != 0:
                 if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE:
                     self.stop()
+
+    def addlistener(self,listener):
+        self.listenerlist[listener.name] = listener
+
 
 
 NNP = Mainloop()
@@ -92,9 +104,6 @@ class canvas:
     def running(self):
         """method returning if a process is running in the canvas, returns false if window is closed"""
         return NNP.running
-
-
-
 
 
 
@@ -199,3 +208,8 @@ class color:
 
     def __call__(self,*,r=255,g=0,b=0,a=255):
         return Color(a,b,g,r)
+
+class listener:
+    def __init__(self, listener):
+        self.lstnr = listener
+        NNP.addlistener(listener)
