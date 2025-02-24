@@ -81,6 +81,11 @@ class canvas:
         NNP.addwindow(name, window)
     
     def addlistener(self, listener):
+        """Adds a listener object
+        
+        Listener object should have a name field 
+        and a method run(event) that takes the events from the screen
+        """
         self.listener = listener
         NNP.addlistener(listener)
 
