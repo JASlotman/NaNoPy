@@ -26,7 +26,7 @@ ySize = 600
 
 screen = canvas("Input Demo",xSize,ySize)
 p = pen(screen)
-l = listener(inputlistener("move"))
+screen.addlistener(inputlistener("move"))
 
 w = 50
 h = 10
@@ -35,7 +35,7 @@ y = ySize/2 - h/2
 
 while screen.running():
 
-    dx = l.lstnr.dx
+    dx = screen.listener.dx
 
     x += dx
 

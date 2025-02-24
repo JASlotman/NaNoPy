@@ -28,12 +28,7 @@ class Mainloop:
                 self.stop()
             for lstnr in self.listenerlist:
                 self.listenerlist[lstnr].run(self.event)
-        
-        
-
        
-
-
 
     def clear(self,name):
         ren = SDL_GetRenderer(self.windowlist.get(name))
@@ -82,8 +77,12 @@ class canvas:
             window = SDL_CreateWindow(str.encode(name), xpos, ypos, xSize, ySize, SDL_WINDOW_HIDDEN)
 
         self.name = name
+        self.listener = 0
         NNP.addwindow(name, window)
-
+    
+    def addlistener(self, listener):
+        self.listener = listener
+        NNP.addlistener(listener)
 
     def update(self):
         """Update the canvas"""
@@ -209,7 +208,4 @@ class color:
     def __call__(self,*,r=255,g=0,b=0,a=255):
         return Color(a,b,g,r)
 
-class listener:
-    def __init__(self, listener):
-        self.lstnr = listener
-        NNP.addlistener(listener)
+
