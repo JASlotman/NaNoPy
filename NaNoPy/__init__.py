@@ -183,7 +183,7 @@ class writer:
             aapolygonColor(self.renderer,vx,vy,n*2,color)
 
     def drawPolygon(self,x,y,r,n,color, filled):
-        rads = (2*math.pi)/(n)
+        rads = (2*math.pi)/n
         xs = list()
         ys = list()
 
