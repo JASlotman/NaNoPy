@@ -113,10 +113,10 @@ class canvas:
 
 
 
-class pen:
+class writer:
     """Object to draw shapes on a nanopy canvas
     
-    pen(canvas)
+    writer(canvas)
     canvas: nanopy canvas
     """
     def __init__(self,window):
@@ -181,6 +181,23 @@ class pen:
             filledPolygonColor(self.renderer, vx, vy, n*2, color)
         else:
             aapolygonColor(self.renderer,vx,vy,n*2,color)
+
+    def drawPolygon(self,x,y,r,n,color, filled):
+        rads = (2*math.pi)/(n)
+        xs = list()
+        ys = list()
+
+        for i in range(n):
+            xs.append(int(x+math.cos((rads*i)-(math.pi/2))*r))
+            ys.append(int((self.ySize)-y+math.sin((rads*i)-(math.pi/2))*r))
+
+        vx = (ctypes.c_int16 * len(xs))(*xs)
+        vy = (ctypes.c_int16 * len(ys))(*ys)
+
+        if filled:
+            filledPolygonColor(self.renderer, vx, vy, n, color)
+        else:
+            aapolygonColor(self.renderer,vx,vy,n,color)
 
     def drawString(self,x,y,color,text):
         gfxPrimitivesSetFont(None, 0, 0)
