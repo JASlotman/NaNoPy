@@ -210,9 +210,9 @@ class color:
 
     Usage example color().red
 
-    For custom colors use color()(r,g,b,a) 
-    r, g and b are colors between 0 and 255
-    a is the alpha (opacity) between 0 and 255
+    For custom colors use color()(r=<r>,g=<g>,b=<b>,a=<a>) 
+    <r>, <g> and <b> are colors between 0 and 255
+    <a> is the alpha (opacity) between 0 and 255
 
     """
 
