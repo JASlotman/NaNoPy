@@ -34,7 +34,8 @@ class Mainloop:
         ren = SDL_GetRenderer(self.windowlist.get(name))
         SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
         SDL_RenderClear(ren)
-        #SDL_RenderPresent(ren)
+        #required for specific linux builds
+        #SDL_RenderPresent(ren) 
 
     def pause(self,name,time):
         SDL_Delay(time)
