@@ -5,7 +5,7 @@ xSize = 800
 ySize = 400
 
 screen = canvas("Name",xSize,ySize)
-pen = pen(screen)
+pen = writer(screen)
 
 n = 10
 x = list()
