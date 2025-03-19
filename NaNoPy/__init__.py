@@ -135,6 +135,18 @@ class writer:
         self.xSize = xobj[0]
         self.ySize = yobj[0]
 
+        #solves the mac bug essentially adding a clear before initialisation of the writer
+        ren = SDL_GetRenderer(self.windowlist.get(window.name))
+        SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
+        SDL_RenderClear(ren)
+        
+        #Blitting a clear surface to the renderer before writing something
+        surface_old = SDL_GetWindowSurface(NNP.windowlist.get(window.name))
+        surface_new = SDL_CreateRGBSurface(0,self.xSize,self.ySize,32,255,0,0,0)
+        SDL_BlitSurface(surface_new,None,surface_old,None)
+
+
+
 
 
     def drawPixel(self,x,y,color):
