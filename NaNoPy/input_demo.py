@@ -25,7 +25,7 @@ xSize = 800
 ySize = 600
 
 screen = canvas("Input Demo",xSize,ySize)
-p = pen(screen)
+p = writer(screen)
 screen.addlistener(inputlistener("move"))
 
 w = 50

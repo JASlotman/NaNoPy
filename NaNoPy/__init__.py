@@ -3,6 +3,7 @@ from sdl2.sdlgfx import *
 from sdl2.ext import *
 import ctypes
 import math
+import platform
 
 
 class Mainloop:    
@@ -35,7 +36,8 @@ class Mainloop:
         SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
         SDL_RenderClear(ren)
         #required for specific linux builds
-        #SDL_RenderPresent(ren) 
+        if(platform.system() == 'Linux'):
+            SDL_RenderPresent(ren) 
 
     def pause(self,name,time):
         SDL_Delay(time)
