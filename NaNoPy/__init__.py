@@ -122,11 +122,11 @@ class writer:
     writer(canvas)
     canvas: nanopy canvas
     """
-    def __init__(self,window):
+    def __init__(self,window,*,driver=-1):
         render_flags = (
                 SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
         )
-        self.renderer = SDL_CreateRenderer(NNP.windowlist.get(window.name), -1, render_flags)
+        self.renderer = SDL_CreateRenderer(NNP.windowlist.get(window.name), driver, render_flags)
         x = list()
         y = list()
         x.append(0)
