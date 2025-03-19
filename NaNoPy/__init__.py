@@ -136,7 +136,7 @@ class writer:
         self.ySize = yobj[0]
 
         #solves the mac bug essentially adding a clear before initialisation of the writer
-        ren = SDL_GetRenderer(self.windowlist.get(window.name))
+        ren = SDL_GetRenderer(NNP.windowlist.get(window.name))
         SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
         SDL_RenderClear(ren)
         
