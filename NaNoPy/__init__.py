@@ -20,7 +20,9 @@ class Mainloop:
 
     def update(self,name):
         window = self.windowlist.get(name)
-        SDL_ShowWindow(window)
+        flags  = SDL_GetWindowFlags(window)
+        if (flags & SDL_WINDOW_HIDDEN):
+            SDL_ShowWindow(window)
         ren = SDL_GetRenderer(window)
         SDL_RenderPresent(ren)
 
