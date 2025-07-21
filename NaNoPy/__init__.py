@@ -223,12 +223,15 @@ class writer:
         else:
             aapolygonColor(self.renderer,vx,vy,n,color)
 
-    def drawSpline(self,xs,ys,color,loop):
+    def drawSpline(self,xs,ys,color,loop,filled):
         """Draws spline through list of coordinates xs,ys of given color, loop false gives a line, loop true gives a closed loop
            coordinate information of complete line available in writer.spln object"""
         self.spln = spline(xs,ys,loop)
         for v  in zip(self.spln.splinex,self.spln.spliney):
             self.drawPixel(v[0],v[1],color)
+        if loop and filled:
+            for v in zip(self.spln.insidex,self.spln.insidey):
+                self.drawPixel(v[0],v[1],color)
 
     def drawString(self,x,y,color,text):
         """Draws string on location x,y with given color"""
@@ -325,7 +328,7 @@ class spline:
 
         for i in range(0,segments):       
             samples = max( abs(self.x[i]-self.x[(i+1)%self.x.size]) , abs(self.y[i]-self.y[(i+1)%self.y.size])  )
-            samples = math.ceil(samples*20)
+            samples = math.ceil(samples*2.5)
             t = np.linspace(0,1,num=samples)
                         
             tempx = (self.ax[i] + self.bx[i]*t + self.cx[i]*(t*t) + self.dx[i]*(t*t*t))
@@ -349,5 +352,40 @@ class spline:
         self.spliney = outy
         self.splinedydx = outdydx
 
+        if loop:
+            self.getInsidePix()
+
+    def getInsidePix(self):
+        inds = self.spliney.argsort()
+        sortedy = self.spliney[inds]
+        sortedx = self.splinex[inds]
+        boundingbox = [np.min(self.splinex),np.min(self.spliney),np.max(self.splinex),np.max(self.spliney)]
+        sortedy = sortedy - boundingbox[1]
+        sortedx = sortedx - boundingbox[0]
+        minx = np.full(math.ceil(boundingbox[3]-boundingbox[1])+1,math.ceil(boundingbox[2]-boundingbox[0])+1)
+        maxx = np.zeros(math.ceil(boundingbox[3]-boundingbox[1])+1)
+
+        for j in range(len(sortedy)):
+            i = math.ceil(sortedy[j])
+            if sortedx[j] < minx[i]:
+                minx[i] = sortedx[j]
+            if sortedx[j] > maxx[i]:
+                maxx[i] = sortedx[j]
+            
+             
+
+        for i in range(len(minx)):
+            if i == 0:
+                self.insidex = (np.arange(math.floor(minx[i]),math.ceil(maxx[i]))+boundingbox[0])
+                self.insidey = (np.full(math.ceil(maxx[i])-math.floor(minx[i]),(i+boundingbox[1])))                
+                
+            else:
+                self.insidex = np.concatenate((self.insidex,(np.arange(math.floor(minx[i]),math.ceil(maxx[i]))+boundingbox[0])),axis=0)
+                self.insidey = np.concatenate((self.insidey,(np.full(math.ceil(maxx[i])-math.floor(minx[i]),(i+boundingbox[1])))),axis=0)
+
+            
+                
+                
+        
         
                 

@@ -56,8 +56,8 @@ while screen.running():
     
     
     for i in range(0,len(x)):
-        dx = rnd.randint(-1,1)
-        dy = rnd.randint(-4,4)
+        
+        dy = rnd.randint(-3,3)
 
         #if 50 < math.sqrt((xSize/2 - (x[i]+dx))**2 + (ySize/2 - (y[i]+dy))**2 ) < 53:
         #x[i] += dx
@@ -71,8 +71,8 @@ while screen.running():
     if not first:
         splinedy = pen.spln.spliney
 
-    pen.drawSpline(x,np.array(y)-50,color().green,False)
-    pen.drawSpline(x,np.array(y)+50,color().green,False)
+    pen.drawSpline(x,np.array(y)-50,color().green,False,False)
+    pen.drawSpline(x,np.array(y)+50,color().green,False,False)
 
     if not first:
         
@@ -100,7 +100,7 @@ while screen.running():
             
 
         #flow
-        flowdx = 15
+        flowdx = 5
         ind2 = np.where(pen.spln.splinex >= (xpart[i]+flowdx)%xSize)[0][0]
         flowdy =  pen.spln.spliney[ind2] - pen.spln.spliney[(ind)%pen.spln.splinex.size] 
 
