@@ -330,20 +330,24 @@ class spline:
                         
             tempx = (self.ax[i] + self.bx[i]*t + self.cx[i]*(t*t) + self.dx[i]*(t*t*t))
             tempy = (self.ay[i] + self.by[i]*t + self.cy[i]*(t*t) + self.dy[i]*(t*t*t))
-            
-            
+            tempdy = (self.by[i] + (2*self.cy[i]*t) + (3*self.dy[i]*(t*t)))
+            tempdx = (self.bx[i] + (2*self.cx[i]*t) + (3*self.dx[i]*(t*t)))
+            tempdydx = (tempdy/tempdx)
 
             if i == 0:
                 outx = tempx
                 outy = tempy
+                outdydx = tempdydx
             else:
                 outx = np.concatenate((outx,tempx), axis=0)
                 outy = np.concatenate((outy,tempy), axis=0)
+                outdydx = np.concatenate((outdydx,tempdydx), axis=0)
         
         
 
         self.splinex = outx
         self.spliney = outy
+        self.splinedydx = outdydx
 
         
                 
