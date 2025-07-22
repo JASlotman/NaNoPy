@@ -383,6 +383,18 @@ class spline:
                 self.insidex = np.concatenate((self.insidex,(np.arange(math.floor(minx[i]),math.ceil(maxx[i]))+boundingbox[0])),axis=0)
                 self.insidey = np.concatenate((self.insidey,(np.full(math.ceil(maxx[i])-math.floor(minx[i]),(i+boundingbox[1])))),axis=0)
 
+    def getInside(self,x,y):
+
+        out = False
+
+        for i in range(len(self.insidex)):            
+
+            if math.ceil(self.insidex[i]) == math.ceil(x) and math.ceil(self.insidey[i]) == math.ceil(y):
+                out = True
+                break 
+
+        return out
+
             
                 
                 
