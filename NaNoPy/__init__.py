@@ -3,6 +3,7 @@ from sdl2.sdlgfx import *
 from sdl2.ext import *
 import ctypes
 import math
+import cmath
 import platform
 import numpy as np
 
@@ -385,15 +386,199 @@ class spline:
 
     def getInside(self,x,y):
 
-        out = False
+        
 
-        for i in range(len(self.insidex)):            
 
-            if math.ceil(self.insidex[i]) == math.ceil(x) and math.ceil(self.insidey[i]) == math.ceil(y):
-                out = True
-                break 
+        splncx = np.average(self.ax)
+        splncy = np.average(self.ay)
+        
 
-        return out
+        #draw line trhough given point and center, extend beyond bounding box
+
+        if splncx < x:
+            x1 = splncx
+            x2 = x
+            y1 = splncy
+            y2 = y
+        if splncx >= x:
+            x1 = x
+            x2 = splncx
+            y1 = y
+            y2 = splncy
+        
+        dx = x2-x1
+        dy = y2-y1
+
+        if dx == 0 and dy == 0:
+            return True
+        
+        
+        numberofsegments = len(self.ax)
+            
+        if self.loop:
+            n = numberofsegments
+        else:
+            n = numberofsegments-1
+        
+        valid_intercepts = []
+        all_intercepts = []
+
+        for segno in range(n):
+            if dx != 0: 
+                
+                E = dy/dx
+                F = y1 - (x1*E)
+
+                a = self.ax[segno] 
+                b = self.bx[segno] 
+                c = self.cx[segno]
+                d = self.dx[segno]
+                e = self.ay[segno]
+                f = self.by[segno]
+                g = self.cy[segno]
+                h = self.dy[segno]
+                i = E
+                j = F
+
+                #redefine an a+bx+cx2+dx2 formula
+
+                a = ((i*a)+j)-e
+                b = (i*b)-f
+                c = (i*c)-g
+                d = (i*d)-h
+
+            if dx == 0:
+                a = self.ax[segno] - x1
+                b = self.bx[segno] 
+                c = self.cx[segno]
+                d = self.dx[segno] 
+
+                    
+            #solve cubic for real values 
+            #https://medium.com/@mephisto_Dev/solving-cubic-equation-using-cardanos-method-with-python-9465f0b92277
+            #https://math.stackexchange.com/questions/243961/find-x-given-y-in-a-cubic-function
+
+            p = (3*d*b - c**2) / (3*d**2)
+            q = (2*c**3 - 9*d*c*b + 27*d**2*a) / (27*d**3)
+            delta = (q**2 / 4 + p**3 / 27)
+
+            # determine number and type of roots
+            if delta > 0:  # one real and two complex roots
+                    
+                u = (-q/2 + cmath.sqrt(delta))
+                v = (-q/2 - cmath.sqrt(delta))
+
+                u_regular = u ** (1./3) if u >= 0 else -(-u)**(1./3)
+                u_cbrt = math.cbrt(u) 
+                v_regular = v ** (1./3) if v >= 0 else -(-v)**(1./3)
+                v_cbrt = math.cbrt(v) 
+
+                xx1 = u_regular + v - c / (3*d)
+                xx2 = -(u_regular + v_regular)/2 - c / (3*d) + (u_regular - v_regular)*cmath.sqrt(3)/2j
+                xx3 = -(u_regular + v_regular)/2 - c / (3*d) - (u_regular - v_regular)*cmath.sqrt(3)/2j
+                xx4 = u_cbrt + v_cbrt - c / (3*d)
+                xx5 = -(u_cbrt + v_cbrt)/2 - c / (3*d) + (u_cbrt - v_cbrt)*cmath.sqrt(3)/2j
+                xx6 = -(u_cbrt + v_cbrt)/2 - c / (3*d) - (u_cbrt - v_cbrt)*cmath.sqrt(3)/2j
+                # print("One real root and two complex roots:")
+                # print("x1 = ", xx1.real)
+                # print("x2 = ", xx2)
+                # print("x3 = ", xx3)
+            elif delta == 0:  # three real roots, two are equal
+                u = (-q/2)
+                u_regular = u ** (1./3) if u >= 0 else -(-u)**(1./3)
+                u_cbrt = math.cbrt(u) 
+                xx1 = ((2*u_regular) - c) / (3*d)
+                xx2 = ((-u_regular) - c) / (3*d)
+                xx3 = ((-u_regular) - c) / (3*d)
+                xx4 = ((2*u_cbrt) - c) / (3*d)
+                xx5 = ((-u_cbrt) - c) / (3*d)
+                xx6 = ((-u_cbrt) - c) / (3*d)
+                # print("Three real roots, two are equal:")
+                # print("x1 = ", xx1.real)
+                # print("x2 = ", xx2.real)
+                # print("x3 = ", xx3.real)
+            else:  # three distinct real roots
+                u = (-q/2 + cmath.sqrt(delta))
+                v = (-q/2 - cmath.sqrt(delta))
+                u_regular = u ** (1./3) if u >= 0 else -(-u)**(1./3)
+                u_cbrt = math.cbrt(u) 
+                v_regular = v ** (1./3) if v >= 0 else -(-v)**(1./3)
+                v_cbrt = math.cbrt(v) 
+
+                xx1 = u_regular + v - c / (3*d)
+                xx2 = -(u_regular + v_regular)/2 - c / (3*d) + (u_regular - v_regular)*cmath.sqrt(3)/2j
+                xx3 = -(u_regular + v_regular)/2 - c / (3*d) - (u_regular - v_regular)*cmath.sqrt(3)/2j
+                xx4 = u_cbrt + v_cbrt - c / (3*d)
+                xx5 = -(u_cbrt + v_cbrt)/2 - c / (3*d) + (u_cbrt - v_cbrt)*cmath.sqrt(3)/2j
+                xx6 = -(u_cbrt + v_cbrt)/2 - c / (3*d) - (u_cbrt - v_cbrt)*cmath.sqrt(3)/2j
+                # print("Three distinct real roots:")
+                # print("x1 = ", xx1.real)
+                # print("x2 = ", xx2.real)
+                # print("x3 = ", xx3.real)
+
+            if delta > 0:
+                all_intercepts.append([segno,xx1.real])
+                if 0 <= xx1.real <= 1:
+                    tint = xx1.real
+                    valid_intercepts.append([segno,tint])
+                all_intercepts.append([segno,xx4.real])
+                if 0 <= xx4.real <= 1:
+                    tint = xx4.real
+                    valid_intercepts.append([segno,tint])
+            if delta <= 0:
+                all_intercepts.append([segno,xx1.real])
+                all_intercepts.append([segno,xx2.real])
+                all_intercepts.append([segno,xx3.real])
+                if 0 <= xx1.real <= 1:
+                    tint = xx1.real
+                    valid_intercepts.append([segno,tint])
+                if 0 <= xx2.real <= 1:
+                    tint = xx2.real
+                    valid_intercepts.append([segno,tint])
+                if 0 <= xx3.real <= 1:
+                    tint = xx3.real
+                    valid_intercepts.append([segno,tint])
+                all_intercepts.append([segno,xx4.real])
+                all_intercepts.append([segno,xx5.real])
+                all_intercepts.append([segno,xx6.real])
+                if 0 <= xx4.real <= 1:
+                    tint = xx4.real
+                    valid_intercepts.append([segno,tint])
+                if 0 <= xx5.real <= 1:
+                    tint = xx5.real
+                    valid_intercepts.append([segno,tint])
+                if 0 <= xx6.real <= 1:
+                    tint = xx6.real
+                    valid_intercepts.append([segno,tint])
+        
+        countbefore = 0
+
+        
+
+        truevalids = []
+
+        for i in range(len(valid_intercepts)):
+            segmentno = valid_intercepts[i][0]
+            tintercept = valid_intercepts[i][1]
+
+            xint = self.ax[segmentno]+(self.bx[segmentno]*tintercept)+(self.cx[segmentno]*(tintercept**2))+(self.dx[segmentno]*(tintercept**3))
+            yint = self.ay[segmentno]+(self.by[segmentno]*tintercept)+(self.cy[segmentno]*(tintercept**2))+(self.dy[segmentno]*(tintercept**3))
+            valid_intercepts[i].append(xint)
+            valid_intercepts[i].append(yint)
+
+            if  math.isclose(yint , (E*xint) + F):
+
+                truevalids.append([valid_intercepts[i],xint,yint])
+
+                if xint < x:
+                    countbefore += 1
+        
+        
+
+        if countbefore%2 == 1:
+            return True
+        else:
+            return False
 
             
                 
