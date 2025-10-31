@@ -19,9 +19,6 @@ classifiers = [
 ]
 dependencies = [
     "Numpy",
-    "cmath",
-    "math",
-    "ctypes",
     "platform",
     "PySDL2",
     "pysdl2-dll",
