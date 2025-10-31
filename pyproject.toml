@@ -12,10 +12,10 @@ authors = [
 description = "A Graphical pySDL2 based engine for Nanobiology Erasmus MC/TU Delft"
 readme = "README.md"
 requires-python = ">=3.9"
+license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
-    "License :: OSI Approved :: MIT License",
 ]
 dependencies = [
     "Numpy",
