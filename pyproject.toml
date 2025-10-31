@@ -19,7 +19,6 @@ classifiers = [
 ]
 dependencies = [
     "Numpy",
-    "platform",
     "PySDL2",
     "pysdl2-dll",
 ]
