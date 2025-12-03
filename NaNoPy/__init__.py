@@ -6,7 +6,14 @@ import math
 import cmath
 import platform
 import numpy as np
+import sys
 
+IS_JUPYTER = 'ipykernel' in sys.modules
+
+if IS_JUPYTER:
+    import tempfile
+    from PIL import Image
+    from IPython.display import clear_output, display
 
 class Mainloop:    
     def __init__(self):
@@ -22,17 +29,46 @@ class Mainloop:
 
     def update(self,name):
         window = self.windowlist.get(name)
-        flags  = SDL_GetWindowFlags(window)
-        if (flags & SDL_WINDOW_HIDDEN):
-            SDL_ShowWindow(window)
         ren = SDL_GetRenderer(window)
-        SDL_RenderPresent(ren)
 
         while SDL_PollEvent(ctypes.byref(self.event)) != 0:
-            if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE:
-                self.stop()
-            for lstnr in self.listenerlist:
-                self.listenerlist[lstnr].run(self.event)
+                if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE:
+                    self.stop()
+                for lstnr in self.listenerlist:
+                    self.listenerlist[lstnr].run(self.event)
+
+        if IS_JUPYTER:
+            #dynamically get screen size as it may change per cell
+            xSize = ctypes.c_int()
+            ySize = ctypes.c_int()
+
+            SDL_GetWindowSize(window, ctypes.byref(xSize), ctypes.byref(ySize))
+
+            argb_mask = [0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000]
+
+            surface = SDL_CreateRGBSurface(0,xSize.value, ySize.value, 32, *argb_mask) #create empty surface
+
+            #render screen to surface
+            SDL_RenderReadPixels(ren, None, SDL_PIXELFORMAT_ARGB8888,
+                surface.contents.pixels, surface.contents.pitch)
+            
+            try:
+                with tempfile.NamedTemporaryFile() as tmp:
+                    save_bmp(surface, tmp.name, True)
+
+                    img = Image.open(tmp.name)
+                    SDL_FreeSurface(surface) #free memory
+                    return img
+            except Exception as e:
+                SDL_FreeSurface(surface) #free memory
+                print(f"Failed to save frame: {e}")
+
+        else:
+            flags  = SDL_GetWindowFlags(window)
+            if (flags & SDL_WINDOW_HIDDEN):
+                SDL_ShowWindow(window)
+
+            SDL_RenderPresent(ren)
        
 
     def clear(self,name):
@@ -98,7 +134,7 @@ class canvas:
 
     def update(self):
         """Update the canvas"""
-        NNP.update(self.name)
+        return NNP.update(self.name)
 
     def clear(self):
         """Clear the canvas """
@@ -580,9 +616,51 @@ class spline:
         else:
             return False
 
-            
-                
-                
+def loop(frame_count: int, xSize: int = 300, ySize: int = 300):
+    """
+    Decorator for running an animation loop in a Jupyter notebook environment.
+
+    This function sets up the rendering environment and returns a decorator 
+    that handles the frame iteration, screen clearing, and display logic.
+
+    Args:
+        frame_count (int): The total number of frames the animation should run for.
+        xSize (int, optional): Width of the NaNoPy window. Defaults to 300.
+        ySize (int, optional): Height of the NaNoPy window. Defaults to 300.
+
+    Returns:
+        Callable: A decorator function that takes the user's rendering function.
         
+    Example:
+    ```python
+    @loop(frame_count=100)
+    def draw_animation(screen: canvas, pen: writer, frame_index: int):
+        # Drawing logic here. For example:
+        pen.drawCircle(xSize // 2, i, 5, color().red, True)
+        # Returning False breaks the loop early.
+        # Returning a screen.update() displays that frame instead of creating a new one
+    ```
+    """
+
+    if not IS_JUPYTER:
+        raise EnvironmentError("The 'loop' function decorator is only available in a Jupyter Notebook or IPython environment.")
+
+    screen = canvas("Jupyter_Internal", xSize, ySize) 
+    pen = writer(screen)
+
+    def decorator(func):
+        for i in range(frame_count):
         
-                
+            screen.clear()
+            clear_output(True)
+
+            im = func(screen, pen, i)
+
+            if isinstance(im, Image.Image): display(im)
+            else: display(screen.update())
+
+            if im == False: break
+
+        NNP.stop()
+    
+    return decorator

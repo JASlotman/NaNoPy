@@ -23,5 +23,11 @@ dependencies = [
     "pysdl2-dll",
 ]
 
+[project.optional-dependencies]
+interactive = [
+    "Pillow",
+    "ipython"
+]
+
 [project.urls]
 Homepage = "https://erasmusoic.nl"
