@@ -3,6 +3,9 @@ from sdl2 import SDL_WINDOWPOS_CENTERED
 from sdl2 import SDL_WINDOW_HIDDEN
 from NaNoPy import Mainloop
 
+from NaNoPy.custom_types import WindowType
+from NaNoPy.classes import Listener
+
 class CanvasNaive:
     """NaNoPy Canvas object
     
@@ -14,19 +17,34 @@ class CanvasNaive:
     ypos: the y position of the window (0 is the top)
 
     """
-    def __init__(self,name,xSize,ySize,*,xpos=-1,ypos=-1,NNP:Mainloop):
+    def __init__(
+            self,
+            name:str,
+            xSize:int,
+            ySize:int,
+            *,
+            xpos:int=-1,
+            ypos:int=-1,
+            NNP:Mainloop
+            ):
 
-        if (xpos < 0 or ypos < 0):
-            window = SDL_CreateWindow(str.encode(name), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, xSize, ySize,SDL_WINDOW_HIDDEN)
-        else:
-            window = SDL_CreateWindow(str.encode(name), xpos, ypos, xSize, ySize, SDL_WINDOW_HIDDEN)
+        if xpos < 0 or ypos < 0:
+            xpos = SDL_WINDOWPOS_CENTERED
+            ypos = SDL_WINDOWPOS_CENTERED
 
+        window:WindowType = SDL_CreateWindow(
+            str.encode(name), 
+            xpos, ypos, 
+            xSize, ySize, 
+            SDL_WINDOW_HIDDEN
+            )
+        
         self.name = name
-        self.listener = 0
+        self.listener:None|Listener = None
         self.NNP = NNP
         self.NNP.addwindow(name, window)
     
-    def addlistener(self, listener):
+    def addlistener(self, listener:Listener):
         """Adds a listener object
         
         Listener object should have a name field 

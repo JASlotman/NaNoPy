@@ -20,19 +20,22 @@ from sdl2 import SDL_WINDOWEVENT_CLOSE
 import ctypes
 import platform
 
+from NaNoPy.classes import Listener
+from NaNoPy.custom_types import WindowType
+
 class Mainloop:    
     def __init__(self):
         SDL_Init(SDL_INIT_VIDEO)
         self.event = SDL_Event()
         self.running:bool = True
-        self.windowlist:dict[str,object] = dict()
-        self.listenerlist:dict[str,object] = dict()
+        self.windows:dict[str, WindowType] = dict()
+        self.listeners:dict[str, Listener] = dict()
 
-    def addwindow(self, name,window_) -> None:
-        self.windowlist[name] = window_
+    def addwindow(self, name, window:WindowType) -> None:
+        self.windows[name] = window
 
     def update(self,name):
-        window = self.windowlist.get(name)
+        window = self.windows.get(name)
         flags  = SDL_GetWindowFlags(window)
         if (flags & SDL_WINDOW_HIDDEN):
             SDL_ShowWindow(window)
@@ -42,11 +45,11 @@ class Mainloop:
         while SDL_PollEvent(ctypes.byref(self.event)) != 0:
             if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE:
                 self.stop()
-            for lstnr in self.listenerlist:
-                self.listenerlist[lstnr].run(self.event) # type: ignore
+            for lstnr in self.listeners:
+                self.listeners[lstnr].run(self.event) # type: ignore
        
     def clear(self,name):
-        ren = SDL_GetRenderer(self.windowlist.get(name))
+        ren = SDL_GetRenderer(self.windows.get(name))
         SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
         SDL_RenderClear(ren)
         #required for specific linux builds
@@ -58,8 +61,8 @@ class Mainloop:
 
     def stop(self):
         self.running = False
-        for win in self.windowlist:
-            SDL_DestroyWindow(self.windowlist[win])
+        for win in self.windows:
+            SDL_DestroyWindow(self.windows[win])
         SDL_Quit()
 
     def keep(self):
@@ -68,5 +71,5 @@ class Mainloop:
                 if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE:
                     self.stop()
 
-    def addlistener(self,listener):
-        self.listenerlist[listener.name] = listener
+    def addlistener(self, listener:Listener):
+        self.listeners[listener.name] = listener

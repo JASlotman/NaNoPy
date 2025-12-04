@@ -1,0 +1,1 @@
+from NaNoPy.custom_types.sdl2types import WindowType
