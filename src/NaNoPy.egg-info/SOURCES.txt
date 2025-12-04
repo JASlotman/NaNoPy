@@ -1,0 +1,16 @@
+LICENCE
+README.md
+pyproject.toml
+src/NaNoPy/__init__.py
+src/NaNoPy.egg-info/PKG-INFO
+src/NaNoPy.egg-info/SOURCES.txt
+src/NaNoPy.egg-info/dependency_links.txt
+src/NaNoPy.egg-info/requires.txt
+src/NaNoPy.egg-info/top_level.txt
+src/NaNoPy/demos/__init__.py
+src/NaNoPy/demos/input_demo.py
+src/NaNoPy/demos/mac_problem.py
+src/NaNoPy/demos/squares.py
+src/NaNoPy/demos/test.py
+src/NaNoPy/demos/test_randommove.py
+src/NaNoPy/demos/test_spline.py

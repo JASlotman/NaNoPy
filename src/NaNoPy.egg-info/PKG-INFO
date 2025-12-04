@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: NaNoPy
+Version: 1.4.42
+Summary: A Graphical pySDL2 based engine for Nanobiology Erasmus MC/TU Delft
+Author-email: Johan Slotman <j.slotman@erasmusmc.nl>, Bart Geverts <b.geverts@erasmusmc.nl>
+License-Expression: MIT
+Project-URL: Homepage, https://erasmusoic.nl
+Classifier: Programming Language :: Python :: 3
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENCE
+Requires-Dist: Numpy
+Requires-Dist: PySDL2
+Requires-Dist: pysdl2-dll
+Dynamic: license-file
+
+NaNoPy is a pySDL2 based graphical engine used in the Nanobiology program of the Erasmus MC/TU Delft.

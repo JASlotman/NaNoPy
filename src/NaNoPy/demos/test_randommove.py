@@ -1,4 +1,4 @@
-from __init__ import *
+from NaNoPy import *
 import random
 
 xSize = 800

@@ -1,5 +1,5 @@
 import numpy as np
-from __init__ import *
+from NaNoPy import *
 import random as rnd
 
 
