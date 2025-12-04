@@ -20,7 +20,7 @@ from sdl2 import SDL_WINDOWEVENT_CLOSE
 import ctypes
 import platform
 
-from NaNoPy.classes import Listener
+from NaNoPy.classes.listener import Listener
 from NaNoPy.custom_types import WindowType
 
 class Mainloop:    

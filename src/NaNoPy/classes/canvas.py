@@ -1,10 +1,10 @@
 from sdl2 import SDL_CreateWindow
 from sdl2 import SDL_WINDOWPOS_CENTERED
 from sdl2 import SDL_WINDOW_HIDDEN
-from NaNoPy import Mainloop
+from NaNoPy.classes.mainloop import Mainloop
 
 from NaNoPy.custom_types import WindowType
-from NaNoPy.classes import Listener
+from NaNoPy.classes.listener import Listener
 
 class CanvasNaive:
     """NaNoPy Canvas object

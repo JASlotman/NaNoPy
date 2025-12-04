@@ -8,6 +8,7 @@ import platform
 import numpy as np
 
 from NaNoPy.classes.mainloop import Mainloop
+from NaNoPy.classes.spline import Spline
 
 class WriterNaive:
     """Object to draw shapes on a nanopy canvas
@@ -116,7 +117,7 @@ class WriterNaive:
     def drawSpline(self,xs,ys,color,loop,filled):
         """Draws spline through list of coordinates xs,ys of given color, loop false gives a line, loop true gives a closed loop
            coordinate information of complete line available in writer.spln object"""
-        self.spln = spline(xs,ys,loop)
+        self.spln = Spline(xs,ys,loop)
         for v  in zip(self.spln.splinex,self.spln.spliney):
             self.drawPixel(v[0],v[1],color)
         if loop and filled:
