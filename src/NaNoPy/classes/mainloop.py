@@ -1,11 +1,24 @@
-from sdl2 import *
-from sdl2.sdlgfx import *
-from sdl2.ext import *
+from sdl2 import SDL_Event
+
+from sdl2 import SDL_Init
+from sdl2 import SDL_GetWindowFlags
+from sdl2 import SDL_ShowWindow
+from sdl2 import SDL_GetRenderer
+from sdl2 import SDL_RenderPresent
+from sdl2 import SDL_PollEvent
+from sdl2 import SDL_SetRenderDrawColor
+from sdl2 import SDL_RenderClear
+from sdl2 import SDL_Delay
+from sdl2 import SDL_DestroyWindow
+from sdl2 import SDL_Quit
+
+from sdl2 import SDL_INIT_VIDEO
+from sdl2 import SDL_WINDOW_HIDDEN
+from sdl2 import SDL_WINDOWEVENT
+from sdl2 import SDL_WINDOWEVENT_CLOSE
+
 import ctypes
-import math
-import cmath
 import platform
-import numpy as np
 
 class Mainloop:    
     def __init__(self):
@@ -30,7 +43,7 @@ class Mainloop:
             if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE:
                 self.stop()
             for lstnr in self.listenerlist:
-                self.listenerlist[lstnr].run(self.event)
+                self.listenerlist[lstnr].run(self.event) # type: ignore
        
     def clear(self,name):
         ren = SDL_GetRenderer(self.windowlist.get(name))

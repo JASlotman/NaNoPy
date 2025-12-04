@@ -1,5 +1,7 @@
-from sdl2 import SDL_CreateWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOW_HIDDEN
-from NaNoPy.classes.mainloop import Mainloop
+from sdl2 import SDL_CreateWindow
+from sdl2 import SDL_WINDOWPOS_CENTERED
+from sdl2 import SDL_WINDOW_HIDDEN
+from NaNoPy import Mainloop
 
 class CanvasNaive:
     """NaNoPy Canvas object
