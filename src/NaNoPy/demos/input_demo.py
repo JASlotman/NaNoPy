@@ -1,5 +1,5 @@
 from NaNoPy import *
-
+from sdl2 import SDL_KEYDOWN, SDLK_RIGHT, SDLK_LEFT, SDL_KEYUP
 
 class inputlistener:
 
@@ -7,9 +7,7 @@ class inputlistener:
         self.name = name
         self.dx = 0
         
-    
     def run(self,event):       
-            
             if event.type == SDL_KEYDOWN:
                 if event.key.keysym.sym == SDLK_RIGHT:
                     self.dx = 3
@@ -18,8 +16,6 @@ class inputlistener:
             elif event.type == SDL_KEYUP:
                  if event.key.keysym.sym in (SDLK_RIGHT,SDLK_LEFT):
                     self.dx = 0
-
-
 
 xSize = 800
 ySize = 600
