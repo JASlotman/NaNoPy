@@ -1,56 +1,56 @@
 import math
 import cmath
 import numpy as np
+from typing import SupportsFloat, SupportsInt, Union, Iterable
+NumberLike = Union[int, float, SupportsFloat, SupportsInt]
+from numpy.typing import NDArray
+
+Array1D = NDArray[np.number]
 
 class Spline:
     """Spline class for generating a spline trhough given points"""
-    def __init__(self,xs,ys,loop):
-        self.x = np.array(xs)
-        self.y = np.array(ys)            
+    def __init__(
+            self, 
+            xs:Iterable[NumberLike], 
+            ys:Iterable[NumberLike], 
+            loop:bool
+            ):
+        
+        self.x:Array1D = np.array(xs)
+        self.y:Array1D = np.array(ys)            
+        self.loop:bool = loop
 
-        n = len(self.x)
+        n_anchors = len(self.x)
 
         # matrix = np.array(shape=(n,n),dtype = np.float32)
         # resultsy = np.array(shape=(n,1),dtype = np.float32)
         # resultsx = np.array(shape=(n,1),dtype=np.float32)
 
-        self.loop = loop
-
         if loop:
-            segments = self.x.size 
-            
-            matrix = np.diag(np.full(n-1,1),-1) + np.diag(np.full(n-1,1),+1) + np.diag(np.full(n,4),0)
-            matrix[0,n-1] = 1
-            matrix[n-1,0] = 1
-
-            
-
-            resultsx = 3 * (np.roll(self.x,-1,0) - np.roll(self.x,1,0))
-            resultsy = 3 * (np.roll(self.y,-1,0) - np.roll(self.y,1,0))
+            segments = self.x.size
         else:
-
             segments = self.x.size - 1
 
-            matrix = np.diag(np.full(n-1,1),-1) + np.diag(np.full(n-1,1),+1) + np.diag(np.full(n,4),0)
+        matrix = np.diag(np.full(n_anchors-1,1),-1) + np.diag(np.full(n_anchors-1,1),+1) + np.diag(np.full(n_anchors,4),0)
+        resultsx = 3 * (np.roll(self.x, -1, 0) - np.roll(self.x, 1, 0))
+        resultsy = 3 * (np.roll(self.y, -1, 0) - np.roll(self.y, 1, 0))
+
+        if loop:
+            matrix[0,n_anchors-1] = 1
+            matrix[n_anchors-1,0] = 1
+        else:
             matrix[0,0] = 2
-            matrix[n-1,n-1] = 2
-
+            matrix[n_anchors-1,n_anchors-1] = 2
             
-
-            resultsx = 3 * (np.roll(self.x,-1,0) - np.roll(self.x,1,0))
             resultsx[0] = 3* (self.x[1] - self.x[0])
-            resultsx[n-1] = 3 * (self.x[n-1]-self.x[n-2])
-            resultsy = 3 * (np.roll(self.y,-1,0) - np.roll(self.y,1,0))
-            resultsy[0] = 3* (self.y[1] - self.y[0])
-            resultsy[n-1] = 3 * (self.y[n-1]-self.y[n-2])
-
+            resultsx[n_anchors-1] = 3 * (self.x[n_anchors-1]-self.x[n_anchors-2])
             
+            resultsy[0] = 3* (self.y[1] - self.y[0])
+            resultsy[n_anchors-1] = 3 * (self.y[n_anchors-1]-self.y[n_anchors-2])
 
         matrix_inv = np.linalg.inv(matrix)
-        kx = np.matmul(matrix_inv,resultsx)
-        ky = np.matmul(matrix_inv,resultsy)
-
-        
+        kx = np.matmul(matrix_inv, resultsx)
+        ky = np.matmul(matrix_inv, resultsy)
 
         self.ay = self.y
         self.by = ky
@@ -61,18 +61,20 @@ class Spline:
         self.cx = (3 * ((np.roll(self.x,-1,0)-self.x)) - (2*(kx)) - np.roll(kx,-1,0))
         self.dx = (2 * (self.x - np.roll(self.x,-1,0))) + kx + np.roll(kx,-1,0)
         
-        
+        outx = np.array([])
+        outy = np.array([])
+        outdydx = np.array([])
 
-        for i in range(0,segments):       
-            samples = max( abs(self.x[i]-self.x[(i+1)%self.x.size]) , abs(self.y[i]-self.y[(i+1)%self.y.size])  )
-            samples = math.ceil(samples*2.5)
-            t = np.linspace(0,1,num=samples)
+        for i in range(segments):       
+            samples = max(abs(self.x[i]-self.x[(i+1)%self.x.size]), abs(self.y[i]-self.y[(i+1)%self.y.size])  )
+            samples = math.ceil(samples * 2.5)
+            t = np.linspace(0, 1, num=samples)
                         
-            tempx = (self.ax[i] + self.bx[i]*t + self.cx[i]*(t*t) + self.dx[i]*(t*t*t))
-            tempy = (self.ay[i] + self.by[i]*t + self.cy[i]*(t*t) + self.dy[i]*(t*t*t))
-            tempdy = (self.by[i] + (2*self.cy[i]*t) + (3*self.dy[i]*(t*t)))
-            tempdx = (self.bx[i] + (2*self.cx[i]*t) + (3*self.dx[i]*(t*t)))
-            tempdydx = (tempdy/tempdx)
+            tempx = self.ax[i] + self.bx[i] * t + self.cx[i]*(t*t) + self.dx[i]*(t*t*t)
+            tempy = self.ay[i] + self.by[i]*t + self.cy[i]*(t*t) + self.dy[i]*(t*t*t)
+            tempdy = self.by[i] + (2*self.cy[i]*t) + (3*self.dy[i]*(t*t))
+            tempdx = self.bx[i] + (2*self.cx[i]*t) + (3*self.dx[i]*(t*t))
+            tempdydx = tempdy / tempdx
 
             if i == 0:
                 outx = tempx
@@ -83,8 +85,6 @@ class Spline:
                 outy = np.concatenate((outy,tempy), axis=0)
                 outdydx = np.concatenate((outdydx,tempdydx), axis=0)
         
-        
-
         self.splinex = outx
         self.spliney = outy
         self.splinedydx = outdydx
@@ -121,13 +121,8 @@ class Spline:
                 self.insidey = np.concatenate((self.insidey,(np.full(math.ceil(maxx[i])-math.floor(minx[i]),(i+boundingbox[1])))),axis=0)
 
     def getInside(self,x,y):
-
-        
-
-
         splncx = np.average(self.ax)
         splncy = np.average(self.ay)
-        
 
         #draw line trhough given point and center, extend beyond bounding box
 
@@ -136,7 +131,7 @@ class Spline:
             x2 = x
             y1 = splncy
             y2 = y
-        if splncx >= x:
+        else:
             x1 = x
             x2 = splncx
             y1 = y
@@ -182,8 +177,7 @@ class Spline:
                 b = (i*b)-f
                 c = (i*c)-g
                 d = (i*d)-h
-
-            if dx == 0:
+            else:
                 a = self.ax[segno] - x1
                 b = self.bx[segno] 
                 c = self.cx[segno]
@@ -288,9 +282,6 @@ class Spline:
                     valid_intercepts.append([segno,tint])
         
         countbefore = 0
-
-        
-
         truevalids = []
 
         for i in range(len(valid_intercepts)):
@@ -302,8 +293,7 @@ class Spline:
             valid_intercepts[i].append(xint)
             valid_intercepts[i].append(yint)
 
-            if  math.isclose(yint , (E*xint) + F):
-
+            if  math.isclose(yint , (E*xint) + F): # type: ignore
                 truevalids.append([valid_intercepts[i],xint,yint])
 
                 if xint < x:
@@ -311,7 +301,7 @@ class Spline:
         
         
 
-        if countbefore%2 == 1:
+        if countbefore % 2 == 1:
             return True
         else:
             return False
