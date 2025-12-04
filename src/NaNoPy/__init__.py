@@ -1,12 +1,12 @@
 from NaNoPy.classes import Mainloop
 from NaNoPy.classes import CanvasNaive
-from NaNoPy.classes import color
-from NaNoPy.classes import spline
+from NaNoPy.classes import Color
+from NaNoPy.classes import Spline
 from NaNoPy.classes import WriterNaive
 
 NNP = Mainloop()
 
-class canvas(CanvasNaive):
+class Canvas(CanvasNaive):
     """NaNoPy Canvas object
     
     canvas(name,xSize,ySize,*,xpos,ypos)
@@ -20,7 +20,7 @@ class canvas(CanvasNaive):
     def __init__(self, name, xSize, ySize, *, xpos=-1, ypos=-1):
         super().__init__(name, xSize, ySize, xpos=xpos, ypos=ypos, NNP=NNP)
 
-class writer(WriterNaive):
+class Writer(WriterNaive):
     """Object to draw shapes on a nanopy canvas
     
     writer(canvas)
@@ -29,7 +29,8 @@ class writer(WriterNaive):
     def __init__(self, window, *, driver=-1):
         super().__init__(window, driver=driver, NNP=NNP)
 
-
-
-    
-
+# Defining aliases
+color = Color
+spline = Spline
+writer = Writer
+canvas = Canvas

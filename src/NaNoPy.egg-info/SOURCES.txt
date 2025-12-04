@@ -7,6 +7,12 @@ src/NaNoPy.egg-info/SOURCES.txt
 src/NaNoPy.egg-info/dependency_links.txt
 src/NaNoPy.egg-info/requires.txt
 src/NaNoPy.egg-info/top_level.txt
+src/NaNoPy/classes/__init__.py
+src/NaNoPy/classes/canvas.py
+src/NaNoPy/classes/color.py
+src/NaNoPy/classes/mainloop.py
+src/NaNoPy/classes/spline.py
+src/NaNoPy/classes/writer.py
 src/NaNoPy/demos/__init__.py
 src/NaNoPy/demos/input_demo.py
 src/NaNoPy/demos/mac_problem.py

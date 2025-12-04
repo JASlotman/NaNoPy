@@ -1,12 +1,4 @@
-from sdl2 import *
-from sdl2.sdlgfx import *
-from sdl2.ext import *
-import ctypes
-import math
-import cmath
-import platform
-import numpy as np
-
+from sdl2 import SDL_CreateWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOW_HIDDEN
 from NaNoPy.classes.mainloop import Mainloop
 
 class CanvasNaive:

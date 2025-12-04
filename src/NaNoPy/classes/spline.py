@@ -1,13 +1,8 @@
-from sdl2 import *
-from sdl2.sdlgfx import *
-from sdl2.ext import *
-import ctypes
 import math
 import cmath
-import platform
 import numpy as np
 
-class spline:
+class Spline:
     """Spline class for generating a spline trhough given points"""
     def __init__(self,xs,ys,loop):
         self.x = np.array(xs)
