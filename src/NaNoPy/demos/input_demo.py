@@ -1,5 +1,6 @@
 from NaNoPy import *
 from sdl2 import SDL_KEYDOWN, SDLK_RIGHT, SDLK_LEFT, SDL_KEYUP
+from sdl2 import SDL_Event
 
 from NaNoPy.classes import Listener
 
@@ -8,7 +9,7 @@ class LeftRightListener(Listener):
         super().__init__(name)
         self.dx = 0
 
-    def run(self,event) -> None:       
+    def run(self, event:SDL_Event) -> None:       
         if event.type == SDL_KEYDOWN:
             if event.key.keysym.sym == SDLK_RIGHT:
                 self.dx = 3
