@@ -7,17 +7,15 @@ import cmath
 import platform
 import numpy as np
 
-
 class Mainloop:    
     def __init__(self):
         SDL_Init(SDL_INIT_VIDEO)
         self.event = SDL_Event()
-        self.running = True
-        self.windowlist = dict()
-        self.listenerlist = dict()
+        self.running:bool = True
+        self.windowlist:dict[str,object] = dict()
+        self.listenerlist:dict[str,object] = dict()
 
-
-    def addwindow(self,name,window_):
+    def addwindow(self, name,window_) -> None:
         self.windowlist[name] = window_
 
     def update(self,name):
@@ -34,7 +32,6 @@ class Mainloop:
             for lstnr in self.listenerlist:
                 self.listenerlist[lstnr].run(self.event)
        
-
     def clear(self,name):
         ren = SDL_GetRenderer(self.windowlist.get(name))
         SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
@@ -115,9 +112,6 @@ class canvas:
     def running(self):
         """method returning if a process is running in the canvas, returns false if window is closed"""
         return NNP.running
-
-
-
 
 
 class writer:
