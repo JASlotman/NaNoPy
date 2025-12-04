@@ -2,13 +2,10 @@ import numpy as np
 from NaNoPy import *
 import random as rnd
 
-
-
-
 xSize = 800
 ySize = 400
 
-screen = canvas("screen1",xSize,ySize,xpos=50,ypos=50)
+screen = canvas("screen1", xSize, ySize, xpos=50, ypos=50)
 pen = writer(screen)
 
 x = []
@@ -44,7 +41,7 @@ for i in range(n):
     y.append(ySize/2)
 
 for i in range(npart):
-    xpart.append(rnd.randint(radius,xSize-radius))
+    xpart.append(rnd.randint(radius, xSize-radius))
     ypart.append(ySize/2 + rnd.randint(-3,3))
 
 print(x)
@@ -52,9 +49,6 @@ print(x)
 first = True
 
 while screen.running():
-
-    
-    
     for i in range(0,len(x)):
         
         dy = rnd.randint(-3,3)
@@ -76,7 +70,7 @@ while screen.running():
 
     if not first:
         
-        spsize = min(pen.spln.spliney.size,splinedy.size)
+        spsize = min(pen.spln.spliney.size, splinedy.size)
         splinedy = pen.spln.spliney[0:spsize] - splinedy[0:spsize]
     
     if first:
