@@ -6,7 +6,7 @@ ySize = 500
 screen = canvas("this shows the mac problem", xSize, ySize)
 pen = writer(screen)
 
-pen.draw_line(10, 150, 710, 490, color().red)
-pen.draw_circle(600, 290, 5, color().green, True)
+pen.draw_line(10, 150, 710, 490, Color.red)
+pen.draw_circle(600, 290, 5, Color.green, True)
 screen.update()
-screen.keepwindow()
+screen.keep_window()

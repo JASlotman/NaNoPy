@@ -24,7 +24,7 @@ ySize = 600
 
 screen = canvas("Input Demo",xSize,ySize)
 p = writer(screen)
-screen.addlistener(LeftRightListener("move"))
+screen.add_listener(LeftRightListener("move"))
 assert isinstance(screen.listener, LeftRightListener)
 
 w = 50
@@ -37,7 +37,7 @@ while screen.running():
 
     x += dx
 
-    p.draw_rectangle(x,y,w,h,color().white,True)
+    p.draw_rectangle(x,y,w,h,Color.white,True)
     screen.update()
     screen.pause(12)
     screen.clear()
