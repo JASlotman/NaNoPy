@@ -6,6 +6,8 @@ from NaNoPy.classes.mainloop import Mainloop
 from NaNoPy.custom_types import WindowType
 from NaNoPy.classes.listener import Listener
 
+import warnings
+
 class CanvasNaive:
     """NaNoPy Canvas object
     
@@ -44,31 +46,60 @@ class CanvasNaive:
         self.NNP = NNP
         self.NNP.addwindow(name, window)
     
-    def addlistener(self, listener:Listener):
+    def add_listener(self, listener:Listener) -> None:
         """Adds a listener object
+        
+        Listener object should have a name field 
+        and a method run(event) that takes the events from the screen. 
+        NaNoPy.classes.listener contains an abstract base class for Listener.
+        """
+
+        self.listener = listener
+        self.NNP.addlistener(listener)
+
+    def addlistener(self, listener:Listener):
+        """(deprecated, use add_listener() instead)
+        Adds a listener object
         
         Listener object should have a name field 
         and a method run(event) that takes the events from the screen
         """
-        self.listener = listener
-        self.NNP.addlistener(listener)
+        warnings.warn(
+            "addlistener() is deprecated and will be removed in a future version. "
+            "Use add_listener() instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        self.add_listener(listener)
 
-    def update(self):
+    def update(self) -> None:
         """Update the canvas"""
         self.NNP.update(self.name)
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear the canvas """
         self.NNP.clear(self.name)
 
-    def pause(self,time):
+    def pause(self,time) -> None:
         """Pause the canvas for a time in ms"""
         self.NNP.pause(self.name,time)
 
-    def keepwindow(self):
+    def keep_window(self) -> None:
         """Keep window on screen if not running any code (for showing a single screen) or finite number of frames"""
         self.NNP.keep()
+        
+    def keepwindow(self) -> None:
+        """(deprecated, use keep_window() instead)
+        Keep window on screen if not running any code (for showing a single screen) or finite number of frames"""
+        
+        warnings.warn(
+            "keepwindow() is deprecated and will be removed in a future version. "
+            "Use keep_window() instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        self.keep_window
 
-    def running(self):
+    def running(self) -> bool:
         """method returning if a process is running in the canvas, returns false if window is closed"""
         return self.NNP.running
