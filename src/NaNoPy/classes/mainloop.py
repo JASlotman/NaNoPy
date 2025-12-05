@@ -19,6 +19,7 @@ from sdl2 import SDL_WINDOWEVENT_CLOSE
 
 import ctypes
 import platform
+import warnings
 
 from NaNoPy.classes.listener import Listener
 from NaNoPy.custom_types import WindowType
@@ -31,7 +32,17 @@ class Mainloop:
         self.windows:dict[str, WindowType] = dict()
         self.listeners:dict[str, Listener] = dict()
 
-    def addwindow(self, name, window:WindowType) -> None:
+    def addwindow(self, name:str, window:WindowType) -> None:
+        """(deprecated, use add_window() instead.)"""
+        warnings.warn(
+            "addwindow() is deprecated and will be removed in a future version. "
+            "Use add_window() instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        self.add_window(name, window)
+
+    def add_window(self, name, window:WindowType) -> None:
         self.windows[name] = window
 
     def update(self,name):
@@ -71,5 +82,15 @@ class Mainloop:
                 if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE:
                     self.stop()
 
-    def addlistener(self, listener:Listener):
+    def add_listener(self, listener:Listener) -> None:
         self.listeners[listener.name] = listener
+
+    def addlistener(self, listener:Listener) -> None:
+        """(deprecated, use add_listener() instead)"""
+        warnings.warn(
+            "addlistener() is deprecated and will be removed in a future version. "
+            "Use add_listener() instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        self.add_listener(listener)

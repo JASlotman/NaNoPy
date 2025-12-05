@@ -44,7 +44,7 @@ class CanvasNaive:
         self.name = name
         self.listener:None|Listener = None
         self.NNP = NNP
-        self.NNP.addwindow(name, window)
+        self.NNP.add_window(name, window)
     
     def add_listener(self, listener:Listener) -> None:
         """Adds a listener object
@@ -55,7 +55,7 @@ class CanvasNaive:
         """
 
         self.listener = listener
-        self.NNP.addlistener(listener)
+        self.NNP.add_listener(listener)
 
     def addlistener(self, listener:Listener):
         """(deprecated, use add_listener() instead)
