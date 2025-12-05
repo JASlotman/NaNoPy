@@ -1,20 +1,20 @@
-import NaNoPy 
-from NaNoPy import Color
+from NaNoPy import Canvas, Writer, Color
 import random as rnd
 
 # This is a test file for the NaNoPy library.
-xSize = int(1920/2)
-ySize = int(1080/2)
-screen = NaNoPy.canvas("Zamkor", xSize, ySize)
-pen = NaNoPy.writer(screen)
-y = ySize / 2
+x_size = int(1920 / 2)
+y_size = int(1080 / 2)
+screen = Canvas("Zamkor", x_size, y_size)
+pen = Writer(screen)
+y = y_size / 2
 stars=[]
 particles = []  # List to store trailing particles
 
 for i in range(500):
-    stars.append((rnd.randint(0, xSize), rnd.randint(0, ySize)))
+    stars.append((rnd.randint(0, x_size), rnd.randint(0, y_size)))
+
 while screen.running():  
-    for x in range(xSize):
+    for x in range(x_size):
         for i in range(len(stars)):
             pen.draw_pixel(stars[i][0], stars[i][1], Color.white)
             

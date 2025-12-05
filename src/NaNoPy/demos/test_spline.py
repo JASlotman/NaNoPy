@@ -1,23 +1,23 @@
 import numpy as np
-from NaNoPy import *
+from NaNoPy import Canvas, Writer, Color
 import random as rnd
 
-xSize = 800
-ySize = 400
+x_size = 800
+y_size = 400
 
-screen = canvas("screen1", xSize, ySize, xpos=50, ypos=50)
-pen = writer(screen)
+screen = Canvas("screen1", x_size, y_size, xpos=50, ypos=50)
+pen = Writer(screen)
 
 x = []
 y = []
 rad = []
 
-xpart = []
-ypart = []
+x_part = []
+y_part = []
 radius = 5
 
 n = 9
-npart = 100
+n_part = 100
 
 # for i in range(n):
     
@@ -37,12 +37,12 @@ npart = 100
 # y = np.array(y)[inds]
 
 for i in range(n):
-    x.append((i* (xSize/(n-1))))
-    y.append(ySize/2)
+    x.append((i* (x_size/(n-1))))
+    y.append(y_size/2)
 
-for i in range(npart):
-    xpart.append(rnd.randint(radius, xSize-radius))
-    ypart.append(ySize/2 + rnd.randint(-3,3))
+for i in range(n_part):
+    x_part.append(rnd.randint(radius, x_size - radius))
+    y_part.append(y_size/2 + rnd.randint(-3,3))
 
 print(x)
 
@@ -65,11 +65,10 @@ while screen.running():
     if not first:
         splinedy = pen.spln.spliney
 
-    pen.draw_spline(x,np.array(y)-50,color().green,False,False)
-    pen.draw_spline(x,np.array(y)+50,color().green,False,False)
+    pen.draw_spline(x,np.array(y)-50,Color.green,False,False)
+    pen.draw_spline(x,np.array(y)+50,Color.green,False,False)
 
     if not first:
-        
         spsize = min(pen.spln.spliney.size, splinedy.size)
         splinedy = pen.spln.spliney[0:spsize] - splinedy[0:spsize]
     
@@ -79,34 +78,34 @@ while screen.running():
     first = False
     
 
-    for i in range(npart):
+    for i in range(n_part):
         dx = rnd.randint(-5,5)
         dy = rnd.randint(-5,5)
 
-        ind = np.where(pen.spln.splinex >= xpart[i])[0][0]
+        ind = np.where(pen.spln.splinex >= x_part[i])[0][0]
 
         
-        ypart[i] += splinedy[ind%splinedy.size]
+        y_part[i] += splinedy[ind%splinedy.size]
         
-        if ypart[i]+dy < pen.spln.spliney[ind]-(2*radius) and ypart[i]+dy > (pen.spln.spliney[ind]-100)+(2*radius) and xpart[i]+dx > 0:
-            xpart[i] += dx
-            ypart[i] += dy 
+        if y_part[i]+dy < pen.spln.spliney[ind]-(2*radius) and y_part[i]+dy > (pen.spln.spliney[ind]-100)+(2*radius) and x_part[i]+dx > 0:
+            x_part[i] += dx
+            y_part[i] += dy 
             
 
         #flow
         flowdx = 5
-        ind2 = np.where(pen.spln.splinex >= (xpart[i]+flowdx)%xSize)[0][0]
+        ind2 = np.where(pen.spln.splinex >= (x_part[i]+flowdx)%x_size)[0][0]
         flowdy =  pen.spln.spliney[ind2] - pen.spln.spliney[(ind)%pen.spln.splinex.size] 
 
         
-        xpart[i] += flowdx
-        ypart[i] += flowdy
+        x_part[i] += flowdx
+        y_part[i] += flowdy
 
-        xpart[i] = xpart[i]%xSize
+        x_part[i] = x_part[i]%x_size
 
-    for i in range(npart):
-        pen.draw_circle(xpart[i],ypart[i],radius,color().red,True)
-        pen.draw_circle(xpart[i],ypart[i],radius-3,color().yellow,True)
+    for i in range(n_part):
+        pen.draw_circle(x_part[i],y_part[i],radius,Color.red,True)
+        pen.draw_circle(x_part[i],y_part[i],radius-3,Color.yellow,True)
 
 
     # for i in range(len(x)):

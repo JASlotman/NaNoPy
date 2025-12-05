@@ -1,11 +1,11 @@
-from NaNoPy import *
+from NaNoPy import Canvas, Writer, Color
 import random
 
 xSize = 800
 ySize = 400
 
-screen = canvas("Name", xSize, ySize)
-pen = writer(screen)
+screen = Canvas("Name", xSize, ySize)
+pen = Writer(screen)
 
 n = 10
 x = list()
@@ -27,9 +27,9 @@ while screen.running():
             y[i] += dy
 
     for i in range(n):
-        pen.draw_circle(x[i], y[i], 5, color().green, True)
-        pen.draw_string(x[i], y[i], color().red, "f:" + str(frame) + " p: " + str(i) + " x:" + str(x[i]) + " y:" + str(y[i]))
-        pen.draw_line(0, y[i], 800, y[i], color().red)
+        pen.draw_circle(x[i], y[i], 5, Color.green, True)
+        pen.draw_string(x[i], y[i], Color.red, "f:" + str(frame) + " p: " + str(i) + " x:" + str(x[i]) + " y:" + str(y[i]))
+        pen.draw_line(0, y[i], 800, y[i], Color.red)
 
     screen.update()
     screen.pause(50)

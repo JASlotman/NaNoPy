@@ -1,10 +1,10 @@
-from NaNoPy import *
+from NaNoPy import Canvas, Writer, Color
 
-xSize = 800
-ySize = 500
+x_size = 800
+y_size = 500
 
-screen = canvas("this shows the mac problem", xSize, ySize)
-pen = writer(screen)
+screen = Canvas("this shows the mac problem", x_size, y_size)
+pen = Writer(screen)
 
 pen.draw_line(10, 150, 710, 490, Color.red)
 pen.draw_circle(600, 290, 5, Color.green, True)

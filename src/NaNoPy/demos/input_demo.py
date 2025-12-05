@@ -1,4 +1,4 @@
-from NaNoPy import *
+from NaNoPy import Canvas, Writer, Color
 from sdl2 import SDL_KEYDOWN, SDLK_RIGHT, SDLK_LEFT, SDL_KEYUP
 from sdl2 import SDL_Event
 
@@ -19,25 +19,23 @@ class LeftRightListener(Listener):
             if event.key.keysym.sym in (SDLK_RIGHT,SDLK_LEFT):
                 self.dx = 0
 
-xSize = 800
-ySize = 600
+x_size = 800
+y_size = 600
 
-screen = canvas("Input Demo",xSize,ySize)
-p = writer(screen)
-screen.add_listener(LeftRightListener("move"))
-assert isinstance(screen.listener, LeftRightListener)
+screen = Canvas("Input Demo", x_size, y_size)
+p = Writer(screen)
 
-w = 50
-h = 10
-x = xSize/2 - w/2
-y = ySize/2 - h/2
+listener = LeftRightListener("move")
+screen.add_listener(listener)
+
+width = 50
+height = 10
+x = x_size / 2 - width / 2
+y = y_size / 2 - height / 2
 
 while screen.running():
-    dx = screen.listener.dx
-
-    x += dx
-
-    p.draw_rectangle(x,y,w,h,Color.white,True)
+    x += listener.dx
+    p.draw_rectangle(x, y, width, height, Color.white, True)
     screen.update()
     screen.pause(12)
     screen.clear()

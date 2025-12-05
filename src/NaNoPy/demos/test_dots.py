@@ -1,24 +1,24 @@
-from NaNoPy import *
+from NaNoPy import Canvas, Writer, Color
 import random
 
 def draw_hundreds_of_dots(hundreds: int) -> None:
     # Create the drawing window and basic tools
-    xSize = 800
-    ySize = 600
-    screen = canvas(f"{100*hundreds} Dots Animation", xSize, ySize)
-    pen = writer(screen)
+    x_size = 800
+    y_size = 600
+    screen = Canvas(f"{100*hundreds} Dots Animation", x_size, y_size)
+    pen = Writer(screen)
     screen.clear()
     
     # Emit dots with a short delay between each frame
-    for _ in range(100*hundreds):
+    for _ in range(100 * hundreds):
         # Pick a random in-bounds position so dots stay away from the border
-        x = random.randint(50, xSize-50)
-        y = random.randint(50, ySize-50)
+        x = random.randint(50, x_size-50)
+        y = random.randint(50, y_size-50)
         
         # Generate a random cool-toned color for variety
         dot_color = Color.custom( 
-            g=random.randint(100, 255), 
-            b=random.randint(100, 255)
+            g = random.randint(100, 255), 
+            b = random.randint(100, 255)
         )
         
         # Draw the dot at the chosen location
