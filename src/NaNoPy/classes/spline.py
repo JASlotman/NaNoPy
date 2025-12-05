@@ -1,307 +1,190 @@
 import math
-import cmath
+import warnings
+from typing import Iterable, SupportsFloat, SupportsInt, Union
+
 import numpy as np
-from typing import SupportsFloat, SupportsInt, Union, Iterable
-NumberLike = Union[int, float, SupportsFloat, SupportsInt]
 from numpy.typing import NDArray
 
-Array1D = NDArray[np.number]
+NumberLike = Union[int, float, SupportsFloat, SupportsInt]
+Array1D = NDArray[np.float64]
+
 
 class Spline:
-    """Spline class for generating a spline trhough given points"""
-    def __init__(
-            self, 
-            xs:Iterable[NumberLike], 
-            ys:Iterable[NumberLike], 
-            loop:bool
-            ):
-        
-        self.x:Array1D = np.array(xs)
-        self.y:Array1D = np.array(ys)            
-        self.loop:bool = loop
+    """Spline class for generating a spline through given points."""
 
-        n_anchors = len(self.x)
+    def __init__(self, xs: Iterable[NumberLike], ys: Iterable[NumberLike], loop: bool) -> None:
+        self.x: Array1D = np.asarray(list(xs), dtype=float)
+        self.y: Array1D = np.asarray(list(ys), dtype=float)
+        self.loop = loop
 
-        # matrix = np.array(shape=(n,n),dtype = np.float32)
-        # resultsy = np.array(shape=(n,1),dtype = np.float32)
-        # resultsx = np.array(shape=(n,1),dtype=np.float32)
+        if self.x.ndim != 1 or self.y.ndim != 1:
+            raise ValueError("Spline expects 1D coordinate sequences.")
+        if self.x.size != self.y.size:
+            raise ValueError("xs and ys must have the same length.")
+        if self.x.size < 2:
+            raise ValueError("At least two anchors are required to build a spline.")
 
-        if loop:
-            segments = self.x.size
-        else:
-            segments = self.x.size - 1
+        self._segment_count = self.x.size if loop else self.x.size - 1
+        if self._segment_count <= 0:
+            raise ValueError("Open splines require at least two anchors.")
 
-        matrix = np.diag(np.full(n_anchors-1,1),-1) + np.diag(np.full(n_anchors-1,1),+1) + np.diag(np.full(n_anchors,4),0)
-        resultsx = 3 * (np.roll(self.x, -1, 0) - np.roll(self.x, 1, 0))
-        resultsy = 3 * (np.roll(self.y, -1, 0) - np.roll(self.y, 1, 0))
-
-        if loop:
-            matrix[0,n_anchors-1] = 1
-            matrix[n_anchors-1,0] = 1
-        else:
-            matrix[0,0] = 2
-            matrix[n_anchors-1,n_anchors-1] = 2
-            
-            resultsx[0] = 3* (self.x[1] - self.x[0])
-            resultsx[n_anchors-1] = 3 * (self.x[n_anchors-1]-self.x[n_anchors-2])
-            
-            resultsy[0] = 3* (self.y[1] - self.y[0])
-            resultsy[n_anchors-1] = 3 * (self.y[n_anchors-1]-self.y[n_anchors-2])
-
-        matrix_inv = np.linalg.inv(matrix)
-        kx = np.matmul(matrix_inv, resultsx)
-        ky = np.matmul(matrix_inv, resultsy)
-
-        self.ay = self.y
-        self.by = ky
-        self.cy = (3 * ((np.roll(self.y,-1,0)-self.y)) - (2*(ky)) - np.roll(ky,-1,0))
-        self.dy = (2 * (self.y - np.roll(self.y,-1,0))) + ky + np.roll(ky,-1,0)
-        self.ax = self.x
+        kx, ky = self._solve_tangents()
+        self.ax = self.x.copy()
+        self.ay = self.y.copy()
         self.bx = kx
-        self.cx = (3 * ((np.roll(self.x,-1,0)-self.x)) - (2*(kx)) - np.roll(kx,-1,0))
-        self.dx = (2 * (self.x - np.roll(self.x,-1,0))) + kx + np.roll(kx,-1,0)
-        
-        outx = np.array([])
-        outy = np.array([])
-        outdydx = np.array([])
+        self.by = ky
 
-        for i in range(segments):       
-            samples = max(abs(self.x[i]-self.x[(i+1)%self.x.size]), abs(self.y[i]-self.y[(i+1)%self.y.size])  )
-            samples = math.ceil(samples * 2.5)
-            t = np.linspace(0, 1, num=samples)
-                        
-            tempx = self.ax[i] + self.bx[i] * t + self.cx[i]*(t*t) + self.dx[i]*(t*t*t)
-            tempy = self.ay[i] + self.by[i]*t + self.cy[i]*(t*t) + self.dy[i]*(t*t*t)
-            tempdy = self.by[i] + (2*self.cy[i]*t) + (3*self.dy[i]*(t*t))
-            tempdx = self.bx[i] + (2*self.cx[i]*t) + (3*self.dx[i]*(t*t))
-            tempdydx = tempdy / tempdx
+        kx_next = np.roll(kx, -1)
+        ky_next = np.roll(ky, -1)
+        x_next = np.roll(self.x, -1)
+        y_next = np.roll(self.y, -1)
 
-            if i == 0:
-                outx = tempx
-                outy = tempy
-                outdydx = tempdydx
-            else:
-                outx = np.concatenate((outx,tempx), axis=0)
-                outy = np.concatenate((outy,tempy), axis=0)
-                outdydx = np.concatenate((outdydx,tempdydx), axis=0)
-        
-        self.splinex = outx
-        self.spliney = outy
-        self.splinedydx = outdydx
+        self.cx = 3 * (x_next - self.x) - 2 * kx - kx_next
+        self.cy = 3 * (y_next - self.y) - 2 * ky - ky_next
+        self.dx = 2 * (self.x - x_next) + kx + kx_next
+        self.dy = 2 * (self.y - y_next) + ky + ky_next
+
+        self._sample_segments()
 
         if loop:
             self.getInsidePix()
 
-    def getInsidePix(self):
-        inds = self.spliney.argsort()
-        sortedy = self.spliney[inds]
-        sortedx = self.splinex[inds]
-        boundingbox = [np.min(self.splinex),np.min(self.spliney),np.max(self.splinex),np.max(self.spliney)]
-        sortedy = sortedy - boundingbox[1]
-        sortedx = sortedx - boundingbox[0]
-        minx = np.full(math.ceil(boundingbox[3]-boundingbox[1])+1,math.ceil(boundingbox[2]-boundingbox[0])+1)
-        maxx = np.zeros(math.ceil(boundingbox[3]-boundingbox[1])+1)
+    def _solve_tangents(self) -> tuple[Array1D, Array1D]:
+        n = self.x.size
+        matrix = np.diag(np.full(n, 4.0))
+        ones = np.ones(n - 1)
+        matrix += np.diag(ones, 1) + np.diag(ones, -1)
 
-        for j in range(len(sortedy)):
-            i = math.ceil(sortedy[j])
-            if sortedx[j] < minx[i]:
-                minx[i] = sortedx[j]
-            if sortedx[j] > maxx[i]:
-                maxx[i] = sortedx[j]
-            
-             
+        rhs_x = 3.0 * (np.roll(self.x, -1) - np.roll(self.x, 1))
+        rhs_y = 3.0 * (np.roll(self.y, -1) - np.roll(self.y, 1))
 
-        for i in range(len(minx)):
-            if i == 0:
-                self.insidex = (np.arange(math.floor(minx[i]),math.ceil(maxx[i]))+boundingbox[0])
-                self.insidey = (np.full(math.ceil(maxx[i])-math.floor(minx[i]),(i+boundingbox[1])))                
-                
-            else:
-                self.insidex = np.concatenate((self.insidex,(np.arange(math.floor(minx[i]),math.ceil(maxx[i]))+boundingbox[0])),axis=0)
-                self.insidey = np.concatenate((self.insidey,(np.full(math.ceil(maxx[i])-math.floor(minx[i]),(i+boundingbox[1])))),axis=0)
-
-    def getInside(self,x,y):
-        splncx = np.average(self.ax)
-        splncy = np.average(self.ay)
-
-        #draw line trhough given point and center, extend beyond bounding box
-
-        if splncx < x:
-            x1 = splncx
-            x2 = x
-            y1 = splncy
-            y2 = y
-        else:
-            x1 = x
-            x2 = splncx
-            y1 = y
-            y2 = splncy
-        
-        dx = x2-x1
-        dy = y2-y1
-
-        if dx == 0 and dy == 0:
-            return True
-        
-        
-        numberofsegments = len(self.ax)
-            
         if self.loop:
-            n = numberofsegments
+            matrix[0, -1] = 1.0
+            matrix[-1, 0] = 1.0
         else:
-            n = numberofsegments-1
-        
-        valid_intercepts = []
-        all_intercepts = []
+            matrix[0, 0] = 2.0
+            matrix[-1, -1] = 2.0
+            rhs_x[0] = 3.0 * (self.x[1] - self.x[0])
+            rhs_x[-1] = 3.0 * (self.x[-1] - self.x[-2])
+            rhs_y[0] = 3.0 * (self.y[1] - self.y[0])
+            rhs_y[-1] = 3.0 * (self.y[-1] - self.y[-2])
 
-        for segno in range(n):
-            if dx != 0: 
-                
-                E = dy/dx
-                F = y1 - (x1*E)
+        kx = np.linalg.solve(matrix, rhs_x)
+        ky = np.linalg.solve(matrix, rhs_y)
+        return kx, ky
 
-                a = self.ax[segno] 
-                b = self.bx[segno] 
-                c = self.cx[segno]
-                d = self.dx[segno]
-                e = self.ay[segno]
-                f = self.by[segno]
-                g = self.cy[segno]
-                h = self.dy[segno]
-                i = E
-                j = F
+    def _sample_segments(self) -> None:
+        indices = np.arange(self._segment_count)
+        x_next = np.roll(self.x, -1)
+        y_next = np.roll(self.y, -1)
+        deltas = np.maximum(np.abs(x_next - self.x), np.abs(y_next - self.y))
+        counts = np.maximum(2, np.ceil(deltas[indices] * 2.5).astype(int))
 
-                #redefine an a+bx+cx2+dx2 formula
+        splinex = []
+        spliney = []
+        splinedydx = []
 
-                a = ((i*a)+j)-e
-                b = (i*b)-f
-                c = (i*c)-g
-                d = (i*d)-h
-            else:
-                a = self.ax[segno] - x1
-                b = self.bx[segno] 
-                c = self.cx[segno]
-                d = self.dx[segno] 
+        for idx, sample_count in zip(indices, counts):
+            t = np.linspace(0.0, 1.0, num=sample_count, endpoint=True)
+            x_values = self._eval_cubic(self.ax[idx], self.bx[idx], self.cx[idx], self.dx[idx], t)
+            y_values = self._eval_cubic(self.ay[idx], self.by[idx], self.cy[idx], self.dy[idx], t)
+            dx_dt = self._eval_derivative(self.bx[idx], self.cx[idx], self.dx[idx], t)
+            dy_dt = self._eval_derivative(self.by[idx], self.cy[idx], self.dy[idx], t)
+            splinex.append(x_values)
+            spliney.append(y_values)
+            splinedydx.append(dy_dt / dx_dt)
 
-                    
-            #solve cubic for real values 
-            #https://medium.com/@mephisto_Dev/solving-cubic-equation-using-cardanos-method-with-python-9465f0b92277
-            #https://math.stackexchange.com/questions/243961/find-x-given-y-in-a-cubic-function
+        self.splinex = np.concatenate(splinex)
+        self.spliney = np.concatenate(spliney)
+        self.splinedydx = np.concatenate(splinedydx)
 
-            p = (3*d*b - c**2) / (3*d**2)
-            q = (2*c**3 - 9*d*c*b + 27*d**2*a) / (27*d**3)
-            delta = (q**2 / 4 + p**3 / 27)
+    @staticmethod
+    def _eval_cubic(a: float, b: float, c: float, d: float, t: Array1D) -> Array1D:
+        return ((d * t + c) * t + b) * t + a
 
-            # determine number and type of roots
-            if delta > 0:  # one real and two complex roots
-                    
-                u = (-q/2 + cmath.sqrt(delta))
-                v = (-q/2 - cmath.sqrt(delta))
+    @staticmethod
+    def _eval_derivative(b: float, c: float, d: float, t: Array1D) -> Array1D:
+        return ((3.0 * d * t) + 2.0 * c) * t + b
 
-                u_regular = u ** (1./3) if u >= 0 else -(-u)**(1./3)
-                u_cbrt = math.cbrt(u) 
-                v_regular = v ** (1./3) if v >= 0 else -(-v)**(1./3)
-                v_cbrt = math.cbrt(v) 
+    def get_inside_pixels(self) -> None:
+        if not self.loop or self.splinex.size == 0:
+            self.insidex = np.array([], dtype=float)
+            self.insidey = np.array([], dtype=float)
+            return
 
-                xx1 = u_regular + v - c / (3*d)
-                xx2 = -(u_regular + v_regular)/2 - c / (3*d) + (u_regular - v_regular)*cmath.sqrt(3)/2j
-                xx3 = -(u_regular + v_regular)/2 - c / (3*d) - (u_regular - v_regular)*cmath.sqrt(3)/2j
-                xx4 = u_cbrt + v_cbrt - c / (3*d)
-                xx5 = -(u_cbrt + v_cbrt)/2 - c / (3*d) + (u_cbrt - v_cbrt)*cmath.sqrt(3)/2j
-                xx6 = -(u_cbrt + v_cbrt)/2 - c / (3*d) - (u_cbrt - v_cbrt)*cmath.sqrt(3)/2j
-                # print("One real root and two complex roots:")
-                # print("x1 = ", xx1.real)
-                # print("x2 = ", xx2)
-                # print("x3 = ", xx3)
-            elif delta == 0:  # three real roots, two are equal
-                u = (-q/2)
-                u_regular = u ** (1./3) if u >= 0 else -(-u)**(1./3)
-                u_cbrt = math.cbrt(u) 
-                xx1 = ((2*u_regular) - c) / (3*d)
-                xx2 = ((-u_regular) - c) / (3*d)
-                xx3 = ((-u_regular) - c) / (3*d)
-                xx4 = ((2*u_cbrt) - c) / (3*d)
-                xx5 = ((-u_cbrt) - c) / (3*d)
-                xx6 = ((-u_cbrt) - c) / (3*d)
-                # print("Three real roots, two are equal:")
-                # print("x1 = ", xx1.real)
-                # print("x2 = ", xx2.real)
-                # print("x3 = ", xx3.real)
-            else:  # three distinct real roots
-                u = (-q/2 + cmath.sqrt(delta))
-                v = (-q/2 - cmath.sqrt(delta))
-                u_regular = u ** (1./3) if u >= 0 else -(-u)**(1./3)
-                u_cbrt = math.cbrt(u) 
-                v_regular = v ** (1./3) if v >= 0 else -(-v)**(1./3)
-                v_cbrt = math.cbrt(v) 
+        order = np.argsort(self.spliney)
+        sorted_y = self.spliney[order]
+        sorted_x = self.splinex[order]
 
-                xx1 = u_regular + v - c / (3*d)
-                xx2 = -(u_regular + v_regular)/2 - c / (3*d) + (u_regular - v_regular)*cmath.sqrt(3)/2j
-                xx3 = -(u_regular + v_regular)/2 - c / (3*d) - (u_regular - v_regular)*cmath.sqrt(3)/2j
-                xx4 = u_cbrt + v_cbrt - c / (3*d)
-                xx5 = -(u_cbrt + v_cbrt)/2 - c / (3*d) + (u_cbrt - v_cbrt)*cmath.sqrt(3)/2j
-                xx6 = -(u_cbrt + v_cbrt)/2 - c / (3*d) - (u_cbrt - v_cbrt)*cmath.sqrt(3)/2j
-                # print("Three distinct real roots:")
-                # print("x1 = ", xx1.real)
-                # print("x2 = ", xx2.real)
-                # print("x3 = ", xx3.real)
+        min_x = float(np.min(self.splinex))
+        max_x = float(np.max(self.splinex))
+        min_y = float(np.min(self.spliney))
+        max_y = float(np.max(self.spliney))
 
-            if delta > 0:
-                all_intercepts.append([segno,xx1.real])
-                if 0 <= xx1.real <= 1:
-                    tint = xx1.real
-                    valid_intercepts.append([segno,tint])
-                all_intercepts.append([segno,xx4.real])
-                if 0 <= xx4.real <= 1:
-                    tint = xx4.real
-                    valid_intercepts.append([segno,tint])
-            if delta <= 0:
-                all_intercepts.append([segno,xx1.real])
-                all_intercepts.append([segno,xx2.real])
-                all_intercepts.append([segno,xx3.real])
-                if 0 <= xx1.real <= 1:
-                    tint = xx1.real
-                    valid_intercepts.append([segno,tint])
-                if 0 <= xx2.real <= 1:
-                    tint = xx2.real
-                    valid_intercepts.append([segno,tint])
-                if 0 <= xx3.real <= 1:
-                    tint = xx3.real
-                    valid_intercepts.append([segno,tint])
-                all_intercepts.append([segno,xx4.real])
-                all_intercepts.append([segno,xx5.real])
-                all_intercepts.append([segno,xx6.real])
-                if 0 <= xx4.real <= 1:
-                    tint = xx4.real
-                    valid_intercepts.append([segno,tint])
-                if 0 <= xx5.real <= 1:
-                    tint = xx5.real
-                    valid_intercepts.append([segno,tint])
-                if 0 <= xx6.real <= 1:
-                    tint = xx6.real
-                    valid_intercepts.append([segno,tint])
-        
-        countbefore = 0
-        truevalids = []
+        height = max(1, int(math.ceil(max_y - min_y)) + 1)
+        width = max(1, int(math.ceil(max_x - min_x)) + 1)
 
-        for i in range(len(valid_intercepts)):
-            segmentno = valid_intercepts[i][0]
-            tintercept = valid_intercepts[i][1]
+        mins = np.full(height, float(width))
+        maxs = np.zeros(height)
 
-            xint = self.ax[segmentno]+(self.bx[segmentno]*tintercept)+(self.cx[segmentno]*(tintercept**2))+(self.dx[segmentno]*(tintercept**3))
-            yint = self.ay[segmentno]+(self.by[segmentno]*tintercept)+(self.cy[segmentno]*(tintercept**2))+(self.dy[segmentno]*(tintercept**3))
-            valid_intercepts[i].append(xint)
-            valid_intercepts[i].append(yint)
+        local_x = sorted_x - min_x
+        local_y = sorted_y - min_y
+        rows = np.clip(np.ceil(local_y).astype(int), 0, height - 1)
 
-            if  math.isclose(yint , (E*xint) + F): # type: ignore
-                truevalids.append([valid_intercepts[i],xint,yint])
+        np.minimum.at(mins, rows, local_x)
+        np.maximum.at(maxs, rows, local_x)
 
-                if xint < x:
-                    countbefore += 1
-        
-        
+        fill_x = []
+        fill_y = []
+        for row in range(height):
+            left = math.floor(mins[row])
+            right = math.ceil(maxs[row])
+            if right <= left:
+                continue
+            xs = np.arange(left, right, dtype=float) + min_x
+            ys = np.full(xs.size, row + min_y, dtype=float)
+            fill_x.append(xs)
+            fill_y.append(ys)
 
-        if countbefore % 2 == 1:
-            return True
+        if fill_x:
+            self.insidex = np.concatenate(fill_x)
+            self.insidey = np.concatenate(fill_y)
         else:
+            self.insidex = np.array([], dtype=float)
+            self.insidey = np.array([], dtype=float)
+
+    def get_inside(self, x: float, y: float) -> bool:
+        if not self.loop or self.splinex.size == 0:
             return False
+
+        x_coords = self.splinex
+        y_coords = self.spliney
+        x_next = np.roll(x_coords, -1)
+        y_next = np.roll(y_coords, -1)
+
+        intersects = (y_coords > y) != (y_next > y)
+        if not np.any(intersects):
+            return False
+
+        denom = y_next - y_coords
+        with np.errstate(divide="ignore", invalid="ignore"):
+            xints = x_coords + (y - y_coords) * (x_next - x_coords) / denom
+        xints = np.where(intersects, xints, np.nan)
+        crossings = np.count_nonzero((x < xints))
+        return bool(crossings % 2)
+
+    def getInside(self, x: float, y: float) -> bool:
+        warnings.warn(
+            "getInside is deprecated and will be removed in a future release; use get_inside instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.get_inside(x, y)
+
+    def getInsidePix(self) -> None:
+        warnings.warn(
+            "getInsidePix is deprecated and will be removed in a future release; use get_inside_pixels instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.get_inside_pixels()
