@@ -1,11 +1,28 @@
-from sdl2 import *
-from sdl2.sdlgfx import *
-from sdl2.ext import *
+from sdl2.sdlgfx import pixelColor
+from sdl2.sdlgfx import aalineColor
+from sdl2.sdlgfx import thickLineColor
+from sdl2.sdlgfx import boxColor
+from sdl2.sdlgfx import rectangleColor
+from sdl2.sdlgfx import filledPolygonColor
+from sdl2.sdlgfx import filledCircleColor
+from sdl2.sdlgfx import aapolygonColor
+from sdl2.sdlgfx import aacircleColor
+from sdl2.sdlgfx import gfxPrimitivesSetFont
+from sdl2.sdlgfx import stringColor
+
+from sdl2 import SDL_RENDERER_ACCELERATED
+from sdl2 import SDL_RENDERER_PRESENTVSYNC
+from sdl2 import SDL_CreateRenderer
+from sdl2 import SDL_GetWindowSize
+from sdl2 import SDL_GetRenderer
+from sdl2 import SDL_SetRenderDrawColor
+from sdl2 import SDL_RenderClear
+from sdl2 import SDL_GetWindowSurface
+from sdl2 import SDL_CreateRGBSurface
+from sdl2 import SDL_BlitSurface
+
 import ctypes
 import math
-import cmath
-import platform
-import numpy as np
 
 from NaNoPy.classes.mainloop import Mainloop
 from NaNoPy.classes.spline import Spline
@@ -40,10 +57,6 @@ class WriterNaive:
         surface_old = SDL_GetWindowSurface(NNP.windows.get(window.name))
         surface_new = SDL_CreateRGBSurface(0,self.xSize,self.ySize,32,255,0,0,0)
         SDL_BlitSurface(surface_new,None,surface_old,None)
-
-
-
-
 
     def drawPixel(self,x,y,color):
         """Draws pixels of given color on x,y coordinate"""
