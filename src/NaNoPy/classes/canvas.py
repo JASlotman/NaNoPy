@@ -22,22 +22,22 @@ class CanvasNaive:
     def __init__(
             self,
             name:str,
-            xSize:int,
-            ySize:int,
+            x_size:int,
+            y_size:int,
             *,
-            xpos:int=-1,
-            ypos:int=-1,
+            x_pos:int=-1,
+            y_pos:int=-1,
             NNP:Mainloop
             ):
 
-        if xpos < 0 or ypos < 0:
-            xpos = SDL_WINDOWPOS_CENTERED
-            ypos = SDL_WINDOWPOS_CENTERED
+        if x_pos < 0 or y_pos < 0:
+            x_pos = SDL_WINDOWPOS_CENTERED
+            y_pos = SDL_WINDOWPOS_CENTERED
 
         window:WindowType = SDL_CreateWindow(
             str.encode(name), 
-            xpos, ypos, 
-            xSize, ySize, 
+            x_pos, y_pos, 
+            x_size, y_size, 
             SDL_WINDOW_HIDDEN
             )
         
@@ -80,9 +80,9 @@ class CanvasNaive:
         """Clear the canvas """
         self.NNP.clear(self.name)
 
-    def pause(self,time) -> None:
+    def pause(self, time) -> None:
         """Pause the canvas for a time in ms"""
-        self.NNP.pause(self.name,time)
+        self.NNP.pause(self.name, time)
 
     def keep_window(self) -> None:
         """Keep window on screen if not running any code (for showing a single screen) or finite number of frames"""

@@ -18,7 +18,7 @@ class Canvas(CanvasNaive):
 
     """
     def __init__(self, name, xSize, ySize, *, xpos=-1, ypos=-1):
-        super().__init__(name, xSize, ySize, xpos=xpos, ypos=ypos, NNP=NNP)
+        super().__init__(name, xSize, ySize, x_pos=xpos, y_pos=ypos, NNP=NNP)
 
 class Writer(WriterNaive):
     """Object to draw shapes on a nanopy canvas
