@@ -19,23 +19,28 @@ class LeftRightListener(Listener):
             if event.key.keysym.sym in (SDLK_RIGHT,SDLK_LEFT):
                 self.dx = 0
 
-x_size = 800
-y_size = 600
 
-screen = Canvas("Input Demo", x_size, y_size)
-p = Writer(screen)
+def demo() -> None:
+    x_size = 800
+    y_size = 600
 
-listener = LeftRightListener("move")
-screen.add_listener(listener)
+    screen = Canvas("Input Demo", x_size, y_size)
+    p = Writer(screen)
 
-width = 50
-height = 10
-x = x_size / 2 - width / 2
-y = y_size / 2 - height / 2
+    listener = LeftRightListener("move")
+    screen.add_listener(listener)
 
-while screen.running():
-    x += listener.dx
-    p.draw_rectangle(x, y, width, height, Color.white, True)
-    screen.update()
-    screen.pause(12)
-    screen.clear()
+    width = 50
+    height = 10
+    x = x_size / 2 - width / 2
+    y = y_size / 2 - height / 2
+
+    while screen.running():
+        x += listener.dx
+        p.draw_rectangle(x, y, width, height, Color.white, True)
+        screen.update()
+        screen.pause(12)
+        screen.clear()
+
+if __name__ == "__main__":
+    demo()

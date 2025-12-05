@@ -1,7 +1,7 @@
 from NaNoPy import Canvas, Writer, Color
 import random
 
-def draw_hundreds_of_dots(hundreds: int) -> None:
+def demo(hundreds: int = 2) -> None:
     # Create the drawing window and basic tools
     x_size = 800
     y_size = 600
@@ -36,4 +36,4 @@ def draw_hundreds_of_dots(hundreds: int) -> None:
 
 # Run the demo when executed directly
 if __name__ == "__main__":
-    draw_hundreds_of_dots(2)
+    demo(2)
