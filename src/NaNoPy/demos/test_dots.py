@@ -1,40 +1,39 @@
 from NaNoPy import *
 import random
 
-def draw_hundred_dots():
-    # Utwórz okno
+def draw_hundreds_of_dots(hundreds: int) -> None:
+    # Create the drawing window and basic tools
     xSize = 800
     ySize = 600
-    screen = canvas("100 Dots Animation", xSize, ySize)
+    screen = canvas(f"{100*hundreds} Dots Animation", xSize, ySize)
     pen = writer(screen)
     screen.clear()
     
-    # Rysuj 100 kropek z opóźnieniem
-    for i in range(100):
-        # Losowa pozycja dla kropki
+    # Emit dots with a short delay between each frame
+    for _ in range(100*hundreds):
+        # Pick a random in-bounds position so dots stay away from the border
         x = random.randint(50, xSize-50)
         y = random.randint(50, ySize-50)
         
-        # Losowy kolor (dla urozmaicenia)
-        dot_color = color()(
-            r=random.randint(100, 255), 
+        # Generate a random cool-toned color for variety
+        dot_color = Color.custom( 
             g=random.randint(100, 255), 
             b=random.randint(100, 255)
         )
         
-        # Rysowanie kropki
+        # Draw the dot at the chosen location
         pen.drawCircle(x, y, 5, dot_color, True)
         
         
-        # Aktualizacja ekranu
+        # Refresh the canvas to show the new dot
         screen.update()
         
-        # Pauza 100 ms
+        # Pause briefly to create an animation effect
         screen.pause(100)
     
-    # Utrzymaj okno otwarte po narysowaniu wszystkich kropek
+    # Keep the window open once the animation finishes
     screen.keepwindow()
 
-# Uruchom funkcję
+# Run the demo when executed directly
 if __name__ == "__main__":
-    draw_hundred_dots()
+    draw_hundreds_of_dots(2)
