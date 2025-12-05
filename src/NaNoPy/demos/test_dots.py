@@ -22,7 +22,7 @@ def draw_hundreds_of_dots(hundreds: int) -> None:
         )
         
         # Draw the dot at the chosen location
-        pen.drawCircle(x, y, 5, dot_color, True)
+        pen.draw_circle(x, y, 5, dot_color, True)
         
         
         # Refresh the canvas to show the new dot

@@ -10,20 +10,20 @@ pen = writer(screen)
 #help(pen)
 #help(color)
 
-pen.drawRectangle(50, 50, 50, 50, color().green, False)
-pen.drawRectangle(100, 50,50,50, color()(r=0,g=255,a=150), True)
-pen.drawRectangle(151, 50, 50, 50, color()(r=0,g=255,a=100), True)
-pen.drawRectangle(202, 50, 50, 50,color()(r=0,g=255,a=50), True)
-pen.drawPolygon(50, 150, 25, 4, color().green, False)
-pen.drawPolygon(100, 150, 25, 4, color()(r=0,g=255,a=150), True)
-pen.drawPolygon(151, 150, 25, 4, color()(r=0,g=255,a=100), True)
-pen.drawPolygon(202, 150, 25, 4, color()(r=0,g=255,a=50), True)
-pen.drawPolygon(50, 250, 25, 6, color().green, False)
-pen.drawPolygon(100, 250, 25, 6, color()(r=0,g=255,a=150), True)
-pen.drawPolygon(151, 250, 25, 6, color()(r=0,g=255,a=100), True)
-pen.drawPolygon(202, 250, 25, 6, color()(r=0,g=255,a=50), True)
+pen.draw_rectangle(50, 50, 50, 50, color().green, False)
+pen.draw_rectangle(100, 50,50,50, color()(r=0,g=255,a=150), True)
+pen.draw_rectangle(151, 50, 50, 50, color()(r=0,g=255,a=100), True)
+pen.draw_rectangle(202, 50, 50, 50,color()(r=0,g=255,a=50), True)
+pen.draw_polygon(50, 150, 25, 4, color().green, False)
+pen.draw_polygon(100, 150, 25, 4, color()(r=0,g=255,a=150), True)
+pen.draw_polygon(151, 150, 25, 4, color()(r=0,g=255,a=100), True)
+pen.draw_polygon(202, 150, 25, 4, color()(r=0,g=255,a=50), True)
+pen.draw_polygon(50, 250, 25, 6, color().green, False)
+pen.draw_polygon(100, 250, 25, 6, color()(r=0,g=255,a=150), True)
+pen.draw_polygon(151, 250, 25, 6, color()(r=0,g=255,a=100), True)
+pen.draw_polygon(202, 250, 25, 6, color()(r=0,g=255,a=50), True)
 
-pen.drawSpline(
+pen.draw_spline(
     [400, 500, 500, 400], 
     [200, 200,300, 300],
     color().red,
@@ -31,10 +31,10 @@ pen.drawSpline(
     True
     )
 
-pen.drawCircle(400, 200, 5, color().red, True)
-pen.drawCircle(400, 300, 5, color().red, True)
-pen.drawCircle(500, 300, 5, color().red, True)
-pen.drawCircle(500, 200, 5, color().red, True)
+pen.draw_circle(400, 200, 5, color().red, True)
+pen.draw_circle(400, 300, 5, color().red, True)
+pen.draw_circle(500, 300, 5, color().red, True)
+pen.draw_circle(500, 200, 5, color().red, True)
 
 screen.update()
 screen.keepwindow()

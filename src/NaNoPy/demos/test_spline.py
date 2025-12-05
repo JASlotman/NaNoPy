@@ -65,8 +65,8 @@ while screen.running():
     if not first:
         splinedy = pen.spln.spliney
 
-    pen.drawSpline(x,np.array(y)-50,color().green,False,False)
-    pen.drawSpline(x,np.array(y)+50,color().green,False,False)
+    pen.draw_spline(x,np.array(y)-50,color().green,False,False)
+    pen.draw_spline(x,np.array(y)+50,color().green,False,False)
 
     if not first:
         
@@ -105,8 +105,8 @@ while screen.running():
         xpart[i] = xpart[i]%xSize
 
     for i in range(npart):
-        pen.drawCircle(xpart[i],ypart[i],radius,color().red,True)
-        pen.drawCircle(xpart[i],ypart[i],radius-3,color().yellow,True)
+        pen.draw_circle(xpart[i],ypart[i],radius,color().red,True)
+        pen.draw_circle(xpart[i],ypart[i],radius-3,color().yellow,True)
 
 
     # for i in range(len(x)):

@@ -37,7 +37,7 @@ while screen.running():
 
     x += dx
 
-    p.drawRectangle(x,y,w,h,color().white,True)
+    p.draw_rectangle(x,y,w,h,color().white,True)
     screen.update()
     screen.pause(12)
     screen.clear()

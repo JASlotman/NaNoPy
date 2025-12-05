@@ -16,7 +16,7 @@ for i in range(500):
 while screen.running():  
     for x in range(xSize):
         for i in range(len(stars)):
-            pen.drawPixel(stars[i][0], stars[i][1], Color.white)
+            pen.draw_pixel(stars[i][0], stars[i][1], Color.white)
             
         # Add new particles at the star's position
         for _ in range(5):  # Add 5 particles each frame
@@ -32,7 +32,7 @@ while screen.running():
             particle[4] -= 1  # Decrease lifetime
             
             # Draw the particle
-            pen.drawPixel(int(particle[0]), int(particle[1]), Color.red)
+            pen.draw_pixel(int(particle[0]), int(particle[1]), Color.red)
             
             # Remove particles that have expired
             if particle[4] <= 0:
@@ -41,7 +41,7 @@ while screen.running():
                 i += 1
                 
         # Draw the star
-        pen.drawStar(x, y, 10,5, Color.yellow,True)
+        pen.draw_star(x, y, 10,5, Color.yellow,True)
         screen.update()
         screen.clear()
     screen.pause(20)
