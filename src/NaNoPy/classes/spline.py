@@ -71,6 +71,8 @@ class Spline:
 
         kx = np.linalg.solve(matrix, rhs_x)
         ky = np.linalg.solve(matrix, rhs_y)
+        kx = np.asarray(kx, dtype=np.float64)
+        ky = np.asarray(ky, dtype=np.float64)
         return kx, ky
 
     def _sample_segments(self) -> None:
@@ -100,6 +102,26 @@ class Spline:
 
     @staticmethod
     def _eval_cubic(a: float, b: float, c: float, d: float, t: Array1D) -> Array1D:
+        """Evaluate a cubic Bézier polynomial at the provided parameter values.
+
+        The references below provide the derivation of the cubic form that is used
+        to construct splines and to invert cubic functions:
+        https://medium.com/@mephisto_Dev/solving-cubic-equation-using-cardanos-method-with-python-9465f0b92277
+        https://math.stackexchange.com/questions/243961/find-x-given-y-in-a-cubic-function
+
+        :param a: Anchor coefficient (value at t = 0).
+        :type a: float
+        :param b: First derivative coefficient at t = 0.
+        :type b: float
+        :param c: Second-order coefficient.
+        :type c: float
+        :param d: Third-order coefficient.
+        :type d: float
+        :param t: Parameter values at which to sample the cubic curve.
+        :type t: Array1D
+        :return: Evaluated cubic values for each t.
+        :rtype: Array1D
+        """
         return ((d * t + c) * t + b) * t + a
 
     @staticmethod
