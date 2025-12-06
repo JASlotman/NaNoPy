@@ -32,7 +32,7 @@ def demo(hundreds: int = 2) -> None:
         screen.pause(100)
     
     # Keep the window open once the animation finishes
-    screen.keepwindow()
+    screen.keep_window()
 
 # Run the demo when executed directly
 if __name__ == "__main__":
