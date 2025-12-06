@@ -82,7 +82,7 @@ class CanvasNaive:
 
     def pause(self, time) -> None:
         """Pause the canvas for a time in ms"""
-        self.NNP.pause(self.name, time)
+        self.NNP.pause(time)
 
     def keep_window(self) -> None:
         """Keep window on screen if not running any code (for showing a single screen) or finite number of frames"""

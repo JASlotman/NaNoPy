@@ -67,7 +67,7 @@ class Mainloop:
         if(platform.system() == 'Linux'):
             SDL_RenderPresent(ren) 
 
-    def pause(self,name,time):
+    def pause(self,time):
         SDL_Delay(time)
 
     def stop(self):

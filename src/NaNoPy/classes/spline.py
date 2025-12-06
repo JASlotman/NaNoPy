@@ -1,5 +1,4 @@
 import math
-import warnings
 from typing import Iterable, SupportsFloat, SupportsInt, Union
 
 import numpy as np
@@ -13,8 +12,8 @@ class Spline:
     """Spline class for generating a spline through given points."""
 
     def __init__(self, xs: Iterable[NumberLike], ys: Iterable[NumberLike], loop: bool) -> None:
-        self.x: Array1D = np.asarray(list(xs), dtype=float)
-        self.y: Array1D = np.asarray(list(ys), dtype=float)
+        self.x: Array1D = np.asarray(xs, dtype=float)
+        self.y: Array1D = np.asarray(ys, dtype=float)
         self.loop = loop
 
         if self.x.ndim != 1 or self.y.ndim != 1:
@@ -47,7 +46,7 @@ class Spline:
         self._sample_segments()
 
         if loop:
-            self.getInsidePix()
+            self.get_inside_pixels()
 
     def _solve_tangents(self) -> tuple[Array1D, Array1D]:
         n = self.x.size
@@ -158,6 +157,7 @@ class Spline:
 
         fill_x = []
         fill_y = []
+
         for row in range(height):
             left = math.floor(mins[row])
             right = math.ceil(maxs[row])
@@ -194,19 +194,3 @@ class Spline:
         xints = np.where(intersects, xints, np.nan)
         crossings = np.count_nonzero((x < xints))
         return bool(crossings % 2)
-
-    def getInside(self, x: float, y: float) -> bool:
-        warnings.warn(
-            "getInside is deprecated and will be removed in a future release; use get_inside instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.get_inside(x, y)
-
-    def getInsidePix(self) -> None:
-        warnings.warn(
-            "getInsidePix is deprecated and will be removed in a future release; use get_inside_pixels instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.get_inside_pixels()
