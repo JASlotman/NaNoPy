@@ -25,9 +25,9 @@ def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = 
     Example:
     ```python
     @loop(frame_count=100)
-    def draw_animation(screen: canvas, pen: writer, frame_index: int):
+    def draw_animation(screen: Canvas, pen: Writer, frame_index: int):
         # Drawing logic here. For example:
-        pen.drawCircle(xSize // 2, i, 5, color().red, True)
+        pen.draw_circle(xSize // 2, i, 5, color().red, True)
         # Returning False breaks the loop early.
         # Returning a screen.update() displays that frame instead of creating a new one
     ```
