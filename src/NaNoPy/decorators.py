@@ -53,7 +53,7 @@ def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = 
             else:
                 screen.update()
 
-            if im == False: break
+            if im is False: break
 
         screen.NNP.stop()
     
