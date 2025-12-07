@@ -17,7 +17,7 @@ def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = 
         frame_count (int): The total number of frames the animation should run for.
         xSize (int, optional): Width of the NaNoPy window. Defaults to 300.
         ySize (int, optional): Height of the NaNoPy window. Defaults to 300.
-        embedded: (bool, optional): Should the output be display in the cell output. Defaults to True.
+        embedded: (bool, optional): Should the output be displayed in the cell output. Defaults to True.
 
     Returns:
         Callable: A decorator function that takes the user's rendering function.
