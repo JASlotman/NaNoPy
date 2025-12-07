@@ -27,7 +27,7 @@ class Mainloop:
     def addwindow(self,name,window_):
         self.windowlist[name] = window_
 
-    def update(self,name):
+    def update(self,name, embedded: bool = False):
         window = self.windowlist.get(name)
         ren = SDL_GetRenderer(window)
 
@@ -37,7 +37,7 @@ class Mainloop:
                 for lstnr in self.listenerlist:
                     self.listenerlist[lstnr].run(self.event)
 
-        if IS_JUPYTER:
+        if embedded:
             #dynamically get screen size as it may change per cell
             xSize = ctypes.c_int()
             ySize = ctypes.c_int()
@@ -132,9 +132,9 @@ class canvas:
         self.listener = listener
         NNP.addlistener(listener)
 
-    def update(self):
+    def update(self, embedded: bool = False):
         """Update the canvas"""
-        return NNP.update(self.name)
+        return NNP.update(self.name, embedded)
 
     def clear(self):
         """Clear the canvas """
@@ -616,7 +616,7 @@ class spline:
         else:
             return False
 
-def loop(frame_count: int, xSize: int = 300, ySize: int = 300):
+def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = True):
     """
     Decorator for running an animation loop in a Jupyter notebook environment.
 
@@ -627,6 +627,7 @@ def loop(frame_count: int, xSize: int = 300, ySize: int = 300):
         frame_count (int): The total number of frames the animation should run for.
         xSize (int, optional): Width of the NaNoPy window. Defaults to 300.
         ySize (int, optional): Height of the NaNoPy window. Defaults to 300.
+        embedded: (bool, optional): Should the output be display in the notebook. Defaults to True.
 
     Returns:
         Callable: A decorator function that takes the user's rendering function.
@@ -650,14 +651,17 @@ def loop(frame_count: int, xSize: int = 300, ySize: int = 300):
 
     def decorator(func):
         for i in range(frame_count):
-        
             screen.clear()
-            clear_output(True)
+            
+            if embedded: clear_output(True)
 
             im = func(screen, pen, i)
 
-            if isinstance(im, Image.Image): display(im)
-            else: display(screen.update())
+            if embedded:
+                if isinstance(im, Image.Image): display(im)
+                else: display(screen.update(embedded=True))
+            else:
+                screen.update(False)
 
             if im == False: break
 
