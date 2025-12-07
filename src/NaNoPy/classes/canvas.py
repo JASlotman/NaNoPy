@@ -3,10 +3,14 @@ from sdl2 import SDL_WINDOWPOS_CENTERED
 from sdl2 import SDL_WINDOW_HIDDEN
 from NaNoPy.classes.mainloop import Mainloop
 
+from NaNoPy.constants import IS_JUPYTER
 from NaNoPy.custom_types import WindowType
 from NaNoPy.classes.listener import Listener
 
 import warnings
+
+if IS_JUPYTER:
+    from PIL import Image
 
 class CanvasNaive:
     """NaNoPy Canvas object
@@ -75,6 +79,10 @@ class CanvasNaive:
     def update(self) -> None:
         """Update the canvas"""
         self.NNP.update(self.name)
+
+    def update_embedded(self) -> Image:
+        """Update the canvas and return screen"""
+        return self.NNP.update_embedded(self.name)
 
     def clear(self) -> None:
         """Clear the canvas """

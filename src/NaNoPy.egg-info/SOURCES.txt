@@ -2,6 +2,8 @@ LICENCE
 README.md
 pyproject.toml
 src/NaNoPy/__init__.py
+src/NaNoPy/constants.py
+src/NaNoPy/decorators.py
 src/NaNoPy.egg-info/PKG-INFO
 src/NaNoPy.egg-info/SOURCES.txt
 src/NaNoPy.egg-info/dependency_links.txt
