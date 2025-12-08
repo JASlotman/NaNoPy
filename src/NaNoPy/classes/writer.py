@@ -22,6 +22,7 @@ from sdl2 import SDL_SetRenderTarget
 import ctypes
 import math
 
+from NaNoPy.classes.canvas import CanvasNaive
 from NaNoPy.classes.mainloop import Mainloop
 from NaNoPy.classes.spline import Spline
 
@@ -39,37 +40,18 @@ class WriterNaive:
     canvas: nanopy canvas
     """
 
-    def __init__(self, window, *, driver=-1, NNP: Mainloop):
-        render_flags = (
-            SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE
-        )
-        self.renderer = SDL_CreateRenderer(NNP.windows.get(window.name), driver, render_flags)
-        self._window_name = window.name
+    def __init__(self, canvas: CanvasNaive, *, NNP: Mainloop): 
+        self.canvas = canvas       
+        self.window = canvas.window
+        self.renderer = canvas.renderer
+    
+        self._window_name = self.canvas.name
         self._NNP = NNP
-        x = [0]
-        y = [0]
-        xobj = (ctypes.c_int32 * len(x))(*x)
-        yobj = (ctypes.c_int32 * len(y))(*y)
-        SDL_GetWindowSize(NNP.windows.get(window.name), xobj, yobj)
-        self.x_size = xobj[0]
-        self.y_size = yobj[0]
 
-        self._persistent_texture = self._init_persistent_target()
-        gfxPrimitivesSetFont(None, 0, 0)
-
-    def _init_persistent_target(self):
-        texture = self._NNP.ensure_persistent_texture(
-            self._window_name,
-            self.renderer,
-            self.x_size,
-            self.y_size,
-        )
-
-        SDL_SetRenderTarget(self.renderer, texture)
-        SDL_SetRenderDrawColor(self.renderer, 0, 0, 0, 255)
-        SDL_RenderClear(self.renderer)
-
-        return texture
+    @property
+    def y_size(self):
+        return self.canvas.get_window_size()[1]
+        
 
     def draw_pixel(self, x, y, color) -> None:
         """Draws pixels of given color on x,y coordinate.
@@ -290,6 +272,8 @@ class WriterNaive:
 
     def draw_string(self, x, y, color, text: str) -> None:
         """Draws string on location x,y with given color"""
+
+        self.canvas._reload_fonts = True
 
         stringColor(self.renderer, int(x), int(self.y_size - y), str.encode(text), color)
 

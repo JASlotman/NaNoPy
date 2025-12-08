@@ -19,8 +19,8 @@ class Canvas(CanvasNaive):
 
     """
 
-    def __init__(self, name, xSize, ySize, *, xpos=-1, ypos=-1):
-        super().__init__(name, xSize, ySize, x_pos=xpos, y_pos=ypos, NNP=NNP)
+    def __init__(self, name, xSize, ySize, *, xpos=-1, ypos=-1, driver=-1):
+        super().__init__(name, xSize, ySize, x_pos=xpos, y_pos=ypos, driver=driver, NNP=NNP)
 
 
 class Writer(WriterNaive):
@@ -30,8 +30,8 @@ class Writer(WriterNaive):
     canvas: nanopy canvas
     """
 
-    def __init__(self, window, *, driver=-1):
-        super().__init__(window, driver=driver, NNP=NNP)
+    def __init__(self, window):
+        super().__init__(window, NNP=NNP)
 
 
 # Defining aliases

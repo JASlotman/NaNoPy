@@ -1,11 +1,14 @@
 from sdl2 import SDL_CreateWindow
+from sdl2 import SDL_CreateRenderer
 from sdl2 import SDL_WINDOWPOS_CENTERED
 from sdl2 import SDL_WINDOW_HIDDEN
 from sdl2 import SDL_GetWindowPosition
+from sdl2 import SDL_GetWindowSize
 
 from NaNoPy.custom_types import WindowType
 from NaNoPy.classes.listener import Listener
 from NaNoPy.classes.mainloop import Mainloop
+from NaNoPy.constants import RENDER_FLAGS
 
 import warnings
 import ctypes
@@ -32,6 +35,7 @@ class CanvasNaive:
         *,
         x_pos: int = -1,
         y_pos: int = -1,
+        driver = -1,
         NNP: Mainloop,
     ):
         if x_pos < 0 or y_pos < 0:
@@ -42,10 +46,19 @@ class CanvasNaive:
             str.encode(name), x_pos, y_pos, x_size, y_size, SDL_WINDOW_HIDDEN
         )
 
+        self.renderer = SDL_CreateRenderer(self.window, driver, RENDER_FLAGS)
+
         self.name = name
         self.listener: None | Listener = None
         self.NNP = NNP
-        self.NNP.add_window(name, self.window)
+        self.NNP.add_canvas(self)
+
+
+        self._reload_fonts = False
+        self._persistent_texture = None
+        self._window_size_cache: tuple[int, int] | None = None
+
+        self.NNP.ensure_persistent_texture(self)
 
     def add_listener(self, listener: Listener) -> None:
         """Adds a listener object
@@ -75,11 +88,11 @@ class CanvasNaive:
 
     def update(self) -> None:
         """Update the canvas"""
-        self.NNP.update(self.name)
+        self.NNP.update(self)
 
     def update_embedded(self) -> Image:
         """Update the canvas and return screen"""
-        return self.NNP.update_embedded(self.name)
+        return self.NNP.update_embedded(self)
 
     def clear(self) -> None:
         """Clear the canvas"""
@@ -116,3 +129,18 @@ class CanvasNaive:
         SDL_GetWindowPosition(self.window, x_pos, y_pos)
 
         return (x_pos.value, y_pos.value)
+    
+    def get_window_size(self) -> tuple[int, int]:
+        """Get the size of the active window"""
+
+        if self._window_size_cache is not None: return self._window_size_cache
+        
+        x_size = ctypes.c_int()
+        y_size = ctypes.c_int()
+
+        SDL_GetWindowSize(self.window, ctypes.byref(x_size), ctypes.byref(y_size))
+
+        self._window_size_cache = (x_size.value, y_size.value)
+
+        return self._window_size_cache
+

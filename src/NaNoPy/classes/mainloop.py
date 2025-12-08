@@ -31,11 +31,12 @@ from sdl2 import SDL_WINDOWEVENT_CLOSE
 from sdl2 import SDL_PIXELFORMAT_ARGB8888
 
 from sdl2.ext import save_bmp
+from sdl2.sdlgfx import gfxPrimitivesSetFont
 
 import ctypes
 import warnings
 import tempfile
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from NaNoPy.classes.listener import Listener
 from NaNoPy.constants import ARGB_MASK
@@ -43,6 +44,8 @@ from NaNoPy.custom_types import WindowType
 
 from PIL import Image
 
+if TYPE_CHECKING:
+    from NaNoPy.classes.canvas import CanvasNaive
 
 
 class Mainloop:
@@ -50,9 +53,11 @@ class Mainloop:
         SDL_Init(SDL_INIT_VIDEO)
         self.event = SDL_Event()
         self.running: bool = True
-        self.windows: dict[str, WindowType] = {}
+        self.windows: dict[str, WindowType] = {} # Not used
+        self.canvasses: dict[str, CanvasNaive] = {}
         self.listeners: dict[str, Listener] = {}
-        self._persistent_textures: dict[str, ctypes.c_void_p] = {}
+
+        self.multiple_windows = False
 
     def addwindow(self, name: str, window: WindowType) -> None:
         """(deprecated, use add_window() instead.)"""
@@ -67,35 +72,48 @@ class Mainloop:
     def add_window(self, name, window: WindowType) -> None:
         self.windows[name] = window
 
-    def update(self, name: str):
-        window, ren = self.get_window_and_renderer(name)
+    def add_canvas(self, canvas: CanvasNaive):
+        self.canvasses[canvas.name] = canvas
+
+        # Don't check it during runtime to reduce accession
+        if len(self.canvasses) > 1:
+            self.multiple_windows = True
+
+    def update(self, canvas: CanvasNaive):
+        window = canvas.window
+        ren = canvas.renderer
 
         flags = SDL_GetWindowFlags(window)
         if (flags & SDL_WINDOW_HIDDEN):
             SDL_ShowWindow(window)
 
-        texture = self._copy_persistent_texture(name, ren)
+        if self.multiple_windows and canvas._reload_fonts:
+            gfxPrimitivesSetFont(None, 0, 0)
+            canvas._reload_fonts = False
+
+        texture = self._copy_persistent_texture(canvas)
         SDL_RenderPresent(ren)
         if texture:
             SDL_SetRenderTarget(ren, texture)
 
         self._handle_events()
 
-    def update_embedded(self, name) -> Image.Image:
+    def update_embedded(self, canvas: CanvasNaive) -> Image.Image:
         if Image is None:
             raise RuntimeError("Embedded rendering requires Pillow to be installed")
 
-        window, ren = self.get_window_and_renderer(name)
+        ren = canvas.renderer
+
+        if self.multiple_windows and canvas._reload_fonts:
+            gfxPrimitivesSetFont(None, 0, 0)
+            canvas._reload_fonts = False
 
         self._handle_events()
 
-        x_size = ctypes.c_int()
-        y_size = ctypes.c_int()
-
-        SDL_GetWindowSize(window, ctypes.byref(x_size), ctypes.byref(y_size))
+        x_size, y_size = canvas.get_window_size()
 
         # Create empty surface
-        surface = SDL_CreateRGBSurface(0, x_size.value, y_size.value, 32, *ARGB_MASK)
+        surface = SDL_CreateRGBSurface(0, x_size, y_size, 32, *ARGB_MASK)
 
         # Render screen to surface
         SDL_RenderReadPixels(
@@ -123,7 +141,7 @@ class Mainloop:
                 SDL_FreeSurface(surface)
 
             # Return black image on error
-            return Image.new("1", (x_size.value, y_size.value))
+            return Image.new("1", (x_size, y_size))
         
 
     def get_window_and_renderer(self, name: str):
@@ -152,10 +170,8 @@ class Mainloop:
     def stop(self):
         self.running = False
 
-        for tex in self._persistent_textures.values():
-            SDL_DestroyTexture(tex)
-
-        self._persistent_textures.clear()
+        for canvas in self.canvasses.values():
+            SDL_DestroyTexture(canvas._persistent_texture)
 
         for win in self.windows.values():
             SDL_DestroyWindow(win)
@@ -184,36 +200,38 @@ class Mainloop:
         )
         self.add_listener(listener)
 
-    def ensure_persistent_texture(self, name: str, renderer, width: int, height: int):
-        texture = self._persistent_textures.get(name)
+    def ensure_persistent_texture(self, canvas: CanvasNaive):
+        texture = canvas._persistent_texture
 
         # If texture exist already return
         if texture:
             return texture
 
+        x_size, y_size = canvas.get_window_size()
+
         texture = SDL_CreateTexture(
-            renderer,
+            canvas.renderer,
             SDL_PIXELFORMAT_RGBA8888,
             SDL_TEXTUREACCESS_TARGET,
-            width,
-            height,
+            x_size,
+            y_size,
         )
 
         # Set blending mode to alpha blending
         # This ensures overlapping textures render correctly
         SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND)
     
-        self._persistent_textures[name] = texture
+        canvas._persistent_texture = texture
 
         return texture
 
-    def _copy_persistent_texture(self, name: str, renderer) -> Optional[ctypes.c_void_p]:
-        texture = self._persistent_textures.get(name)
+    def _copy_persistent_texture(self, canvas: CanvasNaive) -> Optional[ctypes.c_void_p]:
+        texture = canvas._persistent_texture
 
         if not texture:
             return None
         
-        SDL_SetRenderTarget(renderer, None)
-        SDL_RenderCopy(renderer, texture, None, None)
+        SDL_SetRenderTarget(canvas.renderer, None)
+        SDL_RenderCopy(canvas.renderer, texture, None, None)
 
         return texture
