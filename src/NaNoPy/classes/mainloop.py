@@ -37,8 +37,6 @@ import warnings
 import tempfile
 from typing import Optional, Any
 
-from typing import TYPE_CHECKING
-
 from NaNoPy.classes.listener import Listener
 from NaNoPy.constants import ARGB_MASK, IS_JUPYTER
 from NaNoPy.custom_types import WindowType
