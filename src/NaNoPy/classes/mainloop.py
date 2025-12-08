@@ -145,19 +145,10 @@ class Mainloop:
                 self.listeners[lstnr].run(self.event)  # type: ignore
 
     def clear(self, name):
-        ren = SDL_GetRenderer(self.windows.get(name))
-        texture = self._persistent_textures.get(name)
-
-        if texture:
-            SDL_SetRenderTarget(ren, texture)
+        _, ren = self.get_window_and_renderer(name)
 
         SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
         SDL_RenderClear(ren)
-
-        if texture:
-            SDL_SetRenderTarget(ren, None)
-            SDL_RenderCopy(ren, texture, None, None)
-            SDL_SetRenderTarget(ren, texture)
 
     def pause(self, time):
         SDL_Delay(time)

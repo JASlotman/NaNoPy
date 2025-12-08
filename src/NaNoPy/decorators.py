@@ -8,7 +8,7 @@ except ImportError:
     pass
 
 
-def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = True):
+def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = True, additive: bool = False):
     """
     Decorator for running an animation loop in a Jupyter notebook environment.
 
@@ -16,10 +16,19 @@ def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = 
     that handles the frame iteration, screen clearing, and display logic.
 
     Args:
-        frame_count (int): The total number of frames the animation should run for.
-        xSize (int, optional): Width of the NaNoPy window. Defaults to 300.
-        ySize (int, optional): Height of the NaNoPy window. Defaults to 300.
-        embedded: (bool, optional): Should the output be displayed in the cell output. Defaults to True.
+        frame_count (int): The total **number of frames** the animation should run for.
+        xSize (int, optional): The **width** of the rendering window in pixels. Defaults to 300.
+        ySize (int, optional): The **height** of the rendering window in pixels. Defaults to 300.
+        embedded (bool, optional): If **True**, the output will be displayed directly 
+                                   in the notebook cell output (e.g., for Jupyter/IPython). 
+                                   Defaults to True.
+        additive (bool, optional): Controls how frames are rendered.
+                                   If **True**, new frames are accumulated on top of 
+                                   previous frames (additive rendering), meaning the 
+                                   screen is not cleared between iterations.
+                                   If **False**, the screen is cleared at the start 
+                                   of each new frame (non-additive or standard rendering). 
+                                   Defaults to False.
 
     Returns:
         Callable: A decorator function that takes the user's rendering function.
@@ -45,7 +54,8 @@ def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = 
 
     def decorator(func):
         for i in range(frame_count):
-            screen.clear()
+            if not additive:
+                screen.clear()
 
             if embedded:
                 clear_output(True)
