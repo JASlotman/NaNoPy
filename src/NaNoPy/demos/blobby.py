@@ -1,11 +1,11 @@
-import numpy as np
-from __init__ import *
+from NaNoPy import canvas, writer, color
 import random as rnd
+import math
 
 xSize = 800
 ySize = 600
 
-screen = canvas("blob",xSize,ySize)
+screen = canvas("blob", xSize, ySize)
 pen = writer(screen)
 
 x = []
@@ -13,8 +13,8 @@ y = []
 r = []
 a = []
 
-xc = xSize/2
-yc = ySize/2
+xc = xSize / 2
+yc = ySize / 2
 
 n = 7
 npart = 5
@@ -27,39 +27,34 @@ for i in range(npart):
     ypart.append(yc)
 
 for i in range(n):
-    r.append(rnd.randint(100,120))
-    a.append(((2*math.pi)/n)*i)
-    x.append(xc+(math.cos(a[i])*r[i]))
-    y.append(yc+(math.sin(a[i])*r[i]))
+    r.append(rnd.randint(100, 120))
+    a.append(((2 * math.pi) / n) * i)
+    x.append(xc + (math.cos(a[i]) * r[i]))
+    y.append(yc + (math.sin(a[i]) * r[i]))
 
 
 while screen.running():
-
-    
-    
     for i in range(n):
-        dr = rnd.randint(-5,5)
-        if r[i] + dr > 50 and r[i]+dr < 250:
-            #r[i] += dr
+        dr = rnd.randint(-5, 5)
+        if r[i] + dr > 50 and r[i] + dr < 250:
+            # r[i] += dr
             pass
-        x[i] = xc+(math.cos(a[i])*r[i])
-        y[i] = yc+(math.sin(a[i])*r[i])
+        x[i] = xc + (math.cos(a[i]) * r[i])
+        y[i] = yc + (math.sin(a[i]) * r[i])
 
-    
-
-    #pen.drawSpline(x,y,color().yellow,True,filled=True)
-    pen.drawSpline(x,y,color().magenta,True,filled=False)
+    # pen.drawSpline(x,y,color.yellow,True,filled=True)
+    pen.drawSpline(x, y, color.magenta, True, filled=False)
 
     for i in range(npart):
-        dx = rnd.randint(-5,5)
-        dy = rnd.randint(-5,5)
+        dx = rnd.randint(-5, 5)
+        dy = rnd.randint(-5, 5)
 
-        if pen.spln.getInside(xpart[i]+dx,ypart[i]+dy):
+        if pen.spln.get_inside(xpart[i] + dx, ypart[i] + dy):
             xpart[i] += dx
             ypart[i] += dy
 
     for i in range(npart):
-        pen.drawCircle(xpart[i],ypart[i],5,color().magenta,True)
+        pen.drawCircle(xpart[i], ypart[i], 5, color.magenta, True)
 
     screen.update()
     screen.pause(12)
