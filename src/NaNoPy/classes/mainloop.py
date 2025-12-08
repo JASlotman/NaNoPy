@@ -43,11 +43,8 @@ from NaNoPy.custom_types import WindowType
 
 try:  # Pillow is only required for notebook embedding
     from PIL import Image
-except ImportError:  # pragma: no cover - optional dependency
-    Image = None  # type: ignore
-    PILImageType = Any
-else:
-    PILImageType = Image.Image
+except ImportError:
+    pass
 
 
 class Mainloop:
@@ -86,15 +83,13 @@ class Mainloop:
 
         self._handle_events()
 
-    def update_embedded(self, name) -> PILImageType:
+    def update_embedded(self, name) -> Image:
         if Image is None:
             raise RuntimeError("Embedded rendering requires Pillow to be installed")
 
         window, ren = self.get_window_and_renderer(name)
 
         self._handle_events()
-
-        texture = self._copy_persistent_texture(name, ren)
 
         x_size = ctypes.c_int()
         y_size = ctypes.c_int()
@@ -129,7 +124,7 @@ class Mainloop:
             if not surface_freed: SDL_FreeSurface(surface) # Free memory
 
             # Return black image on error
-            return Image.new("1", (xSize.value, ySize.value))
+            return Image.new("1", (x_size.value, y_size.value))
         
 
     def get_window_and_renderer(self, name: str):
