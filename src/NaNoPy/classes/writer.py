@@ -12,14 +12,12 @@ from sdl2.sdlgfx import stringColor
 
 from sdl2 import SDL_RENDERER_ACCELERATED
 from sdl2 import SDL_RENDERER_PRESENTVSYNC
+from sdl2 import SDL_RENDERER_TARGETTEXTURE
 from sdl2 import SDL_CreateRenderer
 from sdl2 import SDL_GetWindowSize
-from sdl2 import SDL_GetRenderer
 from sdl2 import SDL_SetRenderDrawColor
 from sdl2 import SDL_RenderClear
-from sdl2 import SDL_GetWindowSurface
-from sdl2 import SDL_CreateRGBSurface
-from sdl2 import SDL_BlitSurface
+from sdl2 import SDL_SetRenderTarget
 
 import ctypes
 import math
@@ -42,8 +40,12 @@ class WriterNaive:
     """
 
     def __init__(self, window, *, driver=-1, NNP: Mainloop):
-        render_flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
+        render_flags = (
+            SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE
+        )
         self.renderer = SDL_CreateRenderer(NNP.windows.get(window.name), driver, render_flags)
+        self._window_name = window.name
+        self._NNP = NNP
         x = [0]
         y = [0]
         xobj = (ctypes.c_int32 * len(x))(*x)
@@ -52,15 +54,21 @@ class WriterNaive:
         self.x_size = xobj[0]
         self.y_size = yobj[0]
 
-        # solves the mac bug essentially adding a clear before initialisation of the writer
-        ren = SDL_GetRenderer(NNP.windows.get(window.name))
-        SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
-        SDL_RenderClear(ren)
+        self._persistent_texture = self._init_persistent_target()
 
-        # Blitting a clear surface to the renderer before writing something
-        surface_old = SDL_GetWindowSurface(NNP.windows.get(window.name))
-        surface_new = SDL_CreateRGBSurface(0, self.x_size, self.y_size, 32, 255, 0, 0, 0)
-        SDL_BlitSurface(surface_new, None, surface_old, None)
+    def _init_persistent_target(self):
+        texture = self._NNP.ensure_persistent_texture(
+            self._window_name,
+            self.renderer,
+            self.x_size,
+            self.y_size,
+        )
+        if not texture:
+            raise RuntimeError("Failed to allocate persistent drawing texture")
+        SDL_SetRenderTarget(self.renderer, texture)
+        SDL_SetRenderDrawColor(self.renderer, 0, 0, 0, 255)
+        SDL_RenderClear(self.renderer)
+        return texture
 
     def draw_pixel(self, x, y, color) -> None:
         """Draws pixels of given color on x,y coordinate.
