@@ -59,9 +59,7 @@ class Color:
         """
 
         if r is None and g is None and b is None:
-            raise ValueError(
-                "Provide at least one of r, g or b when requesting a custom color."
-            )
+            raise ValueError("Provide at least one of r, g or b when requesting a custom color.")
 
         red = 0 if r is None else r
         green = 0 if g is None else g

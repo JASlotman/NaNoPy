@@ -1,10 +1,9 @@
 import math
-from typing import Iterable, SupportsFloat, SupportsInt, Union
-
 import numpy as np
+from typing import Iterable
 from numpy.typing import NDArray
+from NaNoPy.custom_types.generalized_types import NumberLike
 
-NumberLike = Union[int, float, SupportsFloat, SupportsInt]
 Array1D = NDArray[np.float64]
 
 

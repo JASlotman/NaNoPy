@@ -7,29 +7,15 @@ from sdl2.sdlgfx import filledPolygonColor
 from sdl2.sdlgfx import filledCircleColor
 from sdl2.sdlgfx import aapolygonColor
 from sdl2.sdlgfx import aacircleColor
-from sdl2.sdlgfx import gfxPrimitivesSetFont
 from sdl2.sdlgfx import stringColor
-
-from sdl2 import SDL_RENDERER_ACCELERATED
-from sdl2 import SDL_RENDERER_PRESENTVSYNC
-from sdl2 import SDL_CreateRenderer
-from sdl2 import SDL_GetWindowSize
-from sdl2 import SDL_GetRenderer
-from sdl2 import SDL_SetRenderDrawColor
-from sdl2 import SDL_RenderClear
-from sdl2 import SDL_GetWindowSurface
-from sdl2 import SDL_CreateRGBSurface
-from sdl2 import SDL_BlitSurface
 
 import ctypes
 import math
+import warnings
 
+from NaNoPy.classes.canvas import CanvasNaive
 from NaNoPy.classes.mainloop import Mainloop
 from NaNoPy.classes.spline import Spline
-
-from NaNoPy.custom_types.generalized_types import NumberLike
-
-import warnings
 
 from typing import Iterable
 
@@ -41,26 +27,17 @@ class WriterNaive:
     canvas: nanopy canvas
     """
 
-    def __init__(self, window, *, driver=-1, NNP: Mainloop):
-        render_flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
-        self.renderer = SDL_CreateRenderer(NNP.windows.get(window.name), driver, render_flags)
-        x = [0]
-        y = [0]
-        xobj = (ctypes.c_int32 * len(x))(*x)
-        yobj = (ctypes.c_int32 * len(y))(*y)
-        SDL_GetWindowSize(NNP.windows.get(window.name), xobj, yobj)
-        self.x_size = xobj[0]
-        self.y_size = yobj[0]
+    def __init__(self, canvas: CanvasNaive, *, NNP: Mainloop):
+        self.canvas = canvas
+        self.window = canvas.window
+        self.renderer = canvas.renderer
 
-        # solves the mac bug essentially adding a clear before initialisation of the writer
-        ren = SDL_GetRenderer(NNP.windows.get(window.name))
-        SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
-        SDL_RenderClear(ren)
+        self._window_name = self.canvas.name
+        self._NNP = NNP
 
-        # Blitting a clear surface to the renderer before writing something
-        surface_old = SDL_GetWindowSurface(NNP.windows.get(window.name))
-        surface_new = SDL_CreateRGBSurface(0, self.x_size, self.y_size, 32, 255, 0, 0, 0)
-        SDL_BlitSurface(surface_new, None, surface_old, None)
+    @property
+    def y_size(self):
+        return self.canvas.get_window_size()[1]
 
     def draw_pixel(self, x, y, color) -> None:
         """Draws pixels of given color on x,y coordinate.
@@ -87,11 +64,6 @@ class WriterNaive:
         aalineColor(
             self.renderer, int(x1), int(self.y_size - y1), int(x2), int(self.y_size - y2), color
         )
-
-        # option not using the gfx library
-        #     SDL_SetRenderDrawBlendMode(self.renderer, SDL_BLENDMODE_NONE)
-        #     SDL_SetRenderDrawColor(self.renderer, color.a,color.b,color.g,color.r)
-        #     SDL_RenderDrawLine(self.renderer, int(x1), int(self.ySize-y1), int(x2), int(self.ySize-y2))
 
     def drawLine(self, x1, y1, x2, y2, color) -> None:
         """(deprecated, use draw_line() instead)
@@ -281,7 +253,9 @@ class WriterNaive:
 
     def draw_string(self, x, y, color, text: str) -> None:
         """Draws string on location x,y with given color"""
-        gfxPrimitivesSetFont(None, 0, 0)
+
+        self.canvas._reload_fonts = True
+
         stringColor(self.renderer, int(x), int(self.y_size - y), str.encode(text), color)
 
     def drawString(self, x, y, color, text: str) -> None:

@@ -1,4 +1,4 @@
-#simple test
+# simple test
 from NaNoPy import Canvas, Writer, Color
 
 
@@ -28,5 +28,6 @@ def demo() -> None:
         screen_side.update()
         screen_side.pause(500)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     demo()
