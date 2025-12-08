@@ -76,7 +76,7 @@ class Mainloop:
         window, ren = self.get_window_and_renderer(name)
 
         flags = SDL_GetWindowFlags(window)
-        if flags & SDL_WINDOW_HIDDEN:
+        if (flags & SDL_WINDOW_HIDDEN):
             SDL_ShowWindow(window)
 
         texture = self._copy_persistent_texture(name, ren)
