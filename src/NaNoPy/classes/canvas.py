@@ -1,9 +1,10 @@
 from sdl2 import SDL_CreateWindow
 from sdl2 import SDL_CreateRenderer
-from sdl2 import SDL_WINDOWPOS_CENTERED
-from sdl2 import SDL_WINDOW_HIDDEN
 from sdl2 import SDL_GetWindowPosition
 from sdl2 import SDL_GetWindowSize
+
+from sdl2 import SDL_WINDOWPOS_CENTERED
+from sdl2 import SDL_WINDOW_HIDDEN
 
 from NaNoPy.custom_types import WindowType
 from NaNoPy.classes.listener import Listener
@@ -14,6 +15,7 @@ import warnings
 import ctypes
 
 from PIL.Image import Image
+
 
 class CanvasNaive:
     """NaNoPy Canvas object
@@ -35,7 +37,7 @@ class CanvasNaive:
         *,
         x_pos: int = -1,
         y_pos: int = -1,
-        driver = -1,
+        driver=-1,
         NNP: Mainloop,
     ):
         if x_pos < 0 or y_pos < 0:
@@ -52,7 +54,6 @@ class CanvasNaive:
         self.listener: None | Listener = None
         self.NNP = NNP
         self.NNP.add_canvas(self)
-
 
         self._reload_fonts = False
         self._persistent_texture = None
@@ -121,7 +122,7 @@ class CanvasNaive:
     def running(self) -> bool:
         """method returning if a process is running in the canvas, returns false if window is closed"""
         return self.NNP.running
-    
+
     def get_window_pos(self) -> tuple[int, int]:
         x_pos = ctypes.c_int()
         y_pos = ctypes.c_int()
@@ -129,12 +130,13 @@ class CanvasNaive:
         SDL_GetWindowPosition(self.window, x_pos, y_pos)
 
         return (x_pos.value, y_pos.value)
-    
+
     def get_window_size(self) -> tuple[int, int]:
         """Get the size of the active window"""
 
-        if self._window_size_cache is not None: return self._window_size_cache
-        
+        if self._window_size_cache is not None:
+            return self._window_size_cache
+
         x_size = ctypes.c_int()
         y_size = ctypes.c_int()
 
@@ -143,4 +145,3 @@ class CanvasNaive:
         self._window_size_cache = (x_size.value, y_size.value)
 
         return self._window_size_cache
-

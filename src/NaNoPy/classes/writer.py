@@ -7,17 +7,7 @@ from sdl2.sdlgfx import filledPolygonColor
 from sdl2.sdlgfx import filledCircleColor
 from sdl2.sdlgfx import aapolygonColor
 from sdl2.sdlgfx import aacircleColor
-from sdl2.sdlgfx import gfxPrimitivesSetFont
 from sdl2.sdlgfx import stringColor
-
-from sdl2 import SDL_RENDERER_ACCELERATED
-from sdl2 import SDL_RENDERER_PRESENTVSYNC
-from sdl2 import SDL_RENDERER_TARGETTEXTURE
-from sdl2 import SDL_CreateRenderer
-from sdl2 import SDL_GetWindowSize
-from sdl2 import SDL_SetRenderDrawColor
-from sdl2 import SDL_RenderClear
-from sdl2 import SDL_SetRenderTarget
 
 import ctypes
 import math
@@ -37,18 +27,17 @@ class WriterNaive:
     canvas: nanopy canvas
     """
 
-    def __init__(self, canvas: CanvasNaive, *, NNP: Mainloop): 
-        self.canvas = canvas       
+    def __init__(self, canvas: CanvasNaive, *, NNP: Mainloop):
+        self.canvas = canvas
         self.window = canvas.window
         self.renderer = canvas.renderer
-    
+
         self._window_name = self.canvas.name
         self._NNP = NNP
 
     @property
     def y_size(self):
         return self.canvas.get_window_size()[1]
-        
 
     def draw_pixel(self, x, y, color) -> None:
         """Draws pixels of given color on x,y coordinate.
