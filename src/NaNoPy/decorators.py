@@ -3,7 +3,7 @@ from NaNoPy import Canvas, Writer
 from NaNoPy.classes.moviewriter import MovieWriter
 from typing import Optional
 
-try: # Pillow and IPython is only required for notebook embedding
+try:  # Pillow and IPython is only required for notebook embedding
     from IPython.display import clear_output, display
     from PIL import Image
 except ImportError:
@@ -17,7 +17,7 @@ def loop(
     embedded: bool = True,
     additive: bool = False,
     record_mp4: Optional[str] = None,
-    fps: int = 30
+    fps: int = 30,
 ):
     """
     Decorator for running an animation loop in a Jupyter notebook environment.
@@ -29,15 +29,15 @@ def loop(
         frame_count (int): The total **number of frames** the animation should run for.
         xSize (int, optional): The **width** of the rendering window in pixels. Defaults to 300.
         ySize (int, optional): The **height** of the rendering window in pixels. Defaults to 300.
-        embedded (bool, optional): If **True**, the output will be displayed directly 
-                                   in the notebook cell output (e.g., for Jupyter/IPython). 
+        embedded (bool, optional): If **True**, the output will be displayed directly
+                                   in the notebook cell output (e.g., for Jupyter/IPython).
                                    Defaults to True.
         additive (bool, optional): Controls how frames are rendered.
-                                   If **True**, new frames are accumulated on top of 
-                                   previous frames (additive rendering), meaning the 
+                                   If **True**, new frames are accumulated on top of
+                                   previous frames (additive rendering), meaning the
                                    screen is not cleared between iterations.
-                                   If **False**, the screen is cleared at the start 
-                                   of each new frame (non-additive or standard rendering). 
+                                   If **False**, the screen is cleared at the start
+                                   of each new frame (non-additive or standard rendering).
                                    Defaults to False.
         record_mp4 (str, optional): If provided, records the animation to an MP4 file
                                     at the specified path. Frames are only captured when
@@ -66,7 +66,7 @@ def loop(
 
     screen = Canvas("Jupyter_Internal", xSize, ySize)
     pen = Writer(screen)
-    
+
     # Setup movie recording if requested
     movie_writer = None
     if record_mp4:
@@ -97,7 +97,7 @@ def loop(
 
             if im is False:
                 break
-        
+
         # Stop recording and save MP4 if it was enabled
         if movie_writer and movie_writer.is_recording:
             screen.stop_recording()
@@ -107,4 +107,3 @@ def loop(
         screen.NNP.stop()
 
     return decorator
-
