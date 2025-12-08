@@ -54,24 +54,10 @@ class Mainloop:
         SDL_Init(SDL_INIT_VIDEO)
         self.event = SDL_Event()
         self.running: bool = True
-        self.windows: dict[str, WindowType] = {} # Not used
         self.canvasses: dict[str, CanvasNaive] = {}
         self.listeners: dict[str, Listener] = {}
 
         self.multiple_windows = False
-
-    def addwindow(self, name: str, window: WindowType) -> None:
-        """(deprecated, use add_window() instead.)"""
-        warnings.warn(
-            "addwindow() is deprecated and will be removed in a future version. "
-            "Use add_window() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self.add_window(name, window)
-
-    def add_window(self, name, window: WindowType) -> None:
-        self.windows[name] = window
 
     def add_canvas(self, canvas: "CanvasNaive"):
         self.canvasses[canvas.name] = canvas
@@ -143,13 +129,7 @@ class Mainloop:
 
             # Return black image on error
             return Image.new("1", (x_size, y_size))
-        
 
-    def get_window_and_renderer(self, name: str):
-        window = self.windows.get(name)
-        ren = SDL_GetRenderer(window)
-
-        return window, ren
 
     def _handle_events(self):
         while SDL_PollEvent(ctypes.byref(self.event)) != 0:
