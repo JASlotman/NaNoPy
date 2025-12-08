@@ -136,13 +136,11 @@ class Mainloop:
 
     def _handle_events(self):
         while SDL_PollEvent(ctypes.byref(self.event)) != 0:
-            if (
-                self.event.type == SDL_WINDOWEVENT
-                and self.event.window.event == SDL_WINDOWEVENT_CLOSE
-            ):
+            if (self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE):
                 self.stop()
-            for lstnr in self.listeners:
-                self.listeners[lstnr].run(self.event)  # type: ignore
+
+            for listener in self.listeners.values():
+                listener.run(self.event) 
 
     def clear(self, name):
         _, ren = self.get_window_and_renderer(name)
@@ -161,8 +159,8 @@ class Mainloop:
 
         self._persistent_textures.clear()
 
-        for win in self.windows:
-            SDL_DestroyWindow(self.windows[win])
+        for win in self.windows.values():
+            SDL_DestroyWindow(win)
 
         SDL_Quit()
 

@@ -1,12 +1,14 @@
 from sdl2 import SDL_CreateWindow
 from sdl2 import SDL_WINDOWPOS_CENTERED
 from sdl2 import SDL_WINDOW_HIDDEN
+from sdl2 import SDL_GetWindowPosition
 
 from NaNoPy.custom_types import WindowType
 from NaNoPy.classes.listener import Listener
 from NaNoPy.classes.mainloop import Mainloop
 
 import warnings
+import ctypes
 
 try:  # Pillow is only required for notebook embedding
     from PIL.Image import Image
@@ -40,14 +42,14 @@ class CanvasNaive:
             x_pos = SDL_WINDOWPOS_CENTERED
             y_pos = SDL_WINDOWPOS_CENTERED
 
-        window: WindowType = SDL_CreateWindow(
+        self.window: WindowType = SDL_CreateWindow(
             str.encode(name), x_pos, y_pos, x_size, y_size, SDL_WINDOW_HIDDEN
         )
 
         self.name = name
         self.listener: None | Listener = None
         self.NNP = NNP
-        self.NNP.add_window(name, window)
+        self.NNP.add_window(name, self.window)
 
     def add_listener(self, listener: Listener) -> None:
         """Adds a listener object
@@ -110,3 +112,11 @@ class CanvasNaive:
     def running(self) -> bool:
         """method returning if a process is running in the canvas, returns false if window is closed"""
         return self.NNP.running
+    
+    def get_window_pos(self) -> tuple[int, int]:
+        x_pos = ctypes.c_int()
+        y_pos = ctypes.c_int()
+
+        SDL_GetWindowPosition(self.window, x_pos, y_pos)
+
+        return (x_pos.value, y_pos.value)

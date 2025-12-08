@@ -27,5 +27,6 @@ src/NaNoPy/demos/mac_problem.py
 src/NaNoPy/demos/multiple_windows.py
 src/NaNoPy/demos/nerve.py
 src/NaNoPy/demos/randommove.py
+src/NaNoPy/demos/speed.py
 src/NaNoPy/demos/splines.py
 src/NaNoPy/demos/squares.py

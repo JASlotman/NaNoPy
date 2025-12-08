@@ -55,6 +55,7 @@ class WriterNaive:
         self.y_size = yobj[0]
 
         self._persistent_texture = self._init_persistent_target()
+        gfxPrimitivesSetFont(None, 0, 0)
 
     def _init_persistent_target(self):
         texture = self._NNP.ensure_persistent_texture(
@@ -289,7 +290,7 @@ class WriterNaive:
 
     def draw_string(self, x, y, color, text: str) -> None:
         """Draws string on location x,y with given color"""
-        gfxPrimitivesSetFont(None, 0, 0)
+
         stringColor(self.renderer, int(x), int(self.y_size - y), str.encode(text), color)
 
     def drawString(self, x, y, color, text: str) -> None:
