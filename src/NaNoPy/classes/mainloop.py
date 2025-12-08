@@ -175,9 +175,7 @@ class Mainloop:
 
         for canvas in self.canvasses.values():
             SDL_DestroyTexture(canvas._persistent_texture)
-
-        for win in self.windows.values():
-            SDL_DestroyWindow(win)
+            SDL_DestroyWindow(canvas.window)
 
         SDL_Quit()
 
