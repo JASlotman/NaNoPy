@@ -10,11 +10,7 @@ from NaNoPy.classes.mainloop import Mainloop
 import warnings
 import ctypes
 
-try:  # Pillow is only required for notebook embedding
-    from PIL.Image import Image
-except ImportError:
-    pass
-
+from PIL.Image import Image
 
 class CanvasNaive:
     """NaNoPy Canvas object
@@ -107,7 +103,7 @@ class CanvasNaive:
             DeprecationWarning,
             stacklevel=2,
         )
-        self.keep_window
+        self.keep_window()
 
     def running(self) -> bool:
         """method returning if a process is running in the canvas, returns false if window is closed"""
