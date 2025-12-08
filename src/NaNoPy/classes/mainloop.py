@@ -34,16 +34,19 @@ from sdl2 import SDL_BLENDMODE_BLEND
 from sdl2.ext import save_bmp
 from sdl2.sdlgfx import gfxPrimitivesSetFont
 
+from sdl2.rwops import rw_from_object
+from sdl2.sdlimage import IMG_SavePNG_RW
+
 import ctypes
 import warnings
-import tempfile
+
 from typing import Optional, TYPE_CHECKING
 
 from NaNoPy.classes.listener import Listener
 from NaNoPy.constants import ARGB_MASK
-from NaNoPy.custom_types import WindowType
 
 from PIL import Image
+from io import BytesIO
 
 if TYPE_CHECKING:
     from NaNoPy.classes.canvas import CanvasNaive
@@ -114,13 +117,18 @@ class Mainloop:
         surface_freed = False
 
         try:
-            with tempfile.NamedTemporaryFile() as tmp:
-                save_bmp(surface, tmp.name, True)
+            output_buffer = BytesIO()
+            rw_stream = rw_from_object(output_buffer)
 
-                img = Image.open(tmp.name)
-                SDL_FreeSurface(surface)  # Free memory
-                return img
-   
+            IMG_SavePNG_RW(surface, rw_stream, 0)
+
+            SDL_FreeSurface(surface)
+            surface_freed = True
+
+            output_buffer.seek(0)
+            img = Image.open(output_buffer)
+
+            return img   
         except Exception as e:
             print(f"Failed to save frame: {e}")
 
