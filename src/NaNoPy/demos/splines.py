@@ -66,8 +66,8 @@ def demo() -> None:
         if not first:
             splinedy = pen.spln.spliney
 
-        pen.draw_spline(x, np.array(y) - 50, Color.green, False, False)
-        pen.draw_spline(x, np.array(y) + 50, Color.green, False, False)
+        pen.draw_spline(x, np.array(y) - 50, Color.green, False)
+        pen.draw_spline(x, np.array(y) + 50, Color.green, False)
 
         if not first:
             spsize = min(pen.spln.spliney.size, splinedy.size)

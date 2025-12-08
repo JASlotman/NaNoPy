@@ -32,8 +32,8 @@ def demo() -> None:
     pen.draw_polygon(202, 250, 25, 6, green_light, True)
 
     # closed and open splines
-    pen.draw_spline([400, 500, 500, 400], [200, 200, 300, 300], Color.red, True, True)
-    pen.draw_spline([600, 700, 700, 600], [200, 200, 300, 300], green_blue, True, False)
+    pen.draw_spline([400, 500, 500, 400], [200, 200, 300, 300], Color.red, True, fill_color=Color.yellow)
+    pen.draw_spline([600, 700, 700, 600], [200, 200, 300, 300], green_blue, True, filled=False)
 
     # red points at spline anchors
     pen.draw_circle(400, 200, 5, Color.red, True)
