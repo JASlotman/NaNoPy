@@ -2,12 +2,10 @@ from sdl2 import SDL_Event
 
 from sdl2 import SDL_Init
 from sdl2 import SDL_GetWindowFlags
-from sdl2 import SDL_GetWindowSize
 from sdl2 import SDL_CreateRGBSurface
 from sdl2 import SDL_FreeSurface
 from sdl2 import SDL_RenderReadPixels
 from sdl2 import SDL_ShowWindow
-from sdl2 import SDL_GetRenderer
 from sdl2 import SDL_RenderPresent
 from sdl2 import SDL_PollEvent
 from sdl2 import SDL_SetRenderDrawColor
@@ -31,7 +29,6 @@ from sdl2 import SDL_PIXELFORMAT_RGBA8888
 from sdl2 import SDL_TEXTUREACCESS_TARGET
 from sdl2 import SDL_BLENDMODE_BLEND
 
-from sdl2.ext import save_bmp
 from sdl2.sdlgfx import gfxPrimitivesSetFont
 
 from sdl2.rwops import rw_from_object
@@ -43,6 +40,7 @@ import warnings
 from typing import Optional, TYPE_CHECKING
 
 from NaNoPy.classes.listener import Listener
+from NaNoPy.classes.moviewriter import MovieWriter
 from NaNoPy.constants import ARGB_MASK
 
 from PIL import Image
@@ -59,8 +57,9 @@ class Mainloop:
         self.running: bool = True
         self.canvasses: dict[str, CanvasNaive] = {}
         self.listeners: dict[str, Listener] = {}
-
         self.multiple_windows = False
+        self._persistent_textures: dict[str, ctypes.c_void_p] = {}
+        self._movie_writer: Optional[MovieWriter] = None
 
     def add_canvas(self, canvas: "CanvasNaive"):
         self.canvasses[canvas.name] = canvas
@@ -157,6 +156,46 @@ class Mainloop:
 
     def pause(self, time):
         SDL_Delay(time)
+
+    def start_recording(self, output_path: str, fps: int = 30) -> MovieWriter:
+        """Start recording animation frames to MP4.
+        
+        Args:
+            output_path (str): Where to save the MP4 file
+            fps (int): Frames per second for output video (default: 30)
+        
+        Returns:
+            MovieWriter: The movie writer object (also stored internally)
+        """
+        self._movie_writer = MovieWriter(output_path, fps)
+        self._movie_writer.start_recording()
+        return self._movie_writer
+    
+    def stop_recording(self) -> Optional[MovieWriter]:
+        """Stop recording frames. Call save() on returned object to encode."""
+        if self._movie_writer:
+            self._movie_writer.stop_recording()
+            return self._movie_writer
+        return None
+    
+    def save_recording(self, codec: str = "libx264") -> Optional[str]:
+        """Save the recorded animation as MP4.
+        
+        Args:
+            codec (str): Video codec ("libx264", "libx265", etc.)
+        
+        Returns:
+            str: Path to saved MP4 file, or None if no recording
+        """
+        if self._movie_writer:
+            path = self._movie_writer.save(codec)
+            self._movie_writer = None
+            return str(path)
+        return None
+    
+    def get_movie_writer(self) -> Optional[MovieWriter]:
+        """Get the current movie writer object (useful for advanced usage)."""
+        return self._movie_writer
 
     def stop(self):
         self.running = False

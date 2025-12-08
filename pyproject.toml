@@ -28,6 +28,9 @@ dependencies = [
 interactive = [
     "ipython"
 ]
+video = [
+    "ffmpeg"
+]
 
 [project.urls]
 Homepage = "https://erasmusoic.nl"

@@ -10,9 +10,11 @@ from NaNoPy.custom_types import WindowType
 from NaNoPy.classes.listener import Listener
 from NaNoPy.classes.mainloop import Mainloop
 from NaNoPy.constants import RENDER_FLAGS
+from NaNoPy.classes.moviewriter import MovieWriter
 
 import warnings
 import ctypes
+from typing import Optional
 
 from PIL.Image import Image
 
@@ -145,3 +147,40 @@ class CanvasNaive:
         self._window_size_cache = (x_size.value, y_size.value)
 
         return self._window_size_cache
+    def start_recording(self, output_path: str, fps: int = 30) -> MovieWriter:
+        """Start recording animation frames to MP4.
+        
+        Args:
+            output_path (str): Where to save the MP4 file
+            fps (int): Frames per second for output video (default: 30)
+        
+        Returns:
+            MovieWriter: The movie writer object
+            
+        Example:
+            >>> canvas = Canvas("my_window", 800, 600)
+            >>> movie = canvas.start_recording("animation.mp4", fps=30)
+            >>> # ... animation loop ...
+            >>> canvas.stop_recording()
+            >>> canvas.save_recording()  # Encodes MP4
+        """
+        return self.NNP.start_recording(output_path, fps)
+    
+    def stop_recording(self) -> Optional[MovieWriter]:
+        """Stop recording frames. Call save_recording() to encode MP4."""
+        return self.NNP.stop_recording()
+    
+    def save_recording(self, codec: str = "libx264") -> Optional[str]:
+        """Save the recorded animation as MP4.
+        
+        Args:
+            codec (str): Video codec ("libx264", "libx265", etc.)
+        
+        Returns:
+            str: Path to saved MP4 file, or None if no recording
+        """
+        return self.NNP.save_recording(codec)
+    
+    def get_movie_writer(self) -> Optional[MovieWriter]:
+        """Get the current movie writer object (for advanced usage)."""
+        return self.NNP.get_movie_writer()
