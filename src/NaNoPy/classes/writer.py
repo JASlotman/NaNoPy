@@ -21,14 +21,11 @@ from sdl2 import SDL_SetRenderTarget
 
 import ctypes
 import math
+import warnings
 
 from NaNoPy.classes.canvas import CanvasNaive
 from NaNoPy.classes.mainloop import Mainloop
 from NaNoPy.classes.spline import Spline
-
-from NaNoPy.custom_types.generalized_types import NumberLike
-
-import warnings
 
 from typing import Iterable
 
@@ -78,11 +75,6 @@ class WriterNaive:
         aalineColor(
             self.renderer, int(x1), int(self.y_size - y1), int(x2), int(self.y_size - y2), color
         )
-
-        # option not using the gfx library
-        #     SDL_SetRenderDrawBlendMode(self.renderer, SDL_BLENDMODE_NONE)
-        #     SDL_SetRenderDrawColor(self.renderer, color.a,color.b,color.g,color.r)
-        #     SDL_RenderDrawLine(self.renderer, int(x1), int(self.ySize-y1), int(x2), int(self.ySize-y2))
 
     def drawLine(self, x1, y1, x2, y2, color) -> None:
         """(deprecated, use draw_line() instead)
