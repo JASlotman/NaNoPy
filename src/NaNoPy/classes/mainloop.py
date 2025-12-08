@@ -224,6 +224,10 @@ class Mainloop:
     
         canvas._persistent_texture = texture
 
+        SDL_SetRenderTarget(canvas.renderer, texture)
+        SDL_SetRenderDrawColor(canvas.renderer, 0, 0, 0, 255)
+        SDL_RenderClear(canvas.renderer)
+
         return texture
 
     def _copy_persistent_texture(self, canvas: "CanvasNaive") -> Optional[ctypes.c_void_p]:
