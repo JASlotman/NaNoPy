@@ -121,7 +121,8 @@ class Mainloop:
         except Exception as e:
             print(f"Failed to save frame: {e}")
 
-            if not surface_freed: SDL_FreeSurface(surface) # Free memory
+            if not surface_freed:         # Free memory
+                SDL_FreeSurface(surface)
 
             # Return black image on error
             return Image.new("1", (x_size.value, y_size.value))
@@ -146,8 +147,10 @@ class Mainloop:
     def clear(self, name):
         ren = SDL_GetRenderer(self.windows.get(name))
         texture = self._persistent_textures.get(name)
+
         if texture:
             SDL_SetRenderTarget(ren, texture)
+
         SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
         SDL_RenderClear(ren)
 
@@ -161,11 +164,15 @@ class Mainloop:
 
     def stop(self):
         self.running = False
+
         for tex in self._persistent_textures.values():
             SDL_DestroyTexture(tex)
+
         self._persistent_textures.clear()
+
         for win in self.windows:
             SDL_DestroyWindow(self.windows[win])
+
         SDL_Quit()
 
     def keep(self):
@@ -192,8 +199,11 @@ class Mainloop:
 
     def ensure_persistent_texture(self, name: str, renderer, width: int, height: int):
         texture = self._persistent_textures.get(name)
+
+        # If texture exist already return
         if texture:
             return texture
+
         texture = SDL_CreateTexture(
             renderer,
             SDL_PIXELFORMAT_RGBA8888,
@@ -201,16 +211,22 @@ class Mainloop:
             width,
             height,
         )
-        if not texture:
-            raise RuntimeError("Failed to create persistent render texture")
+
+        # Set blending mode to alpha blending
+        # This ensures overlapping textures render correctly
         SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND)
+    
         self._persistent_textures[name] = texture
+
         return texture
 
     def _copy_persistent_texture(self, name: str, renderer) -> Optional[ctypes.c_void_p]:
         texture = self._persistent_textures.get(name)
+
         if not texture:
             return None
+        
         SDL_SetRenderTarget(renderer, None)
         SDL_RenderCopy(renderer, texture, None, None)
+
         return texture

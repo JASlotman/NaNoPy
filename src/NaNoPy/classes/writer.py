@@ -63,11 +63,11 @@ class WriterNaive:
             self.x_size,
             self.y_size,
         )
-        if not texture:
-            raise RuntimeError("Failed to allocate persistent drawing texture")
+
         SDL_SetRenderTarget(self.renderer, texture)
         SDL_SetRenderDrawColor(self.renderer, 0, 0, 0, 255)
         SDL_RenderClear(self.renderer)
+
         return texture
 
     def draw_pixel(self, x, y, color) -> None:
