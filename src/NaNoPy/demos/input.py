@@ -1,24 +1,5 @@
 from NaNoPy import Canvas, Writer, Color
-from sdl2 import SDL_KEYDOWN, SDLK_RIGHT, SDLK_LEFT, SDL_KEYUP
-from sdl2 import SDL_Event
-
-from NaNoPy.classes import Listener
-
-
-class LeftRightListener(Listener):
-    def __init__(self, name: str):
-        super().__init__(name)
-        self.dx = 0
-
-    def run(self, event: SDL_Event) -> None:
-        if event.type == SDL_KEYDOWN:
-            if event.key.keysym.sym == SDLK_RIGHT:
-                self.dx = 3
-            elif event.key.keysym.sym == SDLK_LEFT:
-                self.dx = -3
-        elif event.type == SDL_KEYUP:
-            if event.key.keysym.sym in (SDLK_RIGHT, SDLK_LEFT):
-                self.dx = 0
+from NaNoPy.classes import KeyListener
 
 
 def demo() -> None:
@@ -28,7 +9,49 @@ def demo() -> None:
     screen = Canvas("Input Demo", x_size, y_size)
     p = Writer(screen)
 
-    listener = LeftRightListener("move")
+    dx = 0
+    pressed: set[str] = set()
+
+    def _apply_state() -> None:
+        nonlocal dx
+        if "left" in pressed and "right" in pressed:
+            dx = 0
+        elif "left" in pressed:
+            dx = -3
+        elif "right" in pressed:
+            dx = 3
+        else:
+            dx = 0
+
+    def _press(direction: str) -> None:
+        pressed.add(direction)
+        _apply_state()
+
+    def _release(direction: str) -> None:
+        pressed.discard(direction)
+        _apply_state()
+
+    def press_left(_):
+        _press("left")
+
+    def press_right(_):
+        _press("right")
+
+    def release_left(_):
+        _release("left")
+
+    def release_right(_):
+        _release("right")
+
+    listener = KeyListener(
+        name="move",
+        bindings={
+            "left": (press_left, release_left),
+            "right": (press_right, release_right),
+            "a": (lambda _: _press("left"), lambda _: _release("left")),
+            "d": (lambda _: _press("right"), lambda _: _release("right")),
+        },
+    )
     screen.add_listener(listener)
 
     width = 50
@@ -37,7 +60,7 @@ def demo() -> None:
     y = y_size / 2 - height / 2
 
     while screen.running():
-        x += listener.dx
+        x += dx
         p.draw_rectangle(x, y, width, height, Color.white, True)
         screen.update()
         screen.pause(12)
