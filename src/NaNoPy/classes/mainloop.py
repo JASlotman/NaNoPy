@@ -19,16 +19,16 @@ from sdl2 import SDL_DestroyTexture
 from sdl2 import SDL_CreateTexture
 from sdl2 import SDL_SetRenderTarget
 from sdl2 import SDL_RenderCopy
-from sdl2 import SDL_PIXELFORMAT_RGBA8888
-from sdl2 import SDL_TEXTUREACCESS_TARGET
 from sdl2 import SDL_SetTextureBlendMode
-from sdl2 import SDL_BLENDMODE_BLEND
 
 from sdl2 import SDL_INIT_VIDEO
 from sdl2 import SDL_WINDOW_HIDDEN
 from sdl2 import SDL_WINDOWEVENT
 from sdl2 import SDL_WINDOWEVENT_CLOSE
 from sdl2 import SDL_PIXELFORMAT_ARGB8888
+from sdl2 import SDL_PIXELFORMAT_RGBA8888
+from sdl2 import SDL_TEXTUREACCESS_TARGET
+from sdl2 import SDL_BLENDMODE_BLEND
 
 from sdl2.ext import save_bmp
 
