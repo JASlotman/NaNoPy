@@ -73,14 +73,14 @@ class Mainloop:
     def add_window(self, name, window: WindowType) -> None:
         self.windows[name] = window
 
-    def add_canvas(self, canvas: CanvasNaive):
+    def add_canvas(self, canvas: "CanvasNaive"):
         self.canvasses[canvas.name] = canvas
 
         # Don't check it during runtime to reduce accession
         if len(self.canvasses) > 1:
             self.multiple_windows = True
 
-    def update(self, canvas: CanvasNaive):
+    def update(self, canvas: "CanvasNaive"):
         window = canvas.window
         ren = canvas.renderer
 
@@ -99,7 +99,7 @@ class Mainloop:
 
         self._handle_events()
 
-    def update_embedded(self, canvas: CanvasNaive) -> Image.Image:
+    def update_embedded(self, canvas: "CanvasNaive") -> Image.Image:
         if Image is None:
             raise RuntimeError("Embedded rendering requires Pillow to be installed")
 
@@ -163,7 +163,7 @@ class Mainloop:
             for listener in self.listeners.values():
                 listener.run(self.event) 
 
-    def clear(self, canvas: CanvasNaive):
+    def clear(self, canvas: "CanvasNaive"):
         SDL_SetRenderDrawColor(canvas.renderer, 0, 0, 0, 255)
         SDL_RenderClear(canvas.renderer)
 
@@ -203,7 +203,7 @@ class Mainloop:
         )
         self.add_listener(listener)
 
-    def ensure_persistent_texture(self, canvas: CanvasNaive):
+    def ensure_persistent_texture(self, canvas: "CanvasNaive"):
         texture = canvas._persistent_texture
 
         # If texture exist already return
@@ -228,7 +228,7 @@ class Mainloop:
 
         return texture
 
-    def _copy_persistent_texture(self, canvas: CanvasNaive) -> Optional[ctypes.c_void_p]:
+    def _copy_persistent_texture(self, canvas: "CanvasNaive") -> Optional[ctypes.c_void_p]:
         texture = canvas._persistent_texture
 
         if not texture:
