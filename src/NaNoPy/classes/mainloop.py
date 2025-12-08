@@ -25,6 +25,7 @@ from sdl2 import SDL_INIT_VIDEO
 from sdl2 import SDL_WINDOW_HIDDEN
 from sdl2 import SDL_WINDOWEVENT
 from sdl2 import SDL_WINDOWEVENT_CLOSE
+from sdl2 import SDL_WINDOWEVENT_RESIZED
 from sdl2 import SDL_PIXELFORMAT_ARGB8888
 from sdl2 import SDL_PIXELFORMAT_RGBA8888
 from sdl2 import SDL_TEXTUREACCESS_TARGET
@@ -154,6 +155,10 @@ class Mainloop:
         while SDL_PollEvent(ctypes.byref(self.event)) != 0:
             if (self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE):
                 self.stop()
+
+            if (self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_RESIZED):
+                for canvas in self.canvasses.values():
+                    canvas._window_size_cache = None
 
             for listener in self.listeners.values():
                 listener.run(self.event) 
