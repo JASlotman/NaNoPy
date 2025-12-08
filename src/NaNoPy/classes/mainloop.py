@@ -28,11 +28,13 @@ import ctypes
 import platform
 import warnings
 
+from typing import TYPE_CHECKING
+
 from NaNoPy.classes.listener import Listener
 from NaNoPy.constants import ARGB_MASK, IS_JUPYTER
 from NaNoPy.custom_types import WindowType
 
-if IS_JUPYTER:
+if IS_JUPYTER or TYPE_CHECKING:
     import tempfile
     from PIL import Image
 
@@ -68,7 +70,7 @@ class Mainloop:
 
         self._handle_events()
 
-    def update_embedded(self, name) -> Image:
+    def update_embedded(self, name) -> Image.Image:
         window, ren = self.get_window_and_renderer(name)
 
         self._handle_events()
@@ -84,6 +86,8 @@ class Mainloop:
         # Render screen to surface
         SDL_RenderReadPixels(ren, None, SDL_PIXELFORMAT_ARGB8888,
                 surface.contents.pixels, surface.contents.pitch)
+        
+        surface_freed = False
 
         try:
             with tempfile.NamedTemporaryFile() as tmp:
@@ -91,10 +95,15 @@ class Mainloop:
 
                 img = Image.open(tmp.name)
                 SDL_FreeSurface(surface) # Free memory
+                surface_freed = True
+
+                raise Exception("TestError1")
                 return img
         except Exception as e:
-            SDL_FreeSurface(surface) # Free memory
-            print(f"Failed to save frame: {e}")
+            if not surface_freed: SDL_FreeSurface(surface) # Free memory
+
+            # Return black image on error
+            return Image.new("1", (xSize.value, ySize.value))
         
 
     def get_window_and_renderer(self, name: str):
