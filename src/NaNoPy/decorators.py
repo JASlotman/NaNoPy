@@ -10,7 +10,7 @@ def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = 
     """
     Decorator for running an animation loop in a Jupyter notebook environment.
 
-    This function sets up the rendering environment and returns a decorator 
+    This function sets up the rendering environment and returns a decorator
     that handles the frame iteration, screen clearing, and display logic.
 
     Args:
@@ -21,7 +21,7 @@ def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = 
 
     Returns:
         Callable: A decorator function that takes the user's rendering function.
-        
+
     Example:
     ```python
     @loop(frame_count=100)
@@ -34,27 +34,33 @@ def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = 
     """
 
     if not IS_JUPYTER:
-        raise EnvironmentError("The 'loop' function decorator is only available in a Jupyter Notebook or IPython environment.")
+        raise EnvironmentError(
+            "The 'loop' function decorator is only available in a Jupyter Notebook or IPython environment."
+        )
 
-    screen = Canvas("Jupyter_Internal", xSize, ySize) 
+    screen = Canvas("Jupyter_Internal", xSize, ySize)
     pen = Writer(screen)
 
     def decorator(func):
         for i in range(frame_count):
             screen.clear()
-            
-            if embedded: clear_output(True)
+
+            if embedded:
+                clear_output(True)
 
             im = func(screen, pen, i)
 
             if embedded:
-                if isinstance(im, Image.Image): display(im)
-                else: display(screen.update_embedded())
+                if isinstance(im, Image.Image):
+                    display(im)
+                else:
+                    display(screen.update_embedded())
             else:
                 screen.update()
 
-            if im is False: break
+            if im is False:
+                break
 
         screen.NNP.stop()
-    
+
     return decorator

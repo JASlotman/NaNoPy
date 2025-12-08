@@ -15,6 +15,14 @@ from sdl2 import SDL_RenderClear
 from sdl2 import SDL_Delay
 from sdl2 import SDL_DestroyWindow
 from sdl2 import SDL_Quit
+from sdl2 import SDL_DestroyTexture
+from sdl2 import SDL_CreateTexture
+from sdl2 import SDL_SetRenderTarget
+from sdl2 import SDL_RenderCopy
+from sdl2 import SDL_PIXELFORMAT_RGBA8888
+from sdl2 import SDL_TEXTUREACCESS_TARGET
+from sdl2 import SDL_SetTextureBlendMode
+from sdl2 import SDL_BLENDMODE_BLEND
 
 from sdl2 import SDL_INIT_VIDEO
 from sdl2 import SDL_WINDOW_HIDDEN
@@ -25,77 +33,101 @@ from sdl2 import SDL_PIXELFORMAT_ARGB8888
 from sdl2.ext import save_bmp
 
 import ctypes
-import platform
 import warnings
+import tempfile
+from typing import Optional, Any
 
 from NaNoPy.classes.listener import Listener
 from NaNoPy.constants import ARGB_MASK, IS_JUPYTER
 from NaNoPy.custom_types import WindowType
 
-if IS_JUPYTER:
-    import tempfile
+try:  # Pillow is only required for notebook embedding
     from PIL import Image
+except ImportError:  # pragma: no cover - optional dependency
+    Image = None  # type: ignore
+    PILImageType = Any
+else:
+    PILImageType = Image.Image
 
-class Mainloop:    
+
+class Mainloop:
     def __init__(self):
         SDL_Init(SDL_INIT_VIDEO)
         self.event = SDL_Event()
-        self.running:bool = True
-        self.windows:dict[str, WindowType] = dict()
-        self.listeners:dict[str, Listener] = dict()
+        self.running: bool = True
+        self.windows: dict[str, WindowType] = {}
+        self.listeners: dict[str, Listener] = {}
+        self._persistent_textures: dict[str, ctypes.c_void_p] = {}
 
-    def addwindow(self, name:str, window:WindowType) -> None:
+    def addwindow(self, name: str, window: WindowType) -> None:
         """(deprecated, use add_window() instead.)"""
         warnings.warn(
             "addwindow() is deprecated and will be removed in a future version. "
             "Use add_window() instead.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
         self.add_window(name, window)
 
-    def add_window(self, name, window:WindowType) -> None:
+    def add_window(self, name, window: WindowType) -> None:
         self.windows[name] = window
 
     def update(self, name: str):
         window, ren = self.get_window_and_renderer(name)
 
         flags = SDL_GetWindowFlags(window)
-        if (flags & SDL_WINDOW_HIDDEN):
+        if flags & SDL_WINDOW_HIDDEN:
             SDL_ShowWindow(window)
 
+        texture = self._copy_persistent_texture(name, ren)
         SDL_RenderPresent(ren)
+        if texture:
+            SDL_SetRenderTarget(ren, texture)
 
         self._handle_events()
 
-    def update_embedded(self, name) -> Image:
+    def update_embedded(self, name) -> PILImageType:
+        if not IS_JUPYTER:
+            raise RuntimeError("Embedded updates are only available inside notebooks")
+        if Image is None:
+            raise RuntimeError("Embedded rendering requires Pillow to be installed")
+
         window, ren = self.get_window_and_renderer(name)
 
         self._handle_events()
 
-        xSize = ctypes.c_int()
-        ySize = ctypes.c_int()
+        texture = self._copy_persistent_texture(name, ren)
 
-        SDL_GetWindowSize(window, ctypes.byref(xSize), ctypes.byref(ySize))
+        x_size = ctypes.c_int()
+        y_size = ctypes.c_int()
+
+        SDL_GetWindowSize(window, ctypes.byref(x_size), ctypes.byref(y_size))
 
         # Create empty surface
-        surface = SDL_CreateRGBSurface(0,xSize.value, ySize.value, 32, *ARGB_MASK)
-        
+        surface = SDL_CreateRGBSurface(0, x_size.value, y_size.value, 32, *ARGB_MASK)
+
         # Render screen to surface
-        SDL_RenderReadPixels(ren, None, SDL_PIXELFORMAT_ARGB8888,
-                surface.contents.pixels, surface.contents.pitch)
+        SDL_RenderReadPixels(
+            ren,
+            None,
+            SDL_PIXELFORMAT_ARGB8888,
+            surface.contents.pixels,
+            surface.contents.pitch,
+        )
 
         try:
             with tempfile.NamedTemporaryFile() as tmp:
                 save_bmp(surface, tmp.name, True)
 
                 img = Image.open(tmp.name)
-                SDL_FreeSurface(surface) # Free memory
+                SDL_FreeSurface(surface)  # Free memory
                 return img
         except Exception as e:
-            SDL_FreeSurface(surface) # Free memory
+            SDL_FreeSurface(surface)  # Free memory
             print(f"Failed to save frame: {e}")
-        
+        finally:
+            if texture:
+                SDL_SetRenderTarget(ren, texture)
 
     def get_window_and_renderer(self, name: str):
         window = self.windows.get(name)
@@ -105,24 +137,35 @@ class Mainloop:
 
     def _handle_events(self):
         while SDL_PollEvent(ctypes.byref(self.event)) != 0:
-            if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE:
+            if (
+                self.event.type == SDL_WINDOWEVENT
+                and self.event.window.event == SDL_WINDOWEVENT_CLOSE
+            ):
                 self.stop()
             for lstnr in self.listeners:
-                self.listeners[lstnr].run(self.event) # type: ignore
-       
-    def clear(self,name):
+                self.listeners[lstnr].run(self.event)  # type: ignore
+
+    def clear(self, name):
         ren = SDL_GetRenderer(self.windows.get(name))
+        texture = self._persistent_textures.get(name)
+        if texture:
+            SDL_SetRenderTarget(ren, texture)
         SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
         SDL_RenderClear(ren)
-        #required for specific linux builds
-        if(platform.system() == 'Linux'):
-            SDL_RenderPresent(ren) 
+        if texture:
+            SDL_SetRenderTarget(ren, None)
+            SDL_RenderCopy(ren, texture, None, None)
+        if texture:
+            SDL_SetRenderTarget(ren, texture)
 
-    def pause(self,time):
+    def pause(self, time):
         SDL_Delay(time)
 
     def stop(self):
         self.running = False
+        for tex in self._persistent_textures.values():
+            SDL_DestroyTexture(tex)
+        self._persistent_textures.clear()
         for win in self.windows:
             SDL_DestroyWindow(self.windows[win])
         SDL_Quit()
@@ -130,18 +173,46 @@ class Mainloop:
     def keep(self):
         while self.running:
             while SDL_PollEvent(ctypes.byref(self.event)) != 0:
-                if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE:
+                if (
+                    self.event.type == SDL_WINDOWEVENT
+                    and self.event.window.event == SDL_WINDOWEVENT_CLOSE
+                ):
                     self.stop()
 
-    def add_listener(self, listener:Listener) -> None:
+    def add_listener(self, listener: Listener) -> None:
         self.listeners[listener.name] = listener
 
-    def addlistener(self, listener:Listener) -> None:
+    def addlistener(self, listener: Listener) -> None:
         """(deprecated, use add_listener() instead)"""
         warnings.warn(
             "addlistener() is deprecated and will be removed in a future version. "
             "Use add_listener() instead.",
             DeprecationWarning,
-            stacklevel=2
+            stacklevel=2,
         )
         self.add_listener(listener)
+
+    def ensure_persistent_texture(self, name: str, renderer, width: int, height: int):
+        texture = self._persistent_textures.get(name)
+        if texture:
+            return texture
+        texture = SDL_CreateTexture(
+            renderer,
+            SDL_PIXELFORMAT_RGBA8888,
+            SDL_TEXTUREACCESS_TARGET,
+            width,
+            height,
+        )
+        if not texture:
+            raise RuntimeError("Failed to create persistent render texture")
+        SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND)
+        self._persistent_textures[name] = texture
+        return texture
+
+    def _copy_persistent_texture(self, name: str, renderer) -> Optional[ctypes.c_void_p]:
+        texture = self._persistent_textures.get(name)
+        if not texture:
+            return None
+        SDL_SetRenderTarget(renderer, None)
+        SDL_RenderCopy(renderer, texture, None, None)
+        return texture

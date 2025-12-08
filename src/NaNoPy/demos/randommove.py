@@ -1,8 +1,8 @@
 from NaNoPy import Canvas, Writer, Color
 import random
 
-def demo() -> None:
 
+def demo() -> None:
     xSize = 800
     ySize = 400
 
@@ -10,8 +10,8 @@ def demo() -> None:
     pen = Writer(screen)
 
     n = 10
-    x = list()
-    y = list()
+    x = []
+    y = []
 
     for i in range(n):
         x.append(random.randint(0, xSize))
@@ -30,12 +30,18 @@ def demo() -> None:
 
         for i in range(n):
             pen.draw_circle(x[i], y[i], 5, Color.green, True)
-            pen.draw_string(x[i], y[i], Color.red, "f:" + str(frame) + " p: " + str(i) + " x:" + str(x[i]) + " y:" + str(y[i]))
+            pen.draw_string(
+                x[i],
+                y[i],
+                Color.red,
+                "f:" + str(frame) + " p: " + str(i) + " x:" + str(x[i]) + " y:" + str(y[i]),
+            )
             pen.draw_line(0, y[i], 800, y[i], Color.red)
 
         screen.update()
         screen.pause(50)
         screen.clear()
+
 
 if __name__ == "__main__":
     demo()

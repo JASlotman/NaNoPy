@@ -1,5 +1,6 @@
 from NaNoPy import Canvas, Writer, Color
 
+
 def demo() -> None:
     x_size = 800
     y_size = 500
@@ -11,6 +12,7 @@ def demo() -> None:
     pen.draw_circle(600, 290, 5, Color.green, True)
     screen.update()
     screen.keep_window()
+
 
 if __name__ == "__main__":
     demo()
