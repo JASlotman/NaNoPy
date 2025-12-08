@@ -4,6 +4,10 @@ from NaNoPy.classes import Color
 from NaNoPy.classes import Spline
 from NaNoPy.classes import WriterNaive
 
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 NNP = Mainloop()
 
 

@@ -39,8 +39,8 @@ import warnings
 
 from typing import Optional, TYPE_CHECKING
 
-from NaNoPy.classes.listener import Listener
 from NaNoPy.classes.moviewriter import MovieWriter
+from NaNoPy.classes.keylistener import KeyListener
 from NaNoPy.constants import ARGB_MASK
 
 from PIL import Image
@@ -56,7 +56,8 @@ class Mainloop:
         self.event = SDL_Event()
         self.running: bool = True
         self.canvasses: dict[str, CanvasNaive] = {}
-        self.listeners: dict[str, Listener] = {}
+        self.listeners: dict[str, KeyListener] = {}
+
         self.multiple_windows = False
         self._persistent_textures: dict[str, ctypes.c_void_p] = {}
         self._movie_writer: Optional[MovieWriter] = None
@@ -215,18 +216,8 @@ class Mainloop:
                 ):
                     self.stop()
 
-    def add_listener(self, listener: Listener) -> None:
+    def add_listener(self, listener: KeyListener) -> None:
         self.listeners[listener.name] = listener
-
-    def addlistener(self, listener: Listener) -> None:
-        """(deprecated, use add_listener() instead)"""
-        warnings.warn(
-            "addlistener() is deprecated and will be removed in a future version. "
-            "Use add_listener() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self.add_listener(listener)
 
     def ensure_persistent_texture(self, canvas: "CanvasNaive"):
         texture = canvas._persistent_texture

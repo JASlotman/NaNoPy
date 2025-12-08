@@ -7,7 +7,7 @@ from sdl2 import SDL_WINDOWPOS_CENTERED
 from sdl2 import SDL_WINDOW_HIDDEN
 
 from NaNoPy.custom_types import WindowType
-from NaNoPy.classes.listener import Listener
+from NaNoPy.classes.keylistener import KeyListener
 from NaNoPy.classes.mainloop import Mainloop
 from NaNoPy.constants import RENDER_FLAGS
 from NaNoPy.classes.moviewriter import MovieWriter
@@ -53,7 +53,7 @@ class CanvasNaive:
         self.renderer = SDL_CreateRenderer(self.window, driver, RENDER_FLAGS)
 
         self.name = name
-        self.listener: None | Listener = None
+        self.listener: None | KeyListener = None
         self.NNP = NNP
         self.NNP.add_canvas(self)
 
@@ -63,7 +63,7 @@ class CanvasNaive:
 
         self.NNP.ensure_persistent_texture(self)
 
-    def add_listener(self, listener: Listener) -> None:
+    def add_listener(self, listener: KeyListener) -> None:
         """Adds a listener object
 
         Listener object should have a name field
@@ -74,7 +74,7 @@ class CanvasNaive:
         self.listener = listener
         self.NNP.add_listener(listener)
 
-    def addlistener(self, listener: Listener):
+    def addlistener(self, listener: KeyListener):
         """(deprecated, use add_listener() instead)
         Adds a listener object
 
