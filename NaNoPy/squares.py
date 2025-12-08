@@ -24,7 +24,7 @@ pen.drawPolygon(100,250,25,6,color()(r=0,g=255,a=150),True)
 pen.drawPolygon(151,250,25,6,color()(r=0,g=255,a=100),True)
 pen.drawPolygon(202,250,25,6,color()(r=0,g=255,a=50),True)
 
-pen.drawSpline([400,500,500,400],[200,200,300,300],color().red,True)
+pen.drawSpline([400,500,500,400],[200,200,300,300],color().red,True,False)
 pen.drawCircle(400,200,5,color().red,True)
 pen.drawCircle(400,300,5,color().red,True)
 pen.drawCircle(500,300,5,color().red,True)
