@@ -38,7 +38,7 @@ import tempfile
 from typing import Optional, Any
 
 from NaNoPy.classes.listener import Listener
-from NaNoPy.constants import ARGB_MASK, IS_JUPYTER
+from NaNoPy.constants import ARGB_MASK
 from NaNoPy.custom_types import WindowType
 
 try:  # Pillow is only required for notebook embedding

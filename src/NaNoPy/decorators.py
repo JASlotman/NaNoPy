@@ -1,9 +1,11 @@
+import sys
 from NaNoPy import Canvas, Writer
-from NaNoPy.constants import IS_JUPYTER
 
-if IS_JUPYTER:
+try: # Pillow and IPython is only required for notebook embedding
     from IPython.display import clear_output, display
     from PIL import Image
+except ImportError:
+    pass
 
 
 def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = True):
@@ -33,7 +35,7 @@ def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = 
     ```
     """
 
-    if not IS_JUPYTER:
+    if not "ipykernel" in sys.modules:
         raise EnvironmentError(
             "The 'loop' function decorator is only available in a Jupyter Notebook or IPython environment."
         )
