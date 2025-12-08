@@ -37,6 +37,8 @@ import warnings
 import tempfile
 from typing import Optional, Any
 
+from typing import TYPE_CHECKING
+
 from NaNoPy.classes.listener import Listener
 from NaNoPy.constants import ARGB_MASK, IS_JUPYTER
 from NaNoPy.custom_types import WindowType
@@ -87,8 +89,6 @@ class Mainloop:
         self._handle_events()
 
     def update_embedded(self, name) -> PILImageType:
-        if not IS_JUPYTER:
-            raise RuntimeError("Embedded updates are only available inside notebooks")
         if Image is None:
             raise RuntimeError("Embedded rendering requires Pillow to be installed")
 
@@ -114,6 +114,8 @@ class Mainloop:
             surface.contents.pixels,
             surface.contents.pitch,
         )
+        
+        surface_freed = False
 
         try:
             with tempfile.NamedTemporaryFile() as tmp:
@@ -122,12 +124,15 @@ class Mainloop:
                 img = Image.open(tmp.name)
                 SDL_FreeSurface(surface)  # Free memory
                 return img
+   
         except Exception as e:
-            SDL_FreeSurface(surface)  # Free memory
             print(f"Failed to save frame: {e}")
-        finally:
-            if texture:
-                SDL_SetRenderTarget(ren, texture)
+
+            if not surface_freed: SDL_FreeSurface(surface) # Free memory
+
+            # Return black image on error
+            return Image.new("1", (xSize.value, ySize.value))
+        
 
     def get_window_and_renderer(self, name: str):
         window = self.windows.get(name)
@@ -152,10 +157,10 @@ class Mainloop:
             SDL_SetRenderTarget(ren, texture)
         SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
         SDL_RenderClear(ren)
+
         if texture:
             SDL_SetRenderTarget(ren, None)
             SDL_RenderCopy(ren, texture, None, None)
-        if texture:
             SDL_SetRenderTarget(ren, texture)
 
     def pause(self, time):

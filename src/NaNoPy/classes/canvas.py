@@ -1,16 +1,18 @@
 from sdl2 import SDL_CreateWindow
 from sdl2 import SDL_WINDOWPOS_CENTERED
 from sdl2 import SDL_WINDOW_HIDDEN
-from NaNoPy.classes.mainloop import Mainloop
 
 from NaNoPy.constants import IS_JUPYTER
 from NaNoPy.custom_types import WindowType
 from NaNoPy.classes.listener import Listener
+from NaNoPy.classes.mainloop import Mainloop
+
+from typing import TYPE_CHECKING
 
 import warnings
 
-if IS_JUPYTER:
-    from PIL import Image
+if IS_JUPYTER or TYPE_CHECKING:
+    from PIL.Image import Image
 
 
 class CanvasNaive:
