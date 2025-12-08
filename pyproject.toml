@@ -21,11 +21,11 @@ dependencies = [
     "Numpy",
     "PySDL2",
     "pysdl2-dll",
+    "Pillow",
 ]
 
 [project.optional-dependencies]
 interactive = [
-    "Pillow",
     "ipython"
 ]
 
