@@ -35,16 +35,14 @@ from sdl2.ext import save_bmp
 import ctypes
 import warnings
 import tempfile
-from typing import Optional, Any
+from typing import Optional
 
 from NaNoPy.classes.listener import Listener
 from NaNoPy.constants import ARGB_MASK
 from NaNoPy.custom_types import WindowType
 
-try:  # Pillow is only required for notebook embedding
-    from PIL import Image
-except ImportError:
-    pass
+from PIL import Image
+
 
 
 class Mainloop:
@@ -83,7 +81,7 @@ class Mainloop:
 
         self._handle_events()
 
-    def update_embedded(self, name) -> Image:
+    def update_embedded(self, name) -> Image.Image:
         if Image is None:
             raise RuntimeError("Embedded rendering requires Pillow to be installed")
 
