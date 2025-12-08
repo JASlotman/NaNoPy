@@ -1,0 +1,3 @@
+dist/*
+NaNoPy/__pycache__/*
+NaNoPy.egg-info/*
