@@ -97,7 +97,7 @@ class CanvasNaive:
 
     def clear(self) -> None:
         """Clear the canvas"""
-        self.NNP.clear(self.name)
+        self.NNP.clear(self)
 
     def pause(self, time) -> None:
         """Pause the canvas for a time in ms"""

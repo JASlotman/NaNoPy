@@ -163,11 +163,9 @@ class Mainloop:
             for listener in self.listeners.values():
                 listener.run(self.event) 
 
-    def clear(self, name):
-        _, ren = self.get_window_and_renderer(name)
-
-        SDL_SetRenderDrawColor(ren, 0, 0, 0, 255)
-        SDL_RenderClear(ren)
+    def clear(self, canvas: CanvasNaive):
+        SDL_SetRenderDrawColor(canvas.renderer, 0, 0, 0, 255)
+        SDL_RenderClear(canvas.renderer)
 
     def pause(self, time):
         SDL_Delay(time)
