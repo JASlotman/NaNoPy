@@ -276,9 +276,7 @@ def example_with_audio():
 
         # Update display and capture frame (explicitly add to movie)
         canvas.update()
-        frame_img = canvas.update_embedded()
-        if movie.is_recording:
-            movie.add_frame(frame_img)
+        canvas.update_embedded()  # Captures frame automatically when recording
         canvas.pause(pause_ms)
         frame_count += 1
 
@@ -355,7 +353,7 @@ if __name__ == "__main__":
     print("  - example_with_cleanup()")
     print("  - example_with_audio()  # Requires 'a.mp3' file")
     print("\nEach will save an MP4 file to the current directory.")
-    # example_bouncing_ball_with_export()
+    example_bouncing_ball_with_export()
     # example_rotating_square()
     # example_with_cleanup()
-    example_with_audio()
+    # example_with_audio()

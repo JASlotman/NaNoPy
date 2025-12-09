@@ -128,6 +128,10 @@ class Mainloop:
             output_buffer.seek(0)
             img = Image.open(output_buffer)
 
+            # Auto-capture frames when a recording is active
+            if self._movie_writer and self._movie_writer.is_recording:
+                self._movie_writer.add_frame(img)
+
             return img   
         except Exception as e:
             print(f"Failed to save frame: {e}")
