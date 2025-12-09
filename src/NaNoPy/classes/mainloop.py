@@ -41,7 +41,7 @@ from typing import Optional, TYPE_CHECKING
 
 from NaNoPy.classes.moviewriter import MovieWriter
 from NaNoPy.classes.keylistener import KeyListener
-from NaNoPy.constants import ARGB_MASK
+from NaNoPy.constants import ARGB_MASK, DEFAULT_CODEC
 
 from PIL import Image
 from io import BytesIO
@@ -179,7 +179,7 @@ class Mainloop:
             return self._movie_writer
         return None
     
-    def save_recording(self, codec: str = "libx264") -> Optional[str]:
+    def save_recording(self, codec: str = DEFAULT_CODEC) -> Optional[str]:
         """Save the recorded animation as MP4.
         
         Args:
