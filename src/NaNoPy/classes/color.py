@@ -26,15 +26,23 @@ class Color:
     least one channel must be provided; omitted RGB channels default to 0 and
     alpha defaults to 255 so supplying ``g=100`` yields a dark green.
     """
-
+    # RGB
     red = _ColorValue(r=255, g=0, b=0, a=255)
     blue = _ColorValue(r=0, g=0, b=255, a=255)
     green = _ColorValue(r=0, g=255, b=0, a=255)
+    # CMYK
     yellow = _ColorValue(r=255, g=255, b=0, a=255)
     magenta = _ColorValue(r=255, g=0, b=255, a=255)
     cyan = _ColorValue(r=0, g=255, b=255, a=255)
+    black = _ColorValue(r=0, g=0, b=0, a=255)
+    # Other
     white = _ColorValue(r=255, g=255, b=255, a=255)
     gray = _ColorValue(r=155, g=155, b=155, a=255)
+    purple = _ColorValue(r=200, g=0, b=255, a=255)
+    orange = _ColorValue(r=240, g=140, b=0, a=255)
+    tangerine = _ColorValue(r=230, g=90, b=0, a=255)
+    lime = _ColorValue(r=180, g=255, b=0, a=255)
+    brown = _ColorValue(r=100, g=50, b=0, a=255)
 
     def __init__(self) -> None:
         warnings.warn(
