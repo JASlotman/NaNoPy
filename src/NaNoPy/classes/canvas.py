@@ -9,7 +9,7 @@ from sdl2 import SDL_WINDOW_HIDDEN
 from NaNoPy.custom_types import WindowType
 from NaNoPy.classes.keylistener import KeyListener
 from NaNoPy.classes.mainloop import Mainloop
-from NaNoPy.constants import RENDER_FLAGS
+from NaNoPy.constants import RENDER_FLAGS, DEFAULT_CODEC
 from NaNoPy.classes.moviewriter import MovieWriter
 
 import warnings
@@ -171,7 +171,7 @@ class CanvasNaive:
         """Stop recording frames. Call save_recording() to encode MP4."""
         return self.NNP.stop_recording()
 
-    def save_recording(self, codec: str = "libx264") -> Optional[str]:
+    def save_recording(self, codec: str = DEFAULT_CODEC) -> Optional[str]:
         """Save the recorded animation as MP4.
 
         Args:
