@@ -60,7 +60,7 @@ class WriterNaive:
         self.draw_pixel(x, y, color)
 
     def draw_line(self, x1, y1, x2, y2, color) -> None:
-        """Draws line of 1 pixel wide between x1,y1 and x2,y2 of given color"""
+        """ """
         aalineColor(
             self.renderer, int(x1), int(self.y_size - y1), int(x2), int(self.y_size - y2), color
         )
@@ -108,7 +108,7 @@ class WriterNaive:
         self.draw_line_thick(x1, y1, x2, y2, w, color)
 
     def draw_rectangle(self, x1, y1, width, height, color, filled: bool) -> None:
-        """Draws rectangle with x1,y1 being the top left corner w being the width and h the height and set filled to true to fill it with given color"""
+        """Draws rectangle with x1,y1 being the bottom left corner w being the width and h the height and set filled to true to fill it with given color"""
         if filled:
             boxColor(
                 self.renderer,

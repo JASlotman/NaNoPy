@@ -54,7 +54,7 @@ class Color:
     ) -> Colorsdl2:
         """Return a custom SDL2 color with sane defaults.
 
-        At least one RGB channel must be provided. Missing RGB channels default
+        At least onrge RGB channel must be provided. Missing RGB channels default
         to 0 and alpha defaults to 255.
         """
 
