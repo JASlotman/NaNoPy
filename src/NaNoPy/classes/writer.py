@@ -60,7 +60,7 @@ class WriterNaive:
         self.draw_pixel(x, y, color)
 
     def draw_line(self, x1, y1, x2, y2, color) -> None:
-        """ """
+        """Draws line of 1 pixel wide between x1,y1 and x2,y2 of given color"""
         aalineColor(
             self.renderer, int(x1), int(self.y_size - y1), int(x2), int(self.y_size - y2), color
         )
