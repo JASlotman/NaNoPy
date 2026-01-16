@@ -8,6 +8,7 @@ from sdl2.sdlgfx import filledCircleColor
 from sdl2.sdlgfx import aapolygonColor
 from sdl2.sdlgfx import aacircleColor
 from sdl2.sdlgfx import stringColor
+from sdl2.sdlgfx import gfxPrimitivesSetFont
 
 import ctypes
 import math
@@ -253,9 +254,10 @@ class WriterNaive:
 
     def draw_string(self, x, y, color, text: str) -> None:
         """Draws string on location x,y with given color"""
-
-        self.canvas._reload_fonts = True
-
+        # Ensure the SDL_gfx font is bound to the current renderer when using multiple windows.
+        if self.canvas._reload_fonts or self.canvas.NNP.multiple_windows:
+            gfxPrimitivesSetFont(None, 0, 0)
+            self.canvas._reload_fonts = False
         stringColor(self.renderer, int(x), int(self.y_size - y), str.encode(text), color)
 
     def drawString(self, x, y, color, text: str) -> None:
