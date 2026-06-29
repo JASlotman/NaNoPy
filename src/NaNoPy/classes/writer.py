@@ -18,7 +18,7 @@ from NaNoPy.classes.mainloop import Mainloop
 from NaNoPy.classes.spline import Spline
 from NaNoPy.classes.color import Color
 
-from typing import Iterable
+from typing import Iterable, Sequence
 
 
 class WriterNaive:
@@ -191,7 +191,8 @@ class WriterNaive:
 
         self.draw_star(x, y, r, n, color, filled)
 
-    def draw_polygon_custom(self, points:list[tuple], color=Color.white, filled: bool=False) -> None:
+    def draw_polygon_custom(self, points:Sequence[tuple[float, float]], color=Color.white, filled: bool=False) -> None:
+        """Draws a custom polygon defined by a list of points. Expects a point to be a tuple of two numbers."""
         n = len(points)
         xs, ys = zip(*points)
         vx = (ctypes.c_int16 * len(xs))(*xs)
