@@ -7,7 +7,7 @@ def demo() -> None:
 
     pen.draw_polygon_custom([(10, 30), (500, 500), (100, 0)], Color.white, True)
     pen.draw_star(100, 100, 20, 5, Color.white, True)
-    pen.draw_polygon_regular(20, 20, 20, 6, Color.white, filled=True)
+    pen.draw_polygon(20, 20, 20, 6, Color.white, filled=True)
 
     screen.update()
     sleep(3)
