@@ -172,13 +172,8 @@ class WriterNaive:
             xs.append(int(x + math.cos(rads * i) * rad))
             ys.append(int((self.y_size) - y + math.sin(rads * i) * rad))
 
-        vx = (ctypes.c_int16 * len(xs))(*xs)
-        vy = (ctypes.c_int16 * len(ys))(*ys)
-
-        if filled:
-            filledPolygonColor(self.renderer, vx, vy, n * 2, color)
-        else:
-            aapolygonColor(self.renderer, vx, vy, n * 2, color)
+        points = list(zip(xs, ys))
+        self.draw_polygon_custom(points, color, filled)
 
     def drawStar(self, x, y, r, n, color, filled: bool) -> None:
         """(deprecated, use draw_star() instead)
@@ -195,7 +190,16 @@ class WriterNaive:
 
         self.draw_star(x, y, r, n, color, filled)
 
+    def draw_polygon_custom(self, points:list[tuple], color, filled:bool) -> None:
+        n = len(points)
+        xs, ys = zip(*points)
+        vx = (ctypes.c_int16 * len(xs))(*xs)
+        vy = (ctypes.c_int16 * len(ys))(*ys)
 
+        if filled:
+            filledPolygonColor(self.renderer, vx, vy, n, color)
+        else:
+            aapolygonColor(self.renderer, vx, vy, n, color)
 
     def draw_polygon_regular(self, x, y, radius, n, color, filled: bool) -> None:
         """Draws n sided polygon with radius r, and x,y being the centre location and set filled to true to fill it with given color"""
@@ -207,13 +211,8 @@ class WriterNaive:
             xs.append(int(x + math.cos((rads * i) - (math.pi / 2)) * radius))
             ys.append(int((self.y_size) - y + math.sin((rads * i) - (math.pi / 2)) * radius))
 
-        vx = (ctypes.c_int16 * len(xs))(*xs)
-        vy = (ctypes.c_int16 * len(ys))(*ys)
-
-        if filled:
-            filledPolygonColor(self.renderer, vx, vy, n, color)
-        else:
-            aapolygonColor(self.renderer, vx, vy, n, color)
+        points = list(zip(xs, ys))
+        self.draw_polygon_custom(points, color, filled)
 
     def drawPolygonRegular(self, x, y, r, n, color, filled: bool) -> None:
         """(deprecated, use draw_polygon_regular instead)
