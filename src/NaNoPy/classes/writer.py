@@ -195,7 +195,7 @@ class WriterNaive:
 
         self.draw_star(x, y, r, n, color, filled)
 
-    def draw_polygon(self, x, y, radius, n, color, filled: bool) -> None:
+    def draw_polygon_regular(self, x, y, radius, n, color, filled: bool) -> None:
         """Draws n sided polygon with radius r, and x,y being the centre location and set filled to true to fill it with given color"""
         rads = (2 * math.pi) / n
         xs = []
@@ -213,7 +213,7 @@ class WriterNaive:
         else:
             aapolygonColor(self.renderer, vx, vy, n, color)
 
-    def drawPolygon(self, x, y, r, n, color, filled: bool) -> None:
+    def drawPolygonRegular(self, x, y, r, n, color, filled: bool) -> None:
         """(deprecated, use draw_polygon instead)
         Draws n sided polygon with radius r, and x,y being the centre location and set filled to true to fill it with given color"""
 
@@ -224,7 +224,7 @@ class WriterNaive:
             stacklevel=2,
         )
 
-        self.draw_polygon(x, y, r, n, color, filled)
+        self.draw_polygon_regular(x, y, r, n, color, filled)
 
     def draw_spline(self, xs: Iterable, ys: Iterable, color, loop: bool, filled: bool) -> None:
         """Draws spline through list of coordinates xs,ys of given color, loop false gives a line, loop true gives a closed loop
