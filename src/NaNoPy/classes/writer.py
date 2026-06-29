@@ -195,6 +195,8 @@ class WriterNaive:
 
         self.draw_star(x, y, r, n, color, filled)
 
+
+
     def draw_polygon_regular(self, x, y, radius, n, color, filled: bool) -> None:
         """Draws n sided polygon with radius r, and x,y being the centre location and set filled to true to fill it with given color"""
         rads = (2 * math.pi) / n
@@ -214,12 +216,12 @@ class WriterNaive:
             aapolygonColor(self.renderer, vx, vy, n, color)
 
     def drawPolygonRegular(self, x, y, r, n, color, filled: bool) -> None:
-        """(deprecated, use draw_polygon instead)
+        """(deprecated, use draw_polygon_regular instead)
         Draws n sided polygon with radius r, and x,y being the centre location and set filled to true to fill it with given color"""
 
         warnings.warn(
-            "drawPolygon() is deprecated and will be removed in a future version. "
-            "Use draw_polygon() instead.",
+            "drawPolygonRegular() is deprecated and will be removed in a future version. "
+            "Use draw_polygon_regular() instead.",
             DeprecationWarning,
             stacklevel=2,
         )
