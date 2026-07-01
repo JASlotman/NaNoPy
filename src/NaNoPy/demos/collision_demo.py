@@ -209,12 +209,16 @@ def demo_iterator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
         screen.clear()
 
 if __name__ == "__main__":
-    n_steps = 100
+    n_steps = 1000
 
-    demos = [demo_double_for, demo_decorator, demo_iterator]
+    demos = [
+        # demo_double_for, 
+        demo_decorator, 
+        demo_iterator
+    ]
 
     for demo in demos:
         start = perf_counter()
-        demo(100)
+        demo(n_steps)
         elapsed = perf_counter() - start
-        print(f"method {str(demo)} took {elapsed:.3f} seconds")
+        print(f"method {str(demo)} took {elapsed:.3f} seconds for {n_steps} timesteps")

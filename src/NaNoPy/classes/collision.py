@@ -1,7 +1,7 @@
 import random as rnd
 from math import ceil
 import math
-from itertools import combinations, product
+from itertools import combinations, product, chain
 from collections import defaultdict
 from typing import Iterator
 
@@ -87,8 +87,9 @@ class Collision:
             for neighbor_id in self.get_chunk_id_neighbors(own_chunk_id):
                 particle_dictionary[neighbor_id].append(i)
 
-        for subset in particle_dictionary.values():
-            yield from combinations(subset, 2)
+        pairs = set().union(chain.from_iterable(combinations(subset,2) for subset in particle_dictionary.values()))
+        yield from pairs
+
 
     def loop(self,xs,ys,xs2,ys2,gridsize):
         dictionary = self.create_dictionary(xs2,ys2,gridsize)
