@@ -1,12 +1,9 @@
-import random as rnd
 from math import ceil
-import math
 from itertools import combinations, product, chain
 from collections import defaultdict
 from typing import Iterator, Sequence
 
 class Collision:
-
     def __init__(self,xsize,ysize):
         self.xsize = xsize
         self.ysize = ysize
