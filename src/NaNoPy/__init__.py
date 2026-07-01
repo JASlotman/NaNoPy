@@ -3,6 +3,7 @@ from NaNoPy.classes import CanvasNaive
 from NaNoPy.classes import Color
 from NaNoPy.classes import Spline
 from NaNoPy.classes import WriterNaive
+from NaNoPy.classes import Collision
 
 import warnings
 
@@ -43,3 +44,4 @@ color = Color
 spline = Spline
 writer = Writer
 canvas = Canvas
+collision = Collision
