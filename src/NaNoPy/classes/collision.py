@@ -1,4 +1,5 @@
 import random as rnd
+from math import ceil
 import math
 
 class Collision:
@@ -10,18 +11,12 @@ class Collision:
     def test(self):
         print("test")
 
-    def get_nrow_ncol(self,gridsize):
-        ncol = (self.xsize//gridsize)
+    def get_nrow_ncol(self,gridsize:int) -> tuple[int, int]:
+        """
+        Calculates the number of grid squares (rows, columns). Always rounds up 
+        if the screen is not perfectly tiled."""
 
-        if self.xsize%gridsize != 0:
-            ncol += 1
-
-        nrow = (self.ysize//gridsize)
-
-        if self.ysize%gridsize != 0:
-            nrow += 1
-
-        return ncol,nrow
+        return ceil(self.xsize / gridsize), ceil(self.ysize / gridsize)
 
     def get_grid_index_xy(self,x,y,gridsize):
         
