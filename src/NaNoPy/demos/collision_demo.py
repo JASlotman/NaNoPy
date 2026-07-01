@@ -180,6 +180,7 @@ def demo_decorator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
 def demo_iterator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
 
     maxdist = 5
+    gridsize = ceil(1.5 * maxdist)
 
     screen = Canvas("test",xsize,ysize)
     pen = Writer(screen)
@@ -195,7 +196,7 @@ def demo_iterator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
         xs = [p.x for p in particles]
         ys = [p.y for p in particles]
 
-        for i, j in screen.collision.get_close_pairs(xs,ys, ceil(1.5 * maxdist)):
+        for i, j in screen.collision.get_close_pairs(xs,ys, gridsize):
             attempt_binding(particles[i], particles[j], maxdist)
 
         for particle in particles:
