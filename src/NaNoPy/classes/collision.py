@@ -1,6 +1,9 @@
 import random as rnd
 from math import ceil
 import math
+from itertools import combinations, product
+from collections import defaultdict
+from typing import Iterator
 
 class Collision:
 
@@ -67,6 +70,25 @@ class Collision:
             i += 1
             
         return d
+
+    def calc_chunk_id(self, x,y,gridsize:int) -> tuple[int,int]:
+        return x//gridsize, y//gridsize
+
+    def get_chunk_id_neighbors(self, chunk_id:tuple[int,int]) -> Iterator[tuple[int,int]]:
+        i_range = range(chunk_id[0] - 1, chunk_id[0] + 2)
+        j_range = range(chunk_id[1] - 1, chunk_id[1] + 2)
+        yield from product(i_range, j_range)
+
+    def get_close_pairs(self, xs, ys, gridsize:int) -> Iterator[tuple[int,int]]:
+        particle_dictionary:dict[tuple[int,int], list[int]] = defaultdict(list)
+
+        for i, (x, y) in enumerate(zip(xs, ys)):
+            own_chunk_id = self.calc_chunk_id(x, y, gridsize)
+            for neighbor_id in self.get_chunk_id_neighbors(own_chunk_id):
+                particle_dictionary[neighbor_id].append(i)
+
+        for subset in particle_dictionary.values():
+            yield from combinations(subset, 2)
 
     def loop(self,xs,ys,xs2,ys2,gridsize):
         dictionary = self.create_dictionary(xs2,ys2,gridsize)
