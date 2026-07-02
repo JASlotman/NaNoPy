@@ -1,6 +1,6 @@
 from itertools import combinations, product, chain
 from collections import defaultdict
-from typing import Iterator, Sequence, Callable, Iterable
+from typing import Iterator, Callable, Iterable
 from math import floor
 
 def _calc_chunk_id(x:float, y:float, gridsize:float) -> tuple[int,int]:
