@@ -15,7 +15,7 @@ class _ColorValue:
         return Colorsdl2(*self._abgr)
 
 
-class Color:
+class Color(Colorsdl2):
     """Palette helper for NaNoPy shapes.
 
     Available colors: red, blue, green, yellow, magenta, cyan, white, gray.
