@@ -9,7 +9,6 @@ from sdl2 import SDL_WINDOW_HIDDEN
 from NaNoPy.custom_types import WindowType
 from NaNoPy.classes.listener import Listener
 from NaNoPy.classes.mainloop import Mainloop
-from NaNoPy.classes.collision import Collision
 from NaNoPy.constants import RENDER_FLAGS
 
 import warnings
@@ -53,7 +52,6 @@ class CanvasNaive:
 
         self.name = name
         self.listener: None | Listener = None
-        self.collision = Collision(x_size,y_size)
         self.NNP = NNP
         self.NNP.add_canvas(self)
         
