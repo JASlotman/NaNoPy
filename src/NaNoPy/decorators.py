@@ -10,7 +10,13 @@ except ImportError:
     pass
 
 
-def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = True, additive: bool = False):
+def loop(
+        frame_count: int, 
+        xSize: int = 300, 
+        ySize: int = 300, 
+        embedded: bool = True, 
+        additive: bool = False
+):
     """
     Decorator for running an animation loop in a Jupyter notebook environment.
 
@@ -81,17 +87,3 @@ def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = 
 
 
 
-def apply_to_close_pairs(
-    xs:Iterable[float], ys:Iterable[float], gridsize:int
-) -> Callable[[Callable[[int, int], object]], None]:
-    """
-    Decorator that calls function `func` for all pairs of indices i, j such that
-    (xs[i], ys[i]) is close to (xs[j], ys[j]). 
-    """
-    close_pairs = get_close_pairs(xs, ys, gridsize)
-
-    def decorator(func:Callable[[int, int], object]) -> None:
-        for i, j in close_pairs:
-            func(i, j)
-
-    return decorator

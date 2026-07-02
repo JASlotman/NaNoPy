@@ -3,8 +3,8 @@ from NaNoPy.classes import CanvasNaive
 from NaNoPy.classes import Color
 from NaNoPy.classes import Spline
 from NaNoPy.classes import WriterNaive
-from NaNoPy.utils import get_close_pairs
-from NaNoPy.decorators import apply_to_close_pairs
+from NaNoPy.collisions import get_close_pairs, apply_to_close_pairs
+
 
 import warnings
 
