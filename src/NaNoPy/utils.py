@@ -1,6 +1,7 @@
+
 from itertools import combinations, product, chain
 from collections import defaultdict
-from typing import Iterator, Callable, Iterable
+from typing import Iterator, Iterable
 from math import floor
 
 def _calc_chunk_id(x:float, y:float, gridsize:float) -> tuple[int,int]:
@@ -39,17 +40,3 @@ def get_close_pairs(xs:Iterable[float], ys:Iterable[float], gridsize:float) -> I
 
     yield from pairs
 
-def apply_to_close_pairs(
-    xs:Iterable[float], ys:Iterable[float], gridsize:int
-) -> Callable[[Callable[[int, int], object]], None]:
-    """
-    Decorator that calls function `func` for all pairs of indices i, j such that
-    (xs[i], ys[i]) is close to (xs[j], ys[j]). 
-    """
-    close_pairs = get_close_pairs(xs, ys, gridsize)
-
-    def decorator(func:Callable[[int, int], object]) -> None:
-        for i, j in close_pairs:
-            func(i, j)
-
-    return decorator

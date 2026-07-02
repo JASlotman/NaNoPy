@@ -1,5 +1,7 @@
 import sys
 from NaNoPy import Canvas, Writer
+from NaNoPy.utils import get_close_pairs
+from typing import Iterable, Callable
 
 try: # Pillow and IPython is only required for notebook embedding
     from IPython.display import clear_output, display
@@ -74,5 +76,22 @@ def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = 
                 break
 
         screen.NNP.stop()
+
+    return decorator
+
+
+
+def apply_to_close_pairs(
+    xs:Iterable[float], ys:Iterable[float], gridsize:int
+) -> Callable[[Callable[[int, int], object]], None]:
+    """
+    Decorator that calls function `func` for all pairs of indices i, j such that
+    (xs[i], ys[i]) is close to (xs[j], ys[j]). 
+    """
+    close_pairs = get_close_pairs(xs, ys, gridsize)
+
+    def decorator(func:Callable[[int, int], object]) -> None:
+        for i, j in close_pairs:
+            func(i, j)
 
     return decorator

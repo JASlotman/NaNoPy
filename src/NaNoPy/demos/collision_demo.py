@@ -6,7 +6,8 @@ from time import perf_counter
 from math import ceil
 import random as rnd
 import math
-from NaNoPy.classes.collision import get_close_pairs, apply_to_close_pairs
+from NaNoPy import get_close_pairs, apply_to_close_pairs
+
 
 @dataclass
 class Particle:
