@@ -1,6 +1,6 @@
 from itertools import combinations, product, chain
 from collections import defaultdict
-from typing import Iterator, Sequence, Callable, TypeVar, ParamSpec
+from typing import Iterator, Sequence, Callable, Iterable
 from math import floor
 
 def _calc_chunk_id(x:float, y:float, gridsize:float) -> tuple[int,int]:
@@ -20,9 +20,10 @@ def _get_chunk_id_neighbors(chunk_id:tuple[int,int]) -> Iterator[tuple[int,int]]
 
     i_range = range(chunk_id[0] - 1, chunk_id[0] + 2)
     j_range = range(chunk_id[1] - 1, chunk_id[1] + 2)
+
     yield from product(i_range, j_range)
 
-def get_close_pairs(xs:Sequence[float], ys:Sequence[float], gridsize:float) -> Iterator[tuple[int,int]]:
+def get_close_pairs(xs:Iterable[float], ys:Iterable[float], gridsize:float) -> Iterator[tuple[int,int]]:
     """
     Function for getting all unique pairs (x1, y1) (x2, y2) that are in 
     neiboring or the same grid cells. 
@@ -35,11 +36,11 @@ def get_close_pairs(xs:Sequence[float], ys:Sequence[float], gridsize:float) -> I
             particle_dictionary[neighbor_id].append(i)
 
     pairs = set().union(chain.from_iterable(combinations(subset,2) for subset in particle_dictionary.values()))
+
     yield from pairs
 
-
 def apply_to_close_pairs(
-        xs:Sequence, ys:Sequence, gridsize:int
+    xs:Iterable[float], ys:Iterable[float], gridsize:int
 ) -> Callable[[Callable[[int, int], object]], None]:
     """
     Decorator that calls function `func` for all pairs of indices i, j such that

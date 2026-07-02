@@ -6,7 +6,7 @@ from time import perf_counter
 from math import ceil
 import random as rnd
 import math
-from NaNoPy.classes.collision import get_close_pairs, loop
+from NaNoPy.classes.collision import get_close_pairs, apply_to_close_pairs
 
 @dataclass
 class Particle:
@@ -153,7 +153,7 @@ def demo_decorator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
         #data = create_dictionary(x,y,maxdist*1.5,xsize,ysize)
             
             
-        @loop(x, y, ceil(maxdist * 1.5))
+        @apply_to_close_pairs(x, y, ceil(maxdist * 1.5))
         def func(i,j):
             dist = math.sqrt((x[i]-x[j])**2 + (y[i]-y[j])**2)
             if dist < maxdist and not bound[i] and not bound[j] and i != j:
