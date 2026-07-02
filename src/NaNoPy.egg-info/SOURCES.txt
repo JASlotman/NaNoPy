@@ -11,6 +11,7 @@ src/NaNoPy.egg-info/requires.txt
 src/NaNoPy.egg-info/top_level.txt
 src/NaNoPy/classes/__init__.py
 src/NaNoPy/classes/canvas.py
+src/NaNoPy/classes/collision.py
 src/NaNoPy/classes/color.py
 src/NaNoPy/classes/listener.py
 src/NaNoPy/classes/mainloop.py
@@ -21,8 +22,10 @@ src/NaNoPy/custom_types/generalized_types.py
 src/NaNoPy/custom_types/sdl2types.py
 src/NaNoPy/demos/__init__.py
 src/NaNoPy/demos/ball_window.py
+src/NaNoPy/demos/collision_demo.py
 src/NaNoPy/demos/dots.py
 src/NaNoPy/demos/efficiency.py
+src/NaNoPy/demos/funky_polygons.py
 src/NaNoPy/demos/input.py
 src/NaNoPy/demos/mac_arm_ball.py
 src/NaNoPy/demos/mac_arm_problem.py
