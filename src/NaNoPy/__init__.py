@@ -7,7 +7,7 @@ from NaNoPy.collisions import get_close_pairs, apply_to_close_pairs
 
 import warnings
 
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+# warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 NNP = Mainloop()
 
