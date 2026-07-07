@@ -1,7 +1,5 @@
 from sdl2.ext import Color as Colorsdl2
 
-from NaNoPy.constants._color_data import XKCD_KEYS
-from NaNoPy.constants._color_data import XKCD_COLORS
 from NaNoPy.constants._color_data import CSS4_KEYS
 from NaNoPy.constants._color_data import CSS4_COLORS
 
@@ -41,6 +39,7 @@ class Color:
     cyan = _ColorValue(r=0, g=255, b=255, a=255)
     white = _ColorValue(r=255, g=255, b=255, a=255)
     gray = _ColorValue(r=155, g=155, b=155, a=255)
+    black = _ColorValue(r=0, g=0, b=0, a=255)
 
     def __init__(self) -> None:
         warnings.warn(
@@ -73,23 +72,6 @@ class Color:
         alpha = 255 if a is None else a
         return Colorsdl2(alpha, blue, green, red)
 
-    @staticmethod
-    def xkcd(color_name: XKCD_KEYS) -> Colorsdl2:
-        """
-        Create a Color object from an XKCD color name.
-        Args:
-            color_name (XKCD_KEYS): The name of the XKCD color to retrieve.
-                Must be a valid key from the XKCD_COLORS dictionary.
-        Returns:
-            Colorsdl2: A Color object initialized from the hexadecimal value
-                of the specified XKCD color. White if not found.
-        Example:
-            >>> red = Color.xkcd("red")
-            >>> blue = Color.xkcd("sky blue")
-        """
-        
-        return Color.hex(XKCD_COLORS.get(color_name, "#ffffff"))
-    
     @staticmethod
     def css(color_name: CSS4_KEYS) -> Colorsdl2:
         """
