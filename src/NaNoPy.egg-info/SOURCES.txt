@@ -2,7 +2,6 @@ LICENCE
 README.md
 pyproject.toml
 src/NaNoPy/__init__.py
-src/NaNoPy/constants.py
 src/NaNoPy/decorators.py
 src/NaNoPy.egg-info/PKG-INFO
 src/NaNoPy.egg-info/SOURCES.txt
@@ -17,6 +16,8 @@ src/NaNoPy/classes/listener.py
 src/NaNoPy/classes/mainloop.py
 src/NaNoPy/classes/spline.py
 src/NaNoPy/classes/writer.py
+src/NaNoPy/constants/__init__.py
+src/NaNoPy/constants/_color_data.py
 src/NaNoPy/custom_types/__init__.py
 src/NaNoPy/custom_types/generalized_types.py
 src/NaNoPy/custom_types/sdl2types.py
