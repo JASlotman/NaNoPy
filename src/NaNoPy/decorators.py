@@ -1,5 +1,7 @@
 import sys
 from NaNoPy import Canvas, Writer
+from NaNoPy.utils import get_close_pairs
+from typing import Iterable, Callable
 
 try: # Pillow and IPython is only required for notebook embedding
     from IPython.display import clear_output, display
@@ -8,7 +10,13 @@ except ImportError:
     pass
 
 
-def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = True, additive: bool = False):
+def loop(
+        frame_count: int, 
+        xSize: int = 300, 
+        ySize: int = 300, 
+        embedded: bool = True, 
+        additive: bool = False
+):
     """
     Decorator for running an animation loop in a Jupyter notebook environment.
 
@@ -76,3 +84,6 @@ def loop(frame_count: int, xSize: int = 300, ySize: int = 300, embedded: bool = 
         screen.NNP.stop()
 
     return decorator
+
+
+

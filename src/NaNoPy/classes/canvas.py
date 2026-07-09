@@ -54,6 +54,7 @@ class CanvasNaive:
         self.listener: None | Listener = None
         self.NNP = NNP
         self.NNP.add_canvas(self)
+        
 
         self._reload_fonts = False
         self._persistent_texture = None

@@ -59,7 +59,6 @@ class Mainloop:
         self.running: bool = True
         self.canvasses: dict[str, CanvasNaive] = {}
         self.listeners: dict[str, Listener] = {}
-
         self.multiple_windows = False
 
     def add_canvas(self, canvas: "CanvasNaive"):
@@ -68,6 +67,8 @@ class Mainloop:
         # Don't check it during runtime to reduce accession
         if len(self.canvasses) > 1:
             self.multiple_windows = True
+    
+  
 
     def update(self, canvas: "CanvasNaive"):
         window = canvas.window

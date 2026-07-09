@@ -19,7 +19,7 @@ class _ColorValue:
         return Colorsdl2(*self._abgr)
 
 
-class Color:
+class Color(Colorsdl2):
     """Palette helper for NaNoPy shapes.
 
     Available colors: red, blue, green, yellow, magenta, cyan, white, gray.
@@ -59,7 +59,7 @@ class Color:
     ) -> Colorsdl2:
         """Return a custom SDL2 color with sane defaults.
 
-        At least one RGB channel must be provided. Missing RGB channels default
+        At least onrge RGB channel must be provided. Missing RGB channels default
         to 0 and alpha defaults to 255.
         """
 
