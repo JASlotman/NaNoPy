@@ -45,7 +45,9 @@ def get_close_pairs_double(x1s:Iterable[float],y1s:Iterable[float],x2s:Iterable[
     
     for i, (x,y) in enumerate(zip(x1s,y1s)):
         own_chunk_id = _calc_chunk_id(x, y, gridsize)
-        pairlist.extend( [(i,j) for j in particle_dictionary[own_chunk_id]] ) 
+        chunks = _get_chunk_id_neighbors(own_chunk_id)
+        for chunck in chunks:
+            pairlist.extend( [(i,j) for j in particle_dictionary[chunck]] ) 
 
     yield from pairlist
 
