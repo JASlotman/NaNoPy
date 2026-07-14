@@ -178,6 +178,92 @@ def demo_decorator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
         screen.pause(0)
         screen.clear()
 
+def demo_decorator_dual_particles(n_steps:int=1000, xsize=800, ysize=800, n=2000):
+    screen = Canvas("test",xsize,ysize)
+    pen = Writer(screen)
+
+    x = []
+    y = []
+    bound = []
+    boundto = []
+
+    x2 = []
+    y2 = []
+    bound2 = []
+    boundto2 = []  
+
+    for i in range(n):
+        x.append(rnd.randint(0,xsize))
+        y.append(rnd.randint(0,ysize))
+        bound.append(False)
+        boundto.append(-1)
+
+        x2.append(rnd.randint(0,xsize))
+        y2.append(rnd.randint(0,ysize))
+        bound2.append(False)
+        boundto2.append(-1)
+
+    for _ in range(n_steps):
+        
+
+        for i in range(n):
+            dx = rnd.randint(-4,4)
+            dy = rnd.randint(-4,4)
+
+            if x[i]+dx > 0 and x[i]+dx < xsize and y[i]+dy > 0 and y[i] + dy < ysize and not bound[i]:
+                x[i] += dx
+                y[i] += dy
+            
+            dx = rnd.randint(-4,4)
+            dy = rnd.randint(-4,4)
+
+            if x2[i]+dx > 0 and x2[i]+dx < xsize and y2[i]+dy > 0 and y2[i] + dy < ysize and not bound2[i]:
+                x2[i] += dx
+                y2[i] += dy
+        
+        
+
+        maxdist = 5
+        #data = create_dictionary(x,y,maxdist*1.5,xsize,ysize)
+            
+            
+        @apply_to_close_pairs(x, y, ceil(maxdist * 1.5), x2s = x2, y2s = y2)
+        def func(i,j):
+            dist = math.sqrt((x[i]-x2[j])**2 + (y[i]-y2[j])**2)
+            if dist < maxdist and not bound[i] and not bound2[j]:
+                bound[i] = True
+                bound2[j] = True
+
+        for i in range(n):
+            if rnd.random() < 0.05:
+                bound[i] = False
+                boundto[i] = False
+
+        for i in range(n):
+            if rnd.random() < 0.05:
+                bound2[i] = False
+                boundto2[i] = False        
+                
+        for i in range(n):
+            if bound[i]:
+                col = Color.red
+            else:
+                col = Color.green
+            
+            pen.draw_circle(x[i],y[i],3,col,True)
+
+        for i in range(n):
+            if bound2[i]:
+                col = Color.red
+            else:
+                col = Color.cyan
+            
+            pen.draw_circle(x2[i],y2[i],3,col,True)
+        
+        screen.update()
+        screen.pause(0)
+        screen.clear()
+
 def demo_iterator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
 
     maxdist = 5
@@ -197,7 +283,7 @@ def demo_iterator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
         xs = [p.x for p in particles]
         ys = [p.y for p in particles]
 
-        for i, j in get_close_pairs(xs,ys, gridsize):
+        for i, j in get_close_pairs(xs,ys,gridsize):
             attempt_binding(particles[i], particles[j], maxdist)
 
         for particle in particles:
@@ -210,13 +296,58 @@ def demo_iterator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
         screen.pause(0)
         screen.clear()
 
+def demo_iterator_dual_particles(n_steps:int=1000, xsize=800, ysize=800, n=2000):
+
+    maxdist = 5
+    gridsize = ceil(1.5 * maxdist)
+
+    screen = Canvas("test",xsize,ysize)
+    pen = Writer(screen)
+
+
+    particles = [Particle.from_random(xsize, ysize) for _ in range(n)]
+    particlesB = [Particle.from_random(xsize, ysize) for _ in range(n)]
+
+    for _ in range(n_steps):
+
+        for particle in particles:
+            particle.rw_step_in_box(xsize, ysize)
+        for particle in particlesB:
+            particle.rw_step_in_box(xsize, ysize)
+
+        xs = [p.x for p in particles]
+        ys = [p.y for p in particles]
+        x2s = [p.x for p in particlesB]
+        y2s = [p.y for p in particlesB]
+
+        for i, j in get_close_pairs(xs,ys,gridsize,x2s=x2s,y2s=y2s):
+            attempt_binding(particles[i], particlesB[j], maxdist)
+
+        for particle in particles:
+            particle.attempt_unbinding()
+        for particle in particlesB:
+            particle.attempt_unbinding()
+
+        for particle in particles:
+            pen.draw_circle(*particle.pos, particle.radius, particle.color, filled=True)
+        
+        for particle in particlesB:
+            pen.draw_circle(*particle.pos, particle.radius, particle.color, filled=True)
+        
+        screen.update()
+        screen.pause(0)
+        screen.clear()
+
 if __name__ == "__main__":
-    n_steps = 1000
+    n_steps = 500
 
     demos = [
         # demo_double_for, 
         demo_decorator, 
-        demo_iterator
+        demo_decorator_dual_particles,
+        demo_iterator,
+        demo_iterator_dual_particles
+
     ]
 
     for demo in demos:

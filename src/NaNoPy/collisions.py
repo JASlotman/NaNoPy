@@ -1,7 +1,7 @@
 
 from itertools import combinations, product, chain
 from collections import defaultdict
-from typing import Iterator, Iterable
+from typing import Iterator, Iterable, Optional
 from math import floor
 from typing import Callable
 
@@ -25,7 +25,32 @@ def _get_chunk_id_neighbors(chunk_id:tuple[int,int]) -> Iterator[tuple[int,int]]
 
     yield from product(i_range, j_range)
 
-def get_close_pairs(xs:Iterable[float], ys:Iterable[float], gridsize:float) -> Iterator[tuple[int,int]]:
+def get_close_pairs(xs:Iterable[float],ys:Iterable[float],gridsize:float,x2s:Optional[Iterable[float]]=None,y2s:Optional[Iterable[float]]=None) -> Iterator[tuple[int,int]]:
+    if x2s == None or y2s == None:
+        v = get_close_pairs_single(xs,ys,gridsize)
+        
+    else:
+        v = get_close_pairs_double(xs,ys,x2s,y2s,gridsize)
+
+    return v
+
+def get_close_pairs_double(x1s:Iterable[float],y1s:Iterable[float],x2s:Iterable[float],y2s:Iterable[float],gridsize:float) -> Iterator[tuple[int,int]]:
+
+    particle_dictionary:dict[tuple[int,int], list[int]] = defaultdict(list)
+    pairlist:list[tuple[int,int]] = []
+
+    for j, (x,y) in enumerate(zip(x2s,y2s)):
+        own_chunk_id = _calc_chunk_id(x, y, gridsize)
+        particle_dictionary[own_chunk_id].append(j)
+    
+    for i, (x,y) in enumerate(zip(x1s,y1s)):
+        own_chunk_id = _calc_chunk_id(x, y, gridsize)
+        pairlist.extend( [(i,j) for j in particle_dictionary[own_chunk_id]] ) 
+
+    yield from pairlist
+
+
+def get_close_pairs_single(xs:Iterable[float], ys:Iterable[float], gridsize:float) -> Iterator[tuple[int,int]]:
     """
     Function for getting all unique pairs (x1, y1) (x2, y2) that are in 
     neiboring or the same grid cells. 
@@ -42,13 +67,13 @@ def get_close_pairs(xs:Iterable[float], ys:Iterable[float], gridsize:float) -> I
     yield from pairs
 
 def apply_to_close_pairs(
-    xs:Iterable[float], ys:Iterable[float], gridsize:int
+    xs:Iterable[float], ys:Iterable[float], gridsize:int, x2s:Optional[Iterable[float]]=None, y2s:Optional[Iterable[int]]=None
 ) -> Callable[[Callable[[int, int], object]], None]:
     """
     Decorator that calls function `func` for all pairs of indices i, j such that
     (xs[i], ys[i]) is close to (xs[j], ys[j]). 
     """
-    close_pairs = get_close_pairs(xs, ys, gridsize)
+    close_pairs = get_close_pairs(xs, ys, gridsize, x2s, y2s)
 
     def decorator(func:Callable[[int, int], object]) -> None:
         for i, j in close_pairs:
