@@ -1,7 +1,6 @@
 import sys
 from NaNoPy import Canvas, Writer
-from NaNoPy.utils import get_close_pairs
-from typing import Iterable, Callable
+
 
 try: # Pillow and IPython is only required for notebook embedding
     from IPython.display import clear_output, display
