@@ -21,7 +21,7 @@ dependencies = [
     "Numpy",
     "PySDL2",
     "pysdl2-dll",
-    "Pillow",
+    "Pillow>12.1",
 ]
 
 [project.optional-dependencies]
