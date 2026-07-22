@@ -291,7 +291,7 @@ def demo_iterator_dual_AB(
         x2s = [p.x for p in particlesB]
         y2s = [p.y for p in particlesB]
 
-        for i, j in get_close_pairs(xs,ys,gridsize,x2s=x2s,y2s=y2s):
+        for i, j in get_close_pairs(xs,ys,gridsize,xs_B=x2s,ys_B=y2s):
             attempt_binding(particles[i], particlesB[j], maxdist)
 
         for particle in particles:
@@ -363,7 +363,7 @@ def demo_decorator_dual_AB(
         #data = create_dictionary(x,y,maxdist*1.5,xsize,ysize)
             
             
-        @apply_to_close_pairs(x, y, ceil(maxdist * 1.5), x2s = x2, y2s = y2)
+        @apply_to_close_pairs(x, y, ceil(maxdist * 1.5), xs_B = x2, ys_B = y2)
         def func(i,j):
             dist = math.sqrt((x[i]-x2[j])**2 + (y[i]-y2[j])**2)
             if dist < maxdist and not bound[i] and not bound2[j]:
