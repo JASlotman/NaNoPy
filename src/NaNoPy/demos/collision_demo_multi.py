@@ -71,7 +71,6 @@ class Particle:
     def color(self):
         return self.color_bound if self.bound else self.color_unbound
 
-        
 def distance(x1:int|float, y1:int|float, x2:int|float, y2:int|float) -> float:
     return sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
@@ -103,7 +102,72 @@ def attempt_binding_respect_particle_type(p1:Particle, p2:Particle, maxdist:floa
         p1.bound = True
         p2.bound = True
 
-def demo_iterator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
+def demo_double_for(
+        n_steps:int=1000, 
+        xsize=800, 
+        ysize=800, 
+        n=2000
+        ) -> None:
+    screen = Canvas("test",xsize,ysize)
+    pen = Writer(screen)
+
+    x = []
+    y = []
+    bound = []
+    boundto = [] 
+
+    for i in range(n):
+        x.append(rnd.randint(0,xsize))
+        y.append(rnd.randint(0,ysize))
+        bound.append(False)
+        boundto.append(-1)
+
+    for _ in range(n_steps):
+        
+
+        for i in range(n):
+            dx = rnd.randint(-4,4)
+            dy = rnd.randint(-4,4)
+
+            if x[i]+dx > 0 and x[i]+dx < xsize and y[i]+dy > 0 and y[i] + dy < ysize and not bound[i]:
+                x[i] += dx
+                y[i] += dy
+        
+        
+
+        maxdist = 5
+        #data = create_dictionary(x,y,maxdist*1.5,xsize,ysize)
+        for i in range(n):
+            for j in range(n):
+                dist = math.sqrt((x[i]-x[j])**2 + (y[i]-y[j])**2)
+                if dist < maxdist and not bound[i] and not bound[j] and i != j:
+                    bound[i] = True
+                    bound[j] = True
+                
+
+        for i in range(n):
+            if rnd.random() < 0.05:
+                bound[i] = False
+                boundto[i] = False
+                
+        for i in range(n):
+            if bound[i]:
+                col = Color.red
+            else:
+                col = Color.green
+            
+            pen.draw_circle(x[i],y[i],3,col,True)
+        
+        screen.update()
+        screen.pause(0)
+        screen.clear()
+
+def demo_iterator_single(
+        n_steps:int=1000, 
+        xsize=800, 
+        ysize=800, 
+        n=2000
+        ) -> None:
 
     maxdist = 5
     gridsize = ceil(1.5 * maxdist)
@@ -135,7 +199,73 @@ def demo_iterator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
         screen.pause(0)
         screen.clear()
 
-def demo_iterator_dual_particles(n_steps:int=1000, xsize=800, ysize=800, n=2000):
+def demo_decorator_single(
+        n_steps:int=1000, 
+        xsize=800, 
+        ysize=800, 
+        n=2000
+        ) -> None:
+    screen = Canvas("test",xsize,ysize)
+    pen = Writer(screen)
+
+    x = []
+    y = []
+    bound = []
+    boundto = [] 
+
+    for i in range(n):
+        x.append(rnd.randint(0,xsize))
+        y.append(rnd.randint(0,ysize))
+        bound.append(False)
+        boundto.append(-1)
+
+    for _ in range(n_steps):
+        
+
+        for i in range(n):
+            dx = rnd.randint(-4,4)
+            dy = rnd.randint(-4,4)
+
+            if x[i]+dx > 0 and x[i]+dx < xsize and y[i]+dy > 0 and y[i] + dy < ysize and not bound[i]:
+                x[i] += dx
+                y[i] += dy
+        
+        
+
+        maxdist = 5
+        #data = create_dictionary(x,y,maxdist*1.5,xsize,ysize)
+            
+            
+        @apply_to_close_pairs(x, y, ceil(maxdist * 1.5))
+        def func(i,j):
+            dist = math.sqrt((x[i]-x[j])**2 + (y[i]-y[j])**2)
+            if dist < maxdist and not bound[i] and not bound[j] and i != j:
+                bound[i] = True
+                bound[j] = True
+
+        for i in range(n):
+            if rnd.random() < 0.05:
+                bound[i] = False
+                boundto[i] = False
+                
+        for i in range(n):
+            if bound[i]:
+                col = Color.red
+            else:
+                col = Color.green
+            
+            pen.draw_circle(x[i],y[i],3,col,True)
+        
+        screen.update()
+        screen.pause(0)
+        screen.clear()
+
+def demo_iterator_dual_AB(
+        n_steps:int=1000, 
+        xsize=800, 
+        ysize=800, 
+        n=2000,
+        ) -> None:
 
     maxdist = 5
     gridsize = ceil(1.5 * maxdist)
@@ -179,7 +309,103 @@ def demo_iterator_dual_particles(n_steps:int=1000, xsize=800, ysize=800, n=2000)
         screen.pause(0)
         screen.clear()
 
-def demo_iterator_dual_extended(n_steps:int=1000, xsize=800, ysize=800, n=2000):
+def demo_decorator_dual_AB(
+        n_steps:int=1000, 
+        xsize=800, 
+        ysize=800, 
+        n=2000
+        ) -> None:
+    screen = Canvas("test",xsize,ysize)
+    pen = Writer(screen)
+
+    x = []
+    y = []
+    bound = []
+    boundto = []
+
+    x2 = []
+    y2 = []
+    bound2 = []
+    boundto2 = []  
+
+    for i in range(n):
+        x.append(rnd.randint(0,xsize))
+        y.append(rnd.randint(0,ysize))
+        bound.append(False)
+        boundto.append(-1)
+
+        x2.append(rnd.randint(0,xsize))
+        y2.append(rnd.randint(0,ysize))
+        bound2.append(False)
+        boundto2.append(-1)
+
+    for _ in range(n_steps):
+        
+
+        for i in range(n):
+            dx = rnd.randint(-4,4)
+            dy = rnd.randint(-4,4)
+
+            if x[i]+dx > 0 and x[i]+dx < xsize and y[i]+dy > 0 and y[i] + dy < ysize and not bound[i]:
+                x[i] += dx
+                y[i] += dy
+            
+            dx = rnd.randint(-4,4)
+            dy = rnd.randint(-4,4)
+
+            if x2[i]+dx > 0 and x2[i]+dx < xsize and y2[i]+dy > 0 and y2[i] + dy < ysize and not bound2[i]:
+                x2[i] += dx
+                y2[i] += dy
+        
+        
+
+        maxdist = 5
+        #data = create_dictionary(x,y,maxdist*1.5,xsize,ysize)
+            
+            
+        @apply_to_close_pairs(x, y, ceil(maxdist * 1.5), x2s = x2, y2s = y2)
+        def func(i,j):
+            dist = math.sqrt((x[i]-x2[j])**2 + (y[i]-y2[j])**2)
+            if dist < maxdist and not bound[i] and not bound2[j]:
+                bound[i] = True
+                bound2[j] = True
+
+        for i in range(n):
+            if rnd.random() < 0.05:
+                bound[i] = False
+                boundto[i] = False
+
+        for i in range(n):
+            if rnd.random() < 0.05:
+                bound2[i] = False
+                boundto2[i] = False        
+                
+        for i in range(n):
+            if bound[i]:
+                col = Color.red
+            else:
+                col = Color.green
+            
+            pen.draw_circle(x[i],y[i],3,col,True)
+
+        for i in range(n):
+            if bound2[i]:
+                col = Color.red
+            else:
+                col = Color.cyan
+            
+            pen.draw_circle(x2[i],y2[i],3,col,True)
+        
+        screen.update()
+        screen.pause(0)
+        screen.clear()
+
+def demo_iterator_dual_by_particle_type(
+        n_steps:int=1000, 
+        xsize=800, 
+        ysize=800, 
+        n=2000
+        ) -> None:
 
     maxdist = 5
     gridsize = ceil(1.5 * maxdist)
@@ -228,17 +454,18 @@ def demo_iterator_dual_extended(n_steps:int=1000, xsize=800, ysize=800, n=2000):
 if __name__ == "__main__":
     n_steps = 500
 
-
-    kwargs = {"n_steps":200, "xsize":800, "ysize":800, "n":n_steps}
+    kwargs = {"n_steps":n_steps, "xsize":800, "ysize":800, "n":n_steps}
     demos = [
-        demo_iterator,
-        demo_iterator_dual_particles,
-        demo_iterator_dual_extended
-
+        demo_double_for,
+        demo_iterator_single,
+        demo_decorator_single,        
+        demo_iterator_dual_AB,
+        demo_decorator_dual_AB,
+        demo_iterator_dual_by_particle_type,
     ]
 
     for demo in demos:
         start = perf_counter()
         demo(**kwargs)
         elapsed = perf_counter() - start
-        print(f"method {str(demo)} took {elapsed:.3f} seconds for {n_steps} timesteps")
+        print(f"method {str(demo.__name__)} took {elapsed:.3f} seconds for {n_steps} timesteps")
