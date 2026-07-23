@@ -1,6 +1,13 @@
-import warnings
-from typing import Optional
+from __future__ import annotations
+
 from sdl2.ext import Color as Colorsdl2
+
+from NaNoPy.constants._color_data import CSS4_KEYS
+from NaNoPy.constants._color_data import CSS4_COLORS
+
+from typing import Optional
+
+import warnings
 
 
 class _ColorValue:
@@ -9,13 +16,19 @@ class _ColorValue:
     __slots__ = ("_abgr",)
 
     def __init__(self, *, r: int, g: int, b: int, a: int) -> None:
+        # NB: stored (and later unpacked) as (a, b, g, r), not (r, g, b, a).
+        # This looks like a channel-swap bug but isn't: the compiled SDL_gfx
+        # C functions actually unpack the packed color int as 0xAABBGGRR,
+        # not 0xRRGGBBAA as pysdl2's own docstrings claim (verified by
+        # rendering a pixel and reading it back). This ordering compensates
+        # for that mismatch so colors render correctly on screen.
         self._abgr = (a, b, g, r)
 
-    def __get__(self, instance, owner):
-        return Colorsdl2(*self._abgr)
+    def __get__(self, instance, owner) -> Color:
+        return Color._from_rgba(*self._abgr)
 
 
-class Color:
+class Color(Colorsdl2):
     """Palette helper for NaNoPy shapes.
 
     Available colors: red, blue, green, yellow, magenta, cyan, white, gray.
@@ -26,23 +39,40 @@ class Color:
     least one channel must be provided; omitted RGB channels default to 0 and
     alpha defaults to 255 so supplying ``g=100`` yields a dark green.
     """
-    # RGB
+
     red = _ColorValue(r=255, g=0, b=0, a=255)
     blue = _ColorValue(r=0, g=0, b=255, a=255)
     green = _ColorValue(r=0, g=255, b=0, a=255)
-    # CMYK
     yellow = _ColorValue(r=255, g=255, b=0, a=255)
     magenta = _ColorValue(r=255, g=0, b=255, a=255)
     cyan = _ColorValue(r=0, g=255, b=255, a=255)
-    black = _ColorValue(r=0, g=0, b=0, a=255)
-    # Other
     white = _ColorValue(r=255, g=255, b=255, a=255)
     gray = _ColorValue(r=155, g=155, b=155, a=255)
+    black = _ColorValue(r=0, g=0, b=0, a=255)
     purple = _ColorValue(r=200, g=0, b=255, a=255)
     orange = _ColorValue(r=240, g=140, b=0, a=255)
     tangerine = _ColorValue(r=230, g=90, b=0, a=255)
     lime = _ColorValue(r=180, g=255, b=0, a=255)
     brown = _ColorValue(r=100, g=50, b=0, a=255)
+
+    @classmethod
+    def _from_rgba(cls, r: int, g: int, b: int, a: int) -> Color:
+        """Construct a frozen ``Color`` directly, bypassing the deprecated public constructor."""
+
+        self = object.__new__(cls)
+        for name, val in (("_r", r), ("_g", g), ("_b", b), ("_a", a)):
+            Colorsdl2._verify_rgba_value(self, val)
+            object.__setattr__(self, name, float(int(val)))
+        return self
+
+    def __setattr__(self, name, value) -> None:
+        raise AttributeError(f"{type(self).__name__} is immutable")
+
+    def __delattr__(self, name) -> None:
+        raise AttributeError(f"{type(self).__name__} is immutable")
+
+    def __hash__(self) -> int:
+        return hash((self.r, self.g, self.b, self.a))
 
     def __init__(self) -> None:
         warnings.warn(
@@ -59,7 +89,7 @@ class Color:
         g: Optional[int] = None,
         b: Optional[int] = None,
         a: Optional[int] = None,
-    ) -> Colorsdl2:
+    ) -> Color:
         """Return a custom SDL2 color with sane defaults.
 
         At least one RGB channel must be provided. Missing RGB channels default
@@ -73,7 +103,55 @@ class Color:
         green = 0 if g is None else g
         blue = 0 if b is None else b
         alpha = 255 if a is None else a
-        return Colorsdl2(alpha, blue, green, red)
+        return Color._from_rgba(alpha, blue, green, red)
+
+    @staticmethod
+    def css(color_name: CSS4_KEYS) -> Color:
+        """
+        Create a Color object from an CSS4 color name.
+        Args:
+            color_name (CSS4_COLORS): The name of the CSS4 color to retrieve.
+                Must be a valid key from the CSS4_COLORS dictionary.
+        Returns:
+            Color: A Color object initialized from the hexadecimal value
+                of the specified CSS4 color. White if not found.
+        Example:
+            >>> red = Color.css("red")
+            >>> blue = Color.css("blanchedalmond")
+        """
+
+        return Color.hex(CSS4_COLORS.get(color_name, "#ffffff"))
+
+    @staticmethod
+    def hex(hex_value: str) -> Color:
+        """
+        Create a Color from a hexadecimal color string.
+        Converts a hex color string (with or without '#' prefix) to a Color object.
+        If only RGB values are provided (6 characters), alpha is set to 255 (fully opaque).
+        Args:
+            hex_value (str): A hexadecimal color string in the format '#RRGGBB' or '#RRGGBBAA'.
+                            The '#' prefix is optional. Supports both 6-character (RGB) and
+                            8-character (RGBA) hex values.
+        Returns:
+            Color: A Color object with the specified RGBA values.
+        Examples:
+            >>> color1 = Color.hex("#FF5733")  # RGB with alpha defaulting to 255
+            >>> color2 = Color.hex("FF5733FF")  # RGBA without '#' prefix
+            >>> color3 = Color.hex("#000000")   # Black with full opacity
+        """
+
+        hex_value = hex_value.lstrip("#")
+
+        # Add alpha 255 by default
+        if len(hex_value) == 6:
+            hex_value += "FF"
+
+        return Color.custom(
+            r=int(hex_value[:2], 16),
+            g=int(hex_value[2:4], 16),
+            b=int(hex_value[4:6], 16),
+            a=int(hex_value[6:8], 16),
+        )
 
     def __call__(
         self,

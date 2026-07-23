@@ -31,10 +31,14 @@ from sdl2 import SDL_BLENDMODE_BLEND
 from sdl2.sdlgfx import gfxPrimitivesSetFont
 
 import ctypes
+import signal
+import threading
+import warnings
 from typing import Optional, TYPE_CHECKING
 
-from NaNoPy.classes.moviewriter import MovieWriter
 from NaNoPy.classes.keylistener import KeyListener
+from NaNoPy.classes.listener import Listener
+from NaNoPy.classes.moviewriter import MovieWriter
 from NaNoPy.constants import DEFAULT_CODEC
 
 from PIL import Image
@@ -49,11 +53,22 @@ class Mainloop:
         self.event = SDL_Event()
         self.running: bool = True
         self.canvasses: dict[str, CanvasNaive] = {}
-        self.listeners: dict[str, KeyListener] = {}
+        self.listeners: dict[str, KeyListener | Listener] = {}
 
         self.multiple_windows = False
         self._persistent_textures: dict[str, ctypes.c_void_p] = {}
         self._movie_writer: Optional[MovieWriter] = None
+
+        # Python only permits signal registration on the main thread. Preserve
+        # master's graceful-shutdown behavior without making worker-thread
+        # imports fail.
+        if threading.current_thread() is threading.main_thread():
+            signal.signal(signal.SIGTERM, self._handle_quit)
+            signal.signal(signal.SIGINT, self._handle_quit)
+
+    def _handle_quit(self, sig_num, _frame):
+        self.stop()
+        raise SystemExit(sig_num)
 
     def add_canvas(self, canvas: "CanvasNaive"):
         self.canvasses[canvas.name] = canvas
@@ -232,8 +247,18 @@ class Mainloop:
                 ):
                     self.stop()
 
-    def add_listener(self, listener: KeyListener) -> None:
+    def add_listener(self, listener: KeyListener | Listener) -> None:
         self.listeners[listener.name] = listener
+
+    def addlistener(self, listener: KeyListener | Listener) -> None:
+        """Deprecated alias for :meth:`add_listener`."""
+        warnings.warn(
+            "addlistener() is deprecated and will be removed in a future version. "
+            "Use add_listener() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.add_listener(listener)
 
     def ensure_persistent_texture(self, canvas: "CanvasNaive"):
         texture = canvas._persistent_texture
