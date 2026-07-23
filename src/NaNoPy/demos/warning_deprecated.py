@@ -9,5 +9,3 @@ pen.draw_circle(50, 50, 10)
 screen.update()
 
 sleep(3)
-
-

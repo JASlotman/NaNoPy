@@ -24,13 +24,13 @@ class Canvas(CanvasNaive):
     """
 
     def __init__(
-        self, 
-        name:str, 
-        xSize:int, 
-        ySize:int, 
-        *, 
-        xpos:int=-1, 
-        ypos:int=-1, 
+        self,
+        name:str,
+        xSize:int,
+        ySize:int,
+        *,
+        xpos:int=-1,
+        ypos:int=-1,
         driver=-1
     ):
         super().__init__(name, xSize, ySize, x_pos=xpos, y_pos=ypos, driver=driver, NNP=NNP)

@@ -34,5 +34,5 @@ Homepage = "https://erasmusoic.nl"
 
 [tool.ruff]
 # Ruff is code formater and linter by UV.
-# Allow lines to be as long as 100. Default is 88 max 320.
-line-length = 100
+# Allow lines to be as long as 150. Default is 88, maximum is 320.
+line-length = 150

@@ -31,9 +31,9 @@ def demo() -> None:
         wall_color = Color.custom(r=30, g=140, b=200)
         wall_offsets = (-channel_half, -channel_half + 1, channel_half - 1, channel_half)
         for offset in wall_offsets:
-            pen.draw_spline(control_x, control_y + offset, wall_color, False, False)
+            pen.draw_spline(control_x, control_y + offset, wall_color, False)
 
-        pen.draw_spline(control_x, control_y, Color.white, False, False)
+        pen.draw_spline(control_x, control_y, Color.white, False)
         curve_x = np.asarray(pen.spln.splinex, dtype=float)
         curve_y = np.asarray(pen.spln.spliney, dtype=float)
 

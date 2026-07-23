@@ -24,20 +24,20 @@ class Particle:
 
     @classmethod
     def from_random(
-        cls, 
-        xsize:int, 
-        ysize:int, 
-        color_bound=color_bound, 
-        color_unbound=color_unbound, 
-        particle_type=particle_type, 
+        cls,
+        xsize:int,
+        ysize:int,
+        color_bound=color_bound,
+        color_unbound=color_unbound,
+        particle_type=particle_type,
         binding_partners=binding_partners
         ) -> "Particle":
         return cls(
-            x=randint(0, xsize), 
-            y=randint(0, ysize), 
-            color_bound=color_bound, 
-            color_unbound=color_unbound, 
-            particle_type=particle_type, 
+            x=randint(0, xsize),
+            y=randint(0, ysize),
+            color_bound=color_bound,
+            color_unbound=color_unbound,
+            particle_type=particle_type,
             binding_partners=binding_partners
             )
 
@@ -47,9 +47,9 @@ class Particle:
 
     def rw_step_in_box(self, xsize:int, ysize:int) -> None:
         """
-        Slightly changed from original logic. Now particles can rejects part of 
+        Slightly changed from original logic. Now particles can rejects part of
         step that would take them out of box instead of whole step.
-        Also, 0 is now an allowed ordinate. 
+        Also, 0 is now an allowed ordinate.
         """
 
         # don't move if bound
@@ -90,10 +90,10 @@ def attempt_binding_respect_particle_type(p1:Particle, p2:Particle, maxdist:floa
     # check for bound
     if p1.bound or p2.bound:
         return
-    
+
     if p1.particle_type not in p2.binding_partners:
         return
-    
+
     if p2.particle_type not in p1.binding_partners:
         return
 
@@ -103,9 +103,9 @@ def attempt_binding_respect_particle_type(p1:Particle, p2:Particle, maxdist:floa
         p2.bound = True
 
 def demo_double_for(
-        n_steps:int=1000, 
-        xsize=800, 
-        ysize=800, 
+        n_steps:int=1000,
+        xsize=800,
+        ysize=800,
         n=2000
         ) -> None:
     screen = Canvas("test",xsize,ysize)
@@ -114,7 +114,7 @@ def demo_double_for(
     x = []
     y = []
     bound = []
-    boundto = [] 
+    boundto = []
 
     for i in range(n):
         x.append(rnd.randint(0,xsize))
@@ -123,7 +123,7 @@ def demo_double_for(
         boundto.append(-1)
 
     for _ in range(n_steps):
-        
+
 
         for i in range(n):
             dx = rnd.randint(-4,4)
@@ -132,8 +132,8 @@ def demo_double_for(
             if x[i]+dx > 0 and x[i]+dx < xsize and y[i]+dy > 0 and y[i] + dy < ysize and not bound[i]:
                 x[i] += dx
                 y[i] += dy
-        
-        
+
+
 
         maxdist = 5
         #data = create_dictionary(x,y,maxdist*1.5,xsize,ysize)
@@ -143,29 +143,29 @@ def demo_double_for(
                 if dist < maxdist and not bound[i] and not bound[j] and i != j:
                     bound[i] = True
                     bound[j] = True
-                
+
 
         for i in range(n):
             if rnd.random() < 0.05:
                 bound[i] = False
                 boundto[i] = False
-                
+
         for i in range(n):
             if bound[i]:
                 col = Color.red
             else:
                 col = Color.green
-            
+
             pen.draw_circle(x[i],y[i],3,col,True)
-        
+
         screen.update()
         screen.pause(0)
         screen.clear()
 
 def demo_iterator_single(
-        n_steps:int=1000, 
-        xsize=800, 
-        ysize=800, 
+        n_steps:int=1000,
+        xsize=800,
+        ysize=800,
         n=2000
         ) -> None:
 
@@ -191,18 +191,18 @@ def demo_iterator_single(
 
         for particle in particles:
             particle.attempt_unbinding()
-               
+
         for particle in particles:
             pen.draw_circle(*particle.pos, particle.radius, particle.color, filled=True)
-        
+
         screen.update()
         screen.pause(0)
         screen.clear()
 
 def demo_decorator_single(
-        n_steps:int=1000, 
-        xsize=800, 
-        ysize=800, 
+        n_steps:int=1000,
+        xsize=800,
+        ysize=800,
         n=2000
         ) -> None:
     screen = Canvas("test",xsize,ysize)
@@ -211,7 +211,7 @@ def demo_decorator_single(
     x = []
     y = []
     bound = []
-    boundto = [] 
+    boundto = []
 
     for i in range(n):
         x.append(rnd.randint(0,xsize))
@@ -220,7 +220,7 @@ def demo_decorator_single(
         boundto.append(-1)
 
     for _ in range(n_steps):
-        
+
 
         for i in range(n):
             dx = rnd.randint(-4,4)
@@ -229,13 +229,13 @@ def demo_decorator_single(
             if x[i]+dx > 0 and x[i]+dx < xsize and y[i]+dy > 0 and y[i] + dy < ysize and not bound[i]:
                 x[i] += dx
                 y[i] += dy
-        
-        
+
+
 
         maxdist = 5
         #data = create_dictionary(x,y,maxdist*1.5,xsize,ysize)
-            
-            
+
+
         @apply_to_close_pairs(x, y, ceil(maxdist * 1.5))
         def func(i,j):
             dist = math.sqrt((x[i]-x[j])**2 + (y[i]-y[j])**2)
@@ -247,23 +247,23 @@ def demo_decorator_single(
             if rnd.random() < 0.05:
                 bound[i] = False
                 boundto[i] = False
-                
+
         for i in range(n):
             if bound[i]:
                 col = Color.red
             else:
                 col = Color.green
-            
+
             pen.draw_circle(x[i],y[i],3,col,True)
-        
+
         screen.update()
         screen.pause(0)
         screen.clear()
 
 def demo_iterator_dual_AB(
-        n_steps:int=1000, 
-        xsize=800, 
-        ysize=800, 
+        n_steps:int=1000,
+        xsize=800,
+        ysize=800,
         n=2000,
         ) -> None:
 
@@ -301,18 +301,18 @@ def demo_iterator_dual_AB(
 
         for particle in particles:
             pen.draw_circle(*particle.pos, particle.radius, particle.color, filled=True)
-        
+
         for particle in particlesB:
             pen.draw_circle(*particle.pos, particle.radius, particle.color, filled=True)
-        
+
         screen.update()
         screen.pause(0)
         screen.clear()
 
 def demo_decorator_dual_AB(
-        n_steps:int=1000, 
-        xsize=800, 
-        ysize=800, 
+        n_steps:int=1000,
+        xsize=800,
+        ysize=800,
         n=2000
         ) -> None:
     screen = Canvas("test",xsize,ysize)
@@ -326,7 +326,7 @@ def demo_decorator_dual_AB(
     x2 = []
     y2 = []
     bound2 = []
-    boundto2 = []  
+    boundto2 = []
 
     for i in range(n):
         x.append(rnd.randint(0,xsize))
@@ -340,7 +340,7 @@ def demo_decorator_dual_AB(
         boundto2.append(-1)
 
     for _ in range(n_steps):
-        
+
 
         for i in range(n):
             dx = rnd.randint(-4,4)
@@ -349,20 +349,20 @@ def demo_decorator_dual_AB(
             if x[i]+dx > 0 and x[i]+dx < xsize and y[i]+dy > 0 and y[i] + dy < ysize and not bound[i]:
                 x[i] += dx
                 y[i] += dy
-            
+
             dx = rnd.randint(-4,4)
             dy = rnd.randint(-4,4)
 
             if x2[i]+dx > 0 and x2[i]+dx < xsize and y2[i]+dy > 0 and y2[i] + dy < ysize and not bound2[i]:
                 x2[i] += dx
                 y2[i] += dy
-        
-        
+
+
 
         maxdist = 5
         #data = create_dictionary(x,y,maxdist*1.5,xsize,ysize)
-            
-            
+
+
         @apply_to_close_pairs(x, y, ceil(maxdist * 1.5), xs_B = x2, ys_B = y2)
         def func(i,j):
             dist = math.sqrt((x[i]-x2[j])**2 + (y[i]-y2[j])**2)
@@ -378,14 +378,14 @@ def demo_decorator_dual_AB(
         for i in range(n):
             if rnd.random() < 0.05:
                 bound2[i] = False
-                boundto2[i] = False        
-                
+                boundto2[i] = False
+
         for i in range(n):
             if bound[i]:
                 col = Color.red
             else:
                 col = Color.green
-            
+
             pen.draw_circle(x[i],y[i],3,col,True)
 
         for i in range(n):
@@ -393,17 +393,17 @@ def demo_decorator_dual_AB(
                 col = Color.red
             else:
                 col = Color.cyan
-            
+
             pen.draw_circle(x2[i],y2[i],3,col,True)
-        
+
         screen.update()
         screen.pause(0)
         screen.clear()
 
 def demo_iterator_dual_by_particle_type(
-        n_steps:int=1000, 
-        xsize=800, 
-        ysize=800, 
+        n_steps:int=1000,
+        xsize=800,
+        ysize=800,
         n=2000
         ) -> None:
 
@@ -414,20 +414,20 @@ def demo_iterator_dual_by_particle_type(
     pen = Writer(screen)
 
     particlesA = [Particle.from_random(
-        xsize, 
-        ysize, 
-        particle_type=0, 
+        xsize,
+        ysize,
+        particle_type=0,
         binding_partners=(1, )
         ) for _ in range(n)]
     particlesB = [Particle.from_random(
-        xsize, 
-        ysize, 
-        color_bound=Color.css("cadetblue"), 
+        xsize,
+        ysize,
+        color_bound=Color.css("cadetblue"),
         color_unbound=Color.css("darkmagenta"),
         particle_type=1,
         binding_partners=(0, )
         ) for _ in range(n)]
-    
+
     particles = particlesA + particlesB
 
     for _ in range(n_steps):
@@ -446,7 +446,7 @@ def demo_iterator_dual_by_particle_type(
 
         for particle in particles:
             pen.draw_circle(*particle.pos, particle.radius, particle.color, filled=True)
-        
+
         screen.update()
         screen.pause(0)
         screen.clear()
@@ -458,7 +458,7 @@ if __name__ == "__main__":
     demos = [
         demo_double_for,
         demo_iterator_single,
-        demo_decorator_single,        
+        demo_decorator_single,
         demo_iterator_dual_AB,
         demo_decorator_dual_AB,
         demo_iterator_dual_by_particle_type,

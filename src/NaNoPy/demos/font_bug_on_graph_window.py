@@ -69,7 +69,7 @@ percentage_quorum_sensing = 100
 
 class Cell:
     def __init__(self, row, column, quorum):
-        self.color_states = {"healthy": healthy_color, "starving": starving_color, 
+        self.color_states = {"healthy": healthy_color, "starving": starving_color,
                         "dead": dead_color, "repolarization":repolarization_color}
         xmin = row*width_cells + xfilm
         xmax = xmin + width_cells - 0.2*(xfilm/width_cells)
@@ -106,18 +106,18 @@ class Cell:
         if len(self.nutrients_taken_up) > 0:
             #total_amount_healthy += 1
             return "healthy"
-            
+
         else:
             #total_amount_starving += 1
             return "starving"
 
-        
+
     @property
     def polarization(self):
         for calc_ion in self.calcium_ions:
             if calc_ion.state != "trapped":
                 return "repolarization"
-        
+
         return "polarized"
 
     def degrade_nutrient(self):
@@ -152,7 +152,7 @@ class Cell:
                 if self.depolarization_timer > depolarization_time and self.quorum is True:
                     for calcium_ion in self.calcium_ions:
                         calcium_ion.release()
-    
+
                     self.nutrient_induced_release()
                     self.depolarization_timer = 0
 
@@ -170,7 +170,7 @@ class Cell:
                 self.dead = True
                 for calcium_ion in self.calcium_ions:
                     del calcium_ion
-                
+
                 self.calcium_ions.clear()
 
 class Nutrient:
@@ -199,7 +199,7 @@ class Nutrient:
                 self.xpos += (dx + self.flow)
             if ymax > self.ypos+dy > ymin:
                 self.ypos += dy
-            
+
         elif self.state == "trapped":
             if xmax > self.xpos+dx > xmin:
                 self.xpos += dx
@@ -223,7 +223,7 @@ class Nutrient:
     def release(self):
         self.state = "free"
         self.area = (0, 0, xsize_screen, ysize_screen)
-        
+
 class Calcium:
     def __init__(self, xmincell, ymincell, xmaxcell, ymaxcell, speed_trapped, speed_free, radius):
         self.xpos = rnd.uniform(xmincell, xmaxcell)
@@ -236,7 +236,7 @@ class Calcium:
         self.speed_free = speed_free
         self.state = "trapped"
         self.color_states = {"free": calcium_color_free, "trapped":calcium_color_trapped}
-    
+
     def move(self):
         if self.state == "free":
             dx = rnd.randint(-self.speed_free, self.speed_free)
@@ -244,7 +244,7 @@ class Calcium:
             if xfilm < self.xpos+dx < xfilm+width_film:
                 self.xpos += dx
             if yfilm < self.ypos+dy < yfilm+height_film:
-                self.ypos += dy    
+                self.ypos += dy
             self.take_up()
 
         elif self.state == "trapped":
@@ -310,10 +310,10 @@ def draw_everything():
 
     for nutrient in nutrients:
         nutrient.draw()
-    
+
     # Now also draw a legend
     create_legend()
-    
+
 def create_legend():
     # Start with a black box
     pen.draw_rectangle(0, 0, xsize_screen, height_legend, color().custom(r=0, g=0, b=0), True)
@@ -339,7 +339,7 @@ def create_legend():
     pen.draw_rectangle(2*xsize_screen/4 - 10, 3*height_legend/4-10, 2*width_cells/7, 2*height_cells/7, healthy_color, False)
     pen.draw_string(25 + 2*xsize_screen/4, 3*height_legend/4 + 3, color().white, "Healthy cell")
 
-    # Starving cell 
+    # Starving cell
     pen.draw_rectangle(2*xsize_screen/4 - 10, height_legend/4-8, 2*width_cells/7, 2*height_cells/7, starving_color, False)
     pen.draw_string(25 + 2*xsize_screen/4, height_legend/4 + 5, color().white, "Starving cell")
 
