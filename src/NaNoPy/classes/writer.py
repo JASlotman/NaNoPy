@@ -23,29 +23,64 @@ from typing import Iterable, Sequence
 
 
 class WriterNaive:
-    """Object to draw shapes on a nanopy canvas
+    """Object to draw shapes on a NaNoPy canvas.
 
-    writer(canvas)
-    canvas: nanopy canvas
+    Public drawing coordinates are Cartesian: ``(0, 0)`` is the bottom-left
+    pixel and increasing ``y`` moves upward. SDL uses top-left coordinates, so
+    every primitive converts a public ``y`` coordinate to SDL row
+    ``canvas_height - 1 - y`` at the rendering boundary. Coordinates are cast
+    to integers, but are not clipped to the canvas.
+
+    Closing a canvas invalidates its native SDL pointers. Drawing calls made
+    later in the current animation iteration are therefore safe no-ops; they
+    never pass a cached, destroyed renderer to SDL_gfx.
+
+    ``writer(canvas)``
+    ``canvas``: NaNoPy canvas
     """
 
     def __init__(self, canvas: CanvasNaive, *, NNP: Mainloop):
         self.canvas = canvas
-        self.window = canvas.window
-        self.renderer = canvas.renderer
-
         self._window_name = self.canvas.name
         self._NNP = NNP
+
+    @property
+    def window(self):
+        """Return the live SDL window pointer, or ``None`` after closure."""
+
+        if not self.canvas.NNP._canvas_is_active(self.canvas):
+            return None
+        return self.canvas.window
+
+    @property
+    def renderer(self):
+        """Return the live SDL renderer pointer, or ``None`` after closure."""
+
+        if not self.canvas.NNP._canvas_is_active(self.canvas):
+            return None
+        return self.canvas.renderer
+
+    def _active_renderer(self):
+        """Return a safe renderer for drawing, or ``None`` after close."""
+
+        return self.renderer
 
     @property
     def y_size(self):
         return self.canvas.get_window_size()[1]
 
+    def _to_sdl_y(self, y) -> int:
+        """Convert a public Cartesian y-coordinate to an SDL pixel row."""
+        return int(self.y_size - 1 - y)
+
     def draw_pixel(self, x, y, color=Color.white) -> None:
         """Draws pixels of given color on x,y coordinate.
         Casts x, y coordinate to int.
         """
-        pixelColor(self.renderer, int(x), int(self.y_size - y), color)
+        renderer = self._active_renderer()
+        if renderer is None:
+            return
+        pixelColor(renderer, int(x), self._to_sdl_y(y), color)
 
     def drawPixel(self, x, y, color=Color.white) -> None:
         """(deprecated, use draw_pixel() instead)
@@ -63,8 +98,11 @@ class WriterNaive:
 
     def draw_line(self, x1, y1, x2, y2, color=Color.white) -> None:
         """Draws line of 1 pixel wide between x1,y1 and x2,y2 of given color"""
+        renderer = self._active_renderer()
+        if renderer is None:
+            return
         aalineColor(
-            self.renderer, int(x1), int(self.y_size - y1), int(x2), int(self.y_size - y2), color
+            renderer, int(x1), self._to_sdl_y(y1), int(x2), self._to_sdl_y(y2), color
         )
 
     def drawLine(self, x1, y1, x2, y2, color=Color.white) -> None:
@@ -84,12 +122,15 @@ class WriterNaive:
 
     def draw_line_thick(self, x1, y1, x2, y2, width, color=Color.white) -> None:
         """Draws line of width pixels wide between x1,y1 and x2,y2 of given color."""
+        renderer = self._active_renderer()
+        if renderer is None:
+            return
         thickLineColor(
-            self.renderer,
+            renderer,
             int(x1),
-            int(self.y_size - y1),
+            self._to_sdl_y(y1),
             int(x2),
-            int(self.y_size - y2),
+            self._to_sdl_y(y2),
             int(width),
             color,
         )
@@ -111,28 +152,34 @@ class WriterNaive:
 
     def draw_rectangle(self, x1, y1, width, height, color=Color.white, filled: bool=False) -> None:
         """Draws rectangle with x1,y1 being the bottom left corner w being the width and h the height and set filled to true to fill it with given color"""
+        renderer = self._active_renderer()
+        if renderer is None:
+            return
         if filled:
             boxColor(
-                self.renderer,
+                renderer,
                 int(x1),
-                int(self.y_size - y1),
+                self._to_sdl_y(y1),
                 int(x1 + width),
-                int((self.y_size - (y1 + height))),
+                self._to_sdl_y(y1 + height),
                 color,
             )
         else:
             rectangleColor(
-                self.renderer,
+                renderer,
                 int(x1),
-                int(self.y_size - y1),
+                self._to_sdl_y(y1),
                 int(x1 + width),
-                int((self.y_size - (y1 + height))),
+                self._to_sdl_y(y1 + height),
                 color,
             )
 
     def drawRectangle(self, x1, y1, w, h, color=Color.white, filled: bool=False) -> None:
         """(deprecated, use draw_rectangle() instead)
-        Draws rectangle with x1,y1 being the top left corner w being the width and h the height and set filled to true to fill it with given color"""
+        Draws rectangle with x1,y1 being the bottom-left corner, w being the
+        width and h the height, and set filled to true to fill it with the
+        given color.
+        """
 
         warnings.warn(
             "drawRectangle() is deprecated and will be removed in a future version. "
@@ -145,10 +192,13 @@ class WriterNaive:
 
     def draw_circle(self, x, y, radius, color=Color.white, filled: bool=False) -> None:
         """Draws circle with a given radius, and x,y being the centre location and set filled to true to fill it with given color"""
+        renderer = self._active_renderer()
+        if renderer is None:
+            return
         if filled:
-            filledCircleColor(self.renderer, int(x), int(self.y_size - y), int(radius), color)
+            filledCircleColor(renderer, int(x), self._to_sdl_y(y), int(radius), color)
         else:
-            aacircleColor(self.renderer, int(x), int(self.y_size - y), int(radius), color)
+            aacircleColor(renderer, int(x), self._to_sdl_y(y), int(radius), color)
 
     def drawCircle(self, x, y, r, color=Color.white, filled: bool=False) -> None:
         """(deprecated, use draw_circle() instead)
@@ -164,17 +214,26 @@ class WriterNaive:
         self.draw_circle(x, y, r, color, filled)
 
     def draw_star(self, x, y, radius, n, color=Color.white, filled: bool=False) -> None:
-        """Draws a n-pointed star with with a given radius, and x,y being the centre location and set filled to true to fill it with given color"""
+        """Draw an n-pointed star centered at ``(x, y)``.
+
+        Raises:
+            ValueError: If ``n`` is less than three.
+        """
+        if n < 3:
+            raise ValueError("A star requires at least three points")
+
         rads = (2 * math.pi) / (2 * n)
-        xs = []
-        ys = []
-
+        points = []
         for i in range(n * 2):
-            rad = radius / ((i % 2) + 1)
-            xs.append(int(x + math.cos(rads * i) * rad))
-            ys.append(int((self.y_size) - y + math.sin(rads * i) * rad))
+            point_radius = radius / ((i % 2) + 1)
+            angle = rads * i
+            points.append(
+                (
+                    x + math.cos(angle) * point_radius,
+                    y - math.sin(angle) * point_radius,
+                )
+            )
 
-        points = list(zip(xs, ys))
         self.draw_polygon_custom(points, color, filled)
 
     def drawStar(self, x, y, r, n, color=Color.white, filled: bool=False) -> None:
@@ -198,28 +257,49 @@ class WriterNaive:
         color=Color.white,
         filled: bool = False,
     ) -> None:
-        """Draws a custom polygon defined by a list of points. Expects a point to be a tuple of two numbers."""
+        """Draw a custom polygon from at least three Cartesian points.
+
+        ``points`` uses the same bottom-left coordinate system as every other
+        drawing primitive. Integer and floating-point coordinates are accepted
+        and converted to SDL's integer coordinates immediately before drawing.
+        """
         n = len(points)
-        xs, ys = zip(*points)
-        vx = (ctypes.c_int16 * len(xs))(*xs)
-        vy = (ctypes.c_int16 * len(ys))(*ys)
+        if n < 3:
+            raise ValueError("A polygon requires at least three points")
+
+        renderer = self._active_renderer()
+        if renderer is None:
+            return
+
+        xs, ys = zip(*points, strict=True)
+        vx = (ctypes.c_int16 * n)(*(int(x) for x in xs))
+        vy = (ctypes.c_int16 * n)(*(self._to_sdl_y(y) for y in ys))
 
         if filled:
-            filledPolygonColor(self.renderer, vx, vy, n, color)
+            filledPolygonColor(renderer, vx, vy, n, color)
         else:
-            aapolygonColor(self.renderer, vx, vy, n, color)
+            aapolygonColor(renderer, vx, vy, n, color)
 
     def draw_polygon(self, x, y, radius, n, color=Color.white, filled: bool=False) -> None:
-        """Draws n sided polygon with radius r, and x,y being the centre location and set filled to true to fill it with given color"""
+        """Draw a regular n-sided polygon centered at ``(x, y)``.
+
+        Raises:
+            ValueError: If ``n`` is less than three.
+        """
+        if n < 3:
+            raise ValueError("A polygon requires at least three points")
+
         rads = (2 * math.pi) / n
-        xs = []
-        ys = []
-
+        points = []
         for i in range(n):
-            xs.append(int(x + math.cos((rads * i) - (math.pi / 2)) * radius))
-            ys.append(int((self.y_size) - y + math.sin((rads * i) - (math.pi / 2)) * radius))
+            angle = (rads * i) - (math.pi / 2)
+            points.append(
+                (
+                    x + math.cos(angle) * radius,
+                    y - math.sin(angle) * radius,
+                )
+            )
 
-        points = list(zip(xs, ys))
         self.draw_polygon_custom(points, color, filled)
 
     def drawPolygon(self, x, y, r, n, color=Color.white, filled: bool=False) -> None:
@@ -246,14 +326,16 @@ class WriterNaive:
         fill_color=None,
     ) -> None:
         """Draw a spline, optionally filling a closed loop with a separate color."""
+        if self._active_renderer() is None:
+            return
         self.spln = Spline(xs, ys, loop)
 
         active_fill_color = fill_color if fill_color is not None else color
         if loop and (filled or fill_color is not None):
-            for x, y in zip(self.spln.insidex, self.spln.insidey):
+            for x, y in zip(self.spln.insidex, self.spln.insidey, strict=True):
                 self.draw_pixel(x, y, active_fill_color)
 
-        for v in zip(self.spln.splinex, self.spln.spliney):
+        for v in zip(self.spln.splinex, self.spln.spliney, strict=True):
             self.draw_pixel(v[0], v[1], color)
 
     def drawSpline(self, xs: Iterable, ys: Iterable, color=Color.white, loop: bool=False, filled: bool=False) -> None:
@@ -273,11 +355,14 @@ class WriterNaive:
 
     def draw_string(self, x, y, color=Color.white, text: str="placeholder") -> None:
         """Draws string on location x,y with given color"""
+        renderer = self._active_renderer()
+        if renderer is None:
+            return
         # Ensure the SDL_gfx font is bound to the current renderer when using multiple windows.
         if self.canvas._reload_fonts or self.canvas.NNP.multiple_windows:
             gfxPrimitivesSetFont(None, 0, 0)
             self.canvas._reload_fonts = False
-        stringColor(self.renderer, int(x), int(self.y_size - y), str.encode(text), color)
+        stringColor(renderer, int(x), self._to_sdl_y(y), str.encode(text), color)
 
     def drawString(self, x, y, color=Color.white, text: str="placeholder") -> None:
         """(deprecated, use draw_string() instead)

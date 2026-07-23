@@ -1,6 +1,7 @@
 import ctypes
 import importlib
 import os
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -11,6 +12,7 @@ Mainloop = mainloop_module.Mainloop
 
 
 class FakeCanvas:
+    window = object()
     renderer = object()
     _reload_fonts = False
 
@@ -35,9 +37,12 @@ class CollectingWriter:
 class EmbeddedCaptureTests(unittest.TestCase):
     def make_loop(self, writer):
         loop = Mainloop.__new__(Mainloop)
+        loop.running = True
+        loop._sdl_initialized = True
+        loop._runtime_thread_id = threading.get_ident()
         loop.multiple_windows = False
         loop._movie_writer = writer
-        loop._handle_events = lambda: None
+        loop._handle_events = lambda: True
         return loop
 
     @staticmethod
