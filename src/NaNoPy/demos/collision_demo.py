@@ -1,6 +1,6 @@
 from NaNoPy import Canvas, Writer, Color
 from random import randint, random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from math import sqrt
 from time import perf_counter
 from math import ceil
@@ -17,10 +17,29 @@ class Particle:
     stepsize:int=4
     p_unbind = 0.05
     radius = 3
+    color_bound:Color = Color.red
+    color_unbound:Color = Color.green
+    particle_type:int = 0
+    binding_partners:list = field(default_factory=list)
 
     @classmethod
-    def from_random(cls, xsize:int, ysize:int) -> "Particle":
-        return cls(x=randint(0, xsize), y=randint(0, ysize))
+    def from_random(
+        cls, 
+        xsize:int, 
+        ysize:int, 
+        color_bound=color_bound, 
+        color_unbound=color_unbound, 
+        particle_type=particle_type, 
+        binding_partners=binding_partners
+        ) -> "Particle":
+        return cls(
+            x=randint(0, xsize), 
+            y=randint(0, ysize), 
+            color_bound=color_bound, 
+            color_unbound=color_unbound, 
+            particle_type=particle_type, 
+            binding_partners=binding_partners
+            )
 
     @property
     def pos(self) -> tuple[int, int]:
@@ -50,9 +69,8 @@ class Particle:
 
     @property
     def color(self):
-        return Color.red if self.bound else Color.green
+        return self.color_bound if self.bound else self.color_unbound
 
-        
 def distance(x1:int|float, y1:int|float, x2:int|float, y2:int|float) -> float:
     return sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
@@ -67,7 +85,29 @@ def attempt_binding(p1:Particle, p2:Particle, maxdist:float):
         p1.bound = True
         p2.bound = True
 
-def demo_double_for(n_steps:int=1000, xsize=800, ysize=800, n=2000):
+def attempt_binding_respect_particle_type(p1:Particle, p2:Particle, maxdist:float):
+
+    # check for bound
+    if p1.bound or p2.bound:
+        return
+    
+    if p1.particle_type not in p2.binding_partners:
+        return
+    
+    if p2.particle_type not in p1.binding_partners:
+        return
+
+    # measure distance to determine whether to bind
+    if distance(*p1.pos, *p2.pos) < maxdist:
+        p1.bound = True
+        p2.bound = True
+
+def demo_double_for(
+        n_steps:int=1000, 
+        xsize=800, 
+        ysize=800, 
+        n=2000
+        ) -> None:
     screen = Canvas("test",xsize,ysize)
     pen = Writer(screen)
 
@@ -122,7 +162,49 @@ def demo_double_for(n_steps:int=1000, xsize=800, ysize=800, n=2000):
         screen.pause(0)
         screen.clear()
 
-def demo_decorator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
+def demo_iterator_single(
+        n_steps:int=1000, 
+        xsize=800, 
+        ysize=800, 
+        n=2000
+        ) -> None:
+
+    maxdist = 5
+    gridsize = ceil(1.5 * maxdist)
+
+    screen = Canvas("test",xsize,ysize)
+    pen = Writer(screen)
+
+
+    particles = [Particle.from_random(xsize, ysize) for _ in range(n)]
+
+    for _ in range(n_steps):
+
+        for particle in particles:
+            particle.rw_step_in_box(xsize, ysize)
+
+        xs = [p.x for p in particles]
+        ys = [p.y for p in particles]
+
+        for i, j in get_close_pairs(xs,ys,gridsize):
+            attempt_binding(particles[i], particles[j], maxdist)
+
+        for particle in particles:
+            particle.attempt_unbinding()
+               
+        for particle in particles:
+            pen.draw_circle(*particle.pos, particle.radius, particle.color, filled=True)
+        
+        screen.update()
+        screen.pause(0)
+        screen.clear()
+
+def demo_decorator_single(
+        n_steps:int=1000, 
+        xsize=800, 
+        ysize=800, 
+        n=2000
+        ) -> None:
     screen = Canvas("test",xsize,ysize)
     pen = Writer(screen)
 
@@ -178,7 +260,61 @@ def demo_decorator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
         screen.pause(0)
         screen.clear()
 
-def demo_decorator_dual_particles(n_steps:int=1000, xsize=800, ysize=800, n=2000):
+def demo_iterator_dual_AB(
+        n_steps:int=1000, 
+        xsize=800, 
+        ysize=800, 
+        n=2000,
+        ) -> None:
+
+    maxdist = 5
+    gridsize = ceil(1.5 * maxdist)
+
+    screen = Canvas("test",xsize,ysize)
+    pen = Writer(screen)
+
+
+    particles = [Particle.from_random(xsize, ysize) for _ in range(n)]
+    particlesB = [Particle.from_random(
+        xsize, ysize, color_bound=Color.css("cadetblue"), color_unbound=Color.css("darkmagenta")
+        ) for _ in range(n)]
+
+    for _ in range(n_steps):
+
+        for particle in particles:
+            particle.rw_step_in_box(xsize, ysize)
+        for particle in particlesB:
+            particle.rw_step_in_box(xsize, ysize)
+
+        xs = [p.x for p in particles]
+        ys = [p.y for p in particles]
+        x2s = [p.x for p in particlesB]
+        y2s = [p.y for p in particlesB]
+
+        for i, j in get_close_pairs(xs,ys,gridsize,xs_B=x2s,ys_B=y2s):
+            attempt_binding(particles[i], particlesB[j], maxdist)
+
+        for particle in particles:
+            particle.attempt_unbinding()
+        for particle in particlesB:
+            particle.attempt_unbinding()
+
+        for particle in particles:
+            pen.draw_circle(*particle.pos, particle.radius, particle.color, filled=True)
+        
+        for particle in particlesB:
+            pen.draw_circle(*particle.pos, particle.radius, particle.color, filled=True)
+        
+        screen.update()
+        screen.pause(0)
+        screen.clear()
+
+def demo_decorator_dual_AB(
+        n_steps:int=1000, 
+        xsize=800, 
+        ysize=800, 
+        n=2000
+        ) -> None:
     screen = Canvas("test",xsize,ysize)
     pen = Writer(screen)
 
@@ -227,7 +363,7 @@ def demo_decorator_dual_particles(n_steps:int=1000, xsize=800, ysize=800, n=2000
         #data = create_dictionary(x,y,maxdist*1.5,xsize,ysize)
             
             
-        @apply_to_close_pairs(x, y, ceil(maxdist * 1.5), x2s = x2, y2s = y2)
+        @apply_to_close_pairs(x, y, ceil(maxdist * 1.5), xs_B = x2, ys_B = y2)
         def func(i,j):
             dist = math.sqrt((x[i]-x2[j])**2 + (y[i]-y2[j])**2)
             if dist < maxdist and not bound[i] and not bound2[j]:
@@ -264,7 +400,12 @@ def demo_decorator_dual_particles(n_steps:int=1000, xsize=800, ysize=800, n=2000
         screen.pause(0)
         screen.clear()
 
-def demo_iterator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
+def demo_iterator_dual_by_particle_type(
+        n_steps:int=1000, 
+        xsize=800, 
+        ysize=800, 
+        n=2000
+        ) -> None:
 
     maxdist = 5
     gridsize = ceil(1.5 * maxdist)
@@ -272,8 +413,22 @@ def demo_iterator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
     screen = Canvas("test",xsize,ysize)
     pen = Writer(screen)
 
-
-    particles = [Particle.from_random(xsize, ysize) for _ in range(n)]
+    particlesA = [Particle.from_random(
+        xsize, 
+        ysize, 
+        particle_type=0, 
+        binding_partners=(1, )
+        ) for _ in range(n)]
+    particlesB = [Particle.from_random(
+        xsize, 
+        ysize, 
+        color_bound=Color.css("cadetblue"), 
+        color_unbound=Color.css("darkmagenta"),
+        particle_type=1,
+        binding_partners=(0, )
+        ) for _ in range(n)]
+    
+    particles = particlesA + particlesB
 
     for _ in range(n_steps):
 
@@ -284,54 +439,12 @@ def demo_iterator(n_steps:int=1000, xsize=800, ysize=800, n=2000):
         ys = [p.y for p in particles]
 
         for i, j in get_close_pairs(xs,ys,gridsize):
-            attempt_binding(particles[i], particles[j], maxdist)
+            attempt_binding_respect_particle_type(particles[i], particles[j], maxdist)
 
         for particle in particles:
             particle.attempt_unbinding()
-               
-        for particle in particles:
-            pen.draw_circle(*particle.pos, particle.radius, particle.color, filled=True)
-        
-        screen.update()
-        screen.pause(0)
-        screen.clear()
-
-def demo_iterator_dual_particles(n_steps:int=1000, xsize=800, ysize=800, n=2000):
-
-    maxdist = 5
-    gridsize = ceil(1.5 * maxdist)
-
-    screen = Canvas("test",xsize,ysize)
-    pen = Writer(screen)
-
-
-    particles = [Particle.from_random(xsize, ysize) for _ in range(n)]
-    particlesB = [Particle.from_random(xsize, ysize) for _ in range(n)]
-
-    for _ in range(n_steps):
 
         for particle in particles:
-            particle.rw_step_in_box(xsize, ysize)
-        for particle in particlesB:
-            particle.rw_step_in_box(xsize, ysize)
-
-        xs = [p.x for p in particles]
-        ys = [p.y for p in particles]
-        x2s = [p.x for p in particlesB]
-        y2s = [p.y for p in particlesB]
-
-        for i, j in get_close_pairs(xs,ys,gridsize,x2s=x2s,y2s=y2s):
-            attempt_binding(particles[i], particlesB[j], maxdist)
-
-        for particle in particles:
-            particle.attempt_unbinding()
-        for particle in particlesB:
-            particle.attempt_unbinding()
-
-        for particle in particles:
-            pen.draw_circle(*particle.pos, particle.radius, particle.color, filled=True)
-        
-        for particle in particlesB:
             pen.draw_circle(*particle.pos, particle.radius, particle.color, filled=True)
         
         screen.update()
@@ -341,17 +454,18 @@ def demo_iterator_dual_particles(n_steps:int=1000, xsize=800, ysize=800, n=2000)
 if __name__ == "__main__":
     n_steps = 500
 
+    kwargs = {"n_steps":n_steps, "xsize":800, "ysize":800, "n":n_steps}
     demos = [
-        # demo_double_for, 
-        demo_decorator, 
-        demo_decorator_dual_particles,
-        demo_iterator,
-        demo_iterator_dual_particles
-
+        demo_double_for,
+        demo_iterator_single,
+        demo_decorator_single,        
+        demo_iterator_dual_AB,
+        demo_decorator_dual_AB,
+        demo_iterator_dual_by_particle_type,
     ]
 
     for demo in demos:
         start = perf_counter()
-        demo(n_steps)
+        demo(**kwargs)
         elapsed = perf_counter() - start
-        print(f"method {str(demo)} took {elapsed:.3f} seconds for {n_steps} timesteps")
+        print(f"method {str(demo.__name__)} took {elapsed:.3f} seconds for {n_steps} timesteps")

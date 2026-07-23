@@ -25,25 +25,56 @@ def _get_chunk_id_neighbors(chunk_id:tuple[int,int]) -> Iterator[tuple[int,int]]
 
     yield from product(i_range, j_range)
 
-def get_close_pairs(xs:Iterable[float],ys:Iterable[float],gridsize:float,x2s:Optional[Iterable[float]]=None,y2s:Optional[Iterable[float]]=None) -> Iterator[tuple[int,int]]:
-    if x2s == None or y2s == None:
-        v = get_close_pairs_single(xs,ys,gridsize)
-        
+def get_close_pairs(
+        xs_A:Iterable[float],
+        ys_A:Iterable[float],
+        gridsize:float,
+        xs_B:Optional[Iterable[float]]=None,
+        ys_B:Optional[Iterable[float]]=None
+        ) -> Iterator[tuple[int,int]]:
+    """
+    Yields all possible ordered pairs of particles in adjacent grid cells. If 
+    xs_B and ys_B are supplied, only form pairs of type AB. 
+
+    Output if no xs_B or ys_B supplied: Iterator of tuples[i,j], where i is the 
+    index of the first particle and j is the index of the second particle in the 
+    input iterable. 
+
+    Output if xs_B and ys_B are both supplied: Iterator of tuples[i,j], where i
+    is the index of the A-type particle and j is the index of the B-type 
+    particle in their respective input iterables. 
+    """
+
+    if xs_B is None or ys_B is None:
+        pairlist_iterator = get_close_AA_pairs(xs_A,ys_A,gridsize)
     else:
-        v = get_close_pairs_double(xs,ys,x2s,y2s,gridsize)
+        pairlist_iterator = get_close_AB_pairs(xs_A,ys_A,xs_B,ys_B,gridsize)
 
-    return v
+    yield from pairlist_iterator
 
-def get_close_pairs_double(x1s:Iterable[float],y1s:Iterable[float],x2s:Iterable[float],y2s:Iterable[float],gridsize:float) -> Iterator[tuple[int,int]]:
+def get_close_AB_pairs(
+        xs_A:Iterable[float],
+        ys_A:Iterable[float],
+        xs_B:Iterable[float],
+        ys_B:Iterable[float],
+        gridsize:float
+        ) -> Iterator[tuple[int,int]]:
+    """
+    Yields all possible ordered pairs of type AB of particles in adjacent grid 
+    cells. 
+
+    Output: Iterator of tuples[i,j], where i is the index of the A-type particle
+    and j is the index of the B-type particle in their respective iterable. 
+    """
 
     particle_dictionary:dict[tuple[int,int], list[int]] = defaultdict(list)
     pairlist:list[tuple[int,int]] = []
 
-    for j, (x,y) in enumerate(zip(x2s,y2s)):
+    for j, (x,y) in enumerate(zip(xs_B,ys_B)):
         own_chunk_id = _calc_chunk_id(x, y, gridsize)
         particle_dictionary[own_chunk_id].append(j)
     
-    for i, (x,y) in enumerate(zip(x1s,y1s)):
+    for i, (x,y) in enumerate(zip(xs_A,ys_A)):
         own_chunk_id = _calc_chunk_id(x, y, gridsize)
         chunks = _get_chunk_id_neighbors(own_chunk_id)
         for chunck in chunks:
@@ -51,15 +82,22 @@ def get_close_pairs_double(x1s:Iterable[float],y1s:Iterable[float],x2s:Iterable[
 
     yield from pairlist
 
+def get_close_AA_pairs(
+        xs_A:Iterable[float], 
+        ys_A:Iterable[float], 
+        gridsize:float
+        ) -> Iterator[tuple[int,int]]:
 
-def get_close_pairs_single(xs:Iterable[float], ys:Iterable[float], gridsize:float) -> Iterator[tuple[int,int]]:
     """
-    Function for getting all unique pairs (x1, y1) (x2, y2) that are in 
-    neiboring or the same grid cells. 
+    Yields all possible ordered pairs particles in adjacent grid cells. 
+
+    Output: Iterator of tuples[i,j], where i is the index of the A-type particle
+    and j is the index of the B-type particle in their respective iterable. 
     """
+
     particle_dictionary:dict[tuple[int,int], list[int]] = defaultdict(list)
 
-    for i, (x, y) in enumerate(zip(xs, ys)):
+    for i, (x, y) in enumerate(zip(xs_A, ys_A)):
         own_chunk_id = _calc_chunk_id(x, y, gridsize)
         for neighbor_id in _get_chunk_id_neighbors(own_chunk_id):
             particle_dictionary[neighbor_id].append(i)
@@ -69,13 +107,24 @@ def get_close_pairs_single(xs:Iterable[float], ys:Iterable[float], gridsize:floa
     yield from pairs
 
 def apply_to_close_pairs(
-    xs:Iterable[float], ys:Iterable[float], gridsize:int, x2s:Optional[Iterable[float]]=None, y2s:Optional[Iterable[int]]=None
-) -> Callable[[Callable[[int, int], object]], None]:
+    xs_A:Iterable[float], 
+    ys_A:Iterable[float], 
+    gridsize:float, 
+    xs_B:Optional[Iterable[float]]=None, 
+    ys_B:Optional[Iterable[int]]=None
+    ) -> Callable[[Callable[[int, int], object]], None]:
+
     """
-    Decorator that calls function `func` for all pairs of indices i, j such that
-    (xs[i], ys[i]) is close to (xs[j], ys[j]). 
+    If xs_B or xs_y is not supplied: Decorator that calls function `func` for 
+    all pairs of indices i, j such that (xs[i], ys[i]) is close to 
+    (xs[j], ys[j]). 
+
+    If xs_B and xs_y are both supplied: Decorator that calls function `func` for 
+    all pairs of indices i, j such that (xs_A[i], ys_A[i]) is close to 
+    (xs_B[j], ys_B[j]). 
     """
-    close_pairs = get_close_pairs(xs, ys, gridsize, x2s, y2s)
+
+    close_pairs = get_close_pairs(xs_A, ys_A, gridsize, xs_B, ys_B)
 
     def decorator(func:Callable[[int, int], object]) -> None:
         for i, j in close_pairs:
