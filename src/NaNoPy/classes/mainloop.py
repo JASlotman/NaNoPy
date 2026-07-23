@@ -48,6 +48,8 @@ from NaNoPy.constants import ARGB_MASK
 from PIL import Image
 from io import BytesIO
 
+import signal
+
 if TYPE_CHECKING:
     from NaNoPy.classes.canvas import CanvasNaive
 
@@ -60,6 +62,14 @@ class Mainloop:
         self.canvasses: dict[str, CanvasNaive] = {}
         self.listeners: dict[str, Listener] = {}
         self.multiple_windows = False
+        
+        # Register termination signals
+        signal.signal(signal.SIGTERM, self._handle_quit)
+        signal.signal(signal.SIGINT, self._handle_quit)
+
+    def _handle_quit(self, sig_num, frame):
+        self.stop()
+        exit(sig_num)
 
     def add_canvas(self, canvas: "CanvasNaive"):
         self.canvasses[canvas.name] = canvas
