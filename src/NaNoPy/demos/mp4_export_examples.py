@@ -193,13 +193,13 @@ def example_with_cleanup():
 def example_with_audio():
     """Example: Star animation with audio track
 
-    Creates a 32-second animation with background music.
+    Creates a 10-second animation with background music.
     Requires an 'a.mp3' file in the same directory.
     """
     import random as rnd
 
     # Setup
-    FPS = 60
+    FPS = 240
     dt = 1.0 / FPS
     x_size, y_size = 1900, 1000
     y = y_size / 2
@@ -227,7 +227,7 @@ def example_with_audio():
         stars.append((rnd.randint(0, x_size), rnd.randint(0, y_size)))
 
     # Animation parameters
-    max_frames = 32 * FPS  # 32 seconds
+    max_frames = 10 * FPS  # 10 seconds
     frame_count = 0
 
     print("Recording star animation with audio...")
