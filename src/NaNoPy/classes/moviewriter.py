@@ -1,92 +1,253 @@
-"""MovieWriter for exporting animations to MP4 format.
-
-This module provides functionality to record animations and export them as MP4 videos.
-It's designed to be memory-efficient by only storing frames when explicitly enabled.
-"""
+"""Stream animation frames to FFmpeg and export them as a video."""
 
 import os
 from pathlib import Path
-from typing import Optional
-from PIL import Image
+import secrets
+import stat
 import subprocess
-import tempfile
+import threading
+from typing import Optional
+
+from PIL import Image
+
 from NaNoPy.constants import DEFAULT_CODEC
 
 
 class MovieWriter:
-    """Records animation frames and exports them as MP4 video.
+    """Encode animation frames with one long-lived FFmpeg process.
 
-    This class captures frames during animation and encodes them into an MP4 file
-    using ffmpeg. Frames are only stored when recording is explicitly enabled.
+    FFmpeg starts when the first frame establishes the video dimensions. Each
+    subsequent frame is converted to RGBA and written directly to FFmpeg's stdin,
+    so recordings do not retain a frame list or create a temporary PNG sequence.
 
-    Attributes:
-        output_path (Path): Path where the MP4 file will be saved
-        fps (int): Frames per second for the output video
-        frames (list): List of PIL Images captured during recording
-        is_recording (bool): Whether frames are currently being recorded
-
-    Example:
-        >>> movie = MovieWriter("output.mp4", fps=30)
-        >>> # In your animation loop:
-        >>> if movie.is_recording:
-        ...     movie.add_frame(screen_image)
-        >>> # After animation:
-        >>> movie.save()
+    Args:
+        output_path: Path where the encoded video will be saved.
+        fps: Frames per second for the output video.
+        codec: FFmpeg video encoder. Because encoding happens while frames arrive,
+            the codec must be selected when the writer is created.
     """
 
-    def __init__(self, output_path: str, fps: int = 30):
-        """Initialize MovieWriter.
+    _FINALIZE_TIMEOUT_SECONDS = 60
+    _STDERR_JOIN_TIMEOUT_SECONDS = 5
 
-        Args:
-            output_path (str): Path where MP4 will be saved (relative or absolute)
-            fps (int): Frames per second for output video. Defaults to 30.
-
-        Raises:
-            ValueError: If fps is not positive
-        """
+    def __init__(self, output_path: str, fps: int = 30, codec: str = DEFAULT_CODEC):
         if fps <= 0:
             raise ValueError("fps must be positive")
+        if not codec:
+            raise ValueError("codec must not be empty")
 
         self.output_path = Path(output_path)
+        self._target_path = self.output_path.absolute()
         self.fps = fps
-        self.frames: list[Image.Image] = []
+        self.codec = codec
         self.is_recording = False
-        self._temp_dir: Optional[tempfile.TemporaryDirectory] = None
+
+        self._process: Optional[subprocess.Popen] = None
+        self._stream_path: Optional[Path] = None
+        self._stderr_buffer = bytearray()
+        self._stderr_thread: Optional[threading.Thread] = None
+        self._frame_size: Optional[tuple[int, int]] = None
+        self._frame_count = 0
+        self._finalized = False
 
     def start_recording(self) -> None:
-        """Start recording frames. Must be called before adding frames."""
+        """Start accepting frames for a new recording."""
+        if self.is_recording:
+            raise RuntimeError("Recording is already active.")
+        if self._process is not None:
+            raise RuntimeError("The previous FFmpeg process has not been finalized.")
+        if self._stream_path is not None:
+            raise RuntimeError("Save or clear the finalized recording before starting again.")
+        if not self._is_ffmpeg_available():
+            raise RuntimeError(
+                "ffmpeg not found. Please install ffmpeg:\n"
+                "  Ubuntu/Debian: sudo apt-get install ffmpeg\n"
+                "  macOS: brew install ffmpeg\n"
+                "  Windows: choco install ffmpeg (or download from ffmpeg.org)"
+            )
+
+        self._frame_size = None
+        self._frame_count = 0
+        self._finalized = False
         self.is_recording = True
-        self.frames = []
 
     def stop_recording(self) -> None:
-        """Stop recording frames."""
+        """Stop accepting frames and finalize the video stream."""
+        if not self.is_recording:
+            return
+
         self.is_recording = False
+        if self._process is not None:
+            self._finalize_video()
 
     def add_frame(self, frame: Image.Image) -> None:
-        """Add a frame to the recording.
-
-        Args:
-            frame (PIL.Image): The image frame to record
-
-        Raises:
-            RuntimeError: If recording hasn't been started
-        """
+        """Write one Pillow image to the active FFmpeg stream."""
         if not self.is_recording:
             raise RuntimeError("Recording not started. Call start_recording() first.")
-
         if not isinstance(frame, Image.Image):
             raise TypeError("Frame must be a PIL Image")
 
-        # Store a copy to avoid issues with frame reuse
-        self.frames.append(frame.copy())
+        if self._frame_size is None:
+            self._start_ffmpeg(frame.size)
+            self._frame_size = frame.size
+        elif frame.size != self._frame_size:
+            raise ValueError(
+                f"Frame size changed from {self._frame_size} to {frame.size}. "
+                "All frames in a recording must have identical dimensions."
+            )
+
+        rgba_frame = frame if frame.mode == "RGBA" else frame.convert("RGBA")
+        self._write_bytes(rgba_frame.tobytes())
+        self._frame_count += 1
+
+    def _start_ffmpeg(self, frame_size: tuple[int, int]) -> None:
+        """Start FFmpeg after the first frame establishes width and height."""
+        width, height = frame_size
+        if width <= 0 or height <= 0:
+            raise ValueError("Frame dimensions must be positive")
+
+        try:
+            self._target_path.parent.mkdir(parents=True, exist_ok=True)
+            self._stream_path = self._create_staging_path("video")
+        except (OSError, RuntimeError) as exc:
+            self._stream_path = None
+            self.is_recording = False
+            raise RuntimeError(f"Unable to prepare ffmpeg output: {exc}") from exc
+
+        cmd = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "rgba",
+            "-video_size",
+            f"{width}x{height}",
+            "-framerate",
+            str(self.fps),
+            "-i",
+            "pipe:0",
+            *self._lossless_video_args(self.codec),
+            "-y",
+            str(self._stream_path),
+        ]
+
+        try:
+            # Unbuffered stdin ensures each frame is handed to FFmpeg immediately.
+            self._process = subprocess.Popen(
+                cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                bufsize=0,
+            )
+            if self._process.stderr is not None:
+                self._stderr_buffer.clear()
+                self._stderr_thread = threading.Thread(
+                    target=MovieWriter._drain_stderr,
+                    args=(self._process.stderr, self._stderr_buffer),
+                    daemon=True,
+                )
+                self._stderr_thread.start()
+        except OSError as exc:
+            if self._stream_path is not None:
+                self._stream_path.unlink(missing_ok=True)
+                self._stream_path = None
+            self.is_recording = False
+            raise RuntimeError(f"Unable to start ffmpeg: {exc}") from exc
+
+    @staticmethod
+    def _drain_stderr(stream, buffer: bytearray) -> None:
+        """Drain FFmpeg diagnostics so its stderr pipe cannot block encoding."""
+        while True:
+            chunk = stream.read(4096)
+            if not chunk:
+                break
+            buffer.extend(chunk)
+            if len(buffer) > 65536:
+                del buffer[:-65536]
+
+    def _finish_stderr_reader(self, process: subprocess.Popen) -> bytes:
+        if self._stderr_thread is not None:
+            self._stderr_thread.join(timeout=self._STDERR_JOIN_TIMEOUT_SECONDS)
+            if self._stderr_thread.is_alive() and process.stderr is not None:
+                process.stderr.close()
+                self._stderr_thread.join(timeout=1)
+            self._stderr_thread = None
+        if process.stderr is not None:
+            process.stderr.close()
+        stderr = bytes(self._stderr_buffer)
+        self._stderr_buffer.clear()
+        return stderr
+
+    def _write_bytes(self, data: bytes) -> None:
+        process = self._process
+        if process is None or process.stdin is None:
+            raise RuntimeError("ffmpeg did not start correctly")
+
+        if process.poll() is not None:
+            self.is_recording = False
+            self._finalize_video(write_error=BrokenPipeError("ffmpeg exited before receiving the frame"))
+
+        remaining = memoryview(data)
+        try:
+            while remaining:
+                written = process.stdin.write(remaining)
+                if not written:
+                    raise BrokenPipeError("ffmpeg stopped accepting frame data")
+                remaining = remaining[written:]
+        except (BrokenPipeError, OSError) as exc:
+            self.is_recording = False
+            self._finalize_video(write_error=exc)
+
+    def _finalize_video(self, write_error: Optional[BaseException] = None) -> None:
+        process = self._process
+        if process is None:
+            return
+
+        close_error: Optional[BaseException] = None
+        if process.stdin is not None:
+            try:
+                process.stdin.close()
+            except (BrokenPipeError, OSError) as exc:
+                close_error = exc
+
+        timed_out = False
+        try:
+            return_code = process.wait(timeout=self._FINALIZE_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            process.kill()
+            return_code = process.wait()
+        stderr = self._finish_stderr_reader(process)
+        self._process = None
+
+        failure = write_error or (close_error if return_code != 0 else None)
+        if timed_out or return_code != 0 or failure is not None:
+            self._finalized = False
+            if self._stream_path is not None:
+                self._stream_path.unlink(missing_ok=True)
+                self._stream_path = None
+            detail = stderr.decode(errors="replace").strip()
+            if timed_out:
+                message = f"ffmpeg encoding timed out after {self._FINALIZE_TIMEOUT_SECONDS} seconds"
+            else:
+                message = f"ffmpeg encoding failed with exit code {return_code}"
+            if detail:
+                message += f": {detail}"
+            elif failure is not None:
+                message += f": {failure}"
+            raise RuntimeError(message) from failure
+
+        self._finalized = True
 
     def _lossless_video_args(self, codec: str) -> list[str]:
-        """Return ffmpeg args for lossless/near-lossless output for the codec."""
-
-        # Prefer broadly supported settings while keeping lossless quality
-        if codec in {"libx264", "h264"}:  # H.264 lossless
+        """Return the existing lossless/near-lossless settings for ``codec``."""
+        if codec in {"libx264", "h264"}:
             return ["-c:v", codec, "-preset", "slow", "-crf", "0", "-pix_fmt", "yuv444p"]
-        if codec in {"libx265", "h265"}:  # H.265 lossless
+        if codec in {"libx265", "h265"}:
             return [
                 "-c:v",
                 codec,
@@ -98,143 +259,200 @@ class MovieWriter:
                 "yuv444p",
             ]
 
-        # Fallback: use the requested codec without forcing lossless flags
         return ["-c:v", codec, "-pix_fmt", "yuv420p"]
 
-    def save(self, codec: str = DEFAULT_CODEC) -> Path:
-        """Encode and save the video.
-
-        Args:
-            codec (str): FFmpeg codec to use. Defaults to "libx265" (H.265).
-                        Other options: "libx264" (H.264), "mpeg4", etc.
-
-        Returns:
-            Path: Path to the saved MP4 file
-
-        Raises:
-            RuntimeError: If no frames have been recorded
-            RuntimeError: If ffmpeg is not installed or encoding fails
-        """
-        if not self.frames:
-            raise RuntimeError("No frames to save. Recording is empty.")
-
-        if not self._is_ffmpeg_available():
-            raise RuntimeError(
-                "ffmpeg not found. Please install ffmpeg:\n"
-                "  Ubuntu/Debian: sudo apt-get install ffmpeg\n"
-                "  macOS: brew install ffmpeg\n"
-                "  Windows: choco install ffmpeg (or download from ffmpeg.org)"
+    def _validate_save_codec(self, codec: Optional[str]) -> None:
+        if codec is not None and codec != self.codec:
+            raise ValueError(
+                f"This recording is already encoded with {self.codec!r}. "
+                "Select a codec in MovieWriter(..., codec=...) or "
+                "canvas.start_recording(..., codec=...) before adding frames."
             )
 
-        # Create output directory if it doesn't exist
-        self.output_path.parent.mkdir(parents=True, exist_ok=True)
+    def _create_staging_path(self, purpose: str) -> Path:
+        """Securely reserve a sibling path with normal user-file permissions."""
+        suffix = self._target_path.suffix or ".mp4"
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, "O_BINARY"):
+            flags |= os.O_BINARY
 
-        # Use temporary directory for frame files
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Save frames as temporary images
-            frame_pattern = os.path.join(temp_dir, "frame_%08d.png")
-            for i, frame in enumerate(self.frames):
-                frame.save(os.path.join(temp_dir, f"frame_{i:08d}.png"))
-
-            # Encode with ffmpeg
-            cmd = [
-                "ffmpeg",
-                "-framerate",
-                str(self.fps),
-                "-i",
-                frame_pattern,
-                *self._lossless_video_args(codec),
-                "-y",
-                str(self.output_path),
-            ]
-
+        for _ in range(100):
+            token = secrets.token_hex(8)
+            candidate = self._target_path.parent / f".{self._target_path.stem}-{purpose}-{token}{suffix}"
             try:
-                # Suppress ffmpeg output by redirecting to devnull
-                subprocess.run(
-                    cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-                )
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(f"ffmpeg encoding failed: {e}")
+                descriptor = os.open(candidate, flags, 0o666)
+            except FileExistsError:
+                continue
+            os.close(descriptor)
+            return candidate
 
-        return self.output_path
+        raise RuntimeError(f"Unable to reserve a temporary {purpose} output path")
 
-    def save_with_audio(self, audio_path: str, codec: str = DEFAULT_CODEC) -> Path:
-        """Encode video with audio track.
+    def _replace_output(self, staging_path: Path) -> None:
+        """Atomically replace the destination, retaining an existing file mode."""
+        try:
+            existing_mode = stat.S_IMODE(self._target_path.stat().st_mode)
+        except FileNotFoundError:
+            existing_mode = None
+        if existing_mode is not None:
+            staging_path.chmod(existing_mode)
+        os.replace(staging_path, self._target_path)
 
-        Args:
-            audio_path (str): Path to audio file (MP3, WAV, etc.)
-            codec (str): FFmpeg video codec. Defaults to "libx265" (H.265).
-
-        Returns:
-            Path: Path to the saved MP4 file
-
-        Raises:
-            RuntimeError: If no frames recorded or ffmpeg unavailable
-            FileNotFoundError: If audio file doesn't exist
-        """
-        if not Path(audio_path).exists():
-            raise FileNotFoundError(f"Audio file not found: {audio_path}")
-
-        if not self.frames:
+    def _ensure_finalized(self) -> None:
+        """Finish the encoder while keeping its private output unpublished."""
+        if self._frame_count == 0:
             raise RuntimeError("No frames to save. Recording is empty.")
 
-        if not self._is_ffmpeg_available():
-            raise RuntimeError("ffmpeg not found. Please install ffmpeg.")
+        if self.is_recording:
+            self.stop_recording()
+        elif self._process is not None:
+            self._finalize_video()
 
-        self.output_path.parent.mkdir(parents=True, exist_ok=True)
+        if not self._finalized:
+            raise RuntimeError("The recording could not be finalized.")
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Save frames
-            frame_pattern = os.path.join(temp_dir, "frame_%08d.png")
-            for i, frame in enumerate(self.frames):
-                frame.save(os.path.join(temp_dir, f"frame_{i:08d}.png"))
+    def save(self, codec: Optional[str] = None) -> Path:
+        """Finalize and atomically publish the encoded video.
 
-            # Encode with audio
+        ``codec`` remains accepted for compatibility when it matches the codec
+        selected at construction time. A different codec cannot be selected here
+        because frames have already been encoded.
+        """
+        self._validate_save_codec(codec)
+        self._ensure_finalized()
+        if self._stream_path is not None:
+            self._replace_output(self._stream_path)
+            self._stream_path = None
+        return self._target_path
+
+    def save_with_audio(self, audio_path: str, codec: Optional[str] = None) -> Path:
+        """Finalize video and mux it with a lossless FLAC audio stream.
+
+        Audio is supplied after recording in the existing API, so a second FFmpeg
+        command stream-copies the encoded video and adds audio without changing
+        video quality.
+        """
+        audio = Path(audio_path).absolute()
+        if not audio.exists():
+            raise FileNotFoundError(f"Audio file not found: {audio_path}")
+
+        self._validate_save_codec(codec)
+        self._ensure_finalized()
+        video_input = self._stream_path or self._target_path
+
+        temporary_path: Optional[Path] = None
+        try:
+            temporary_path = self._create_staging_path("audio")
+
             cmd = [
                 "ffmpeg",
-                "-framerate",
-                str(self.fps),
+                "-hide_banner",
+                "-loglevel",
+                "error",
                 "-i",
-                frame_pattern,
+                str(video_input),
                 "-i",
-                audio_path,
-                *self._lossless_video_args(codec),
+                str(audio),
+                "-map",
+                "0:v:0",
+                "-map",
+                "1:a:0",
+                "-c:v",
+                "copy",
                 "-c:a",
                 "flac",
                 "-shortest",
                 "-y",
-                str(self.output_path),
+                str(temporary_path),
             ]
-
             try:
                 subprocess.run(
-                    cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                    cmd,
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
+                    text=True,
                 )
-            except subprocess.CalledProcessError as e:
-                raise RuntimeError(f"ffmpeg encoding with audio failed: {e}")
+            except subprocess.CalledProcessError as exc:
+                detail = (exc.stderr or "").strip()
+                message = "ffmpeg audio muxing failed"
+                if detail:
+                    message += f": {detail}"
+                raise RuntimeError(message) from exc
+            except OSError as exc:
+                raise RuntimeError(f"Unable to start ffmpeg for audio muxing: {exc}") from exc
 
-        return self.output_path
+            self._replace_output(temporary_path)
+            temporary_path = None
+            if self._stream_path is not None:
+                self._stream_path.unlink(missing_ok=True)
+                self._stream_path = None
+        finally:
+            if temporary_path is not None:
+                temporary_path.unlink(missing_ok=True)
+
+        return self._target_path
 
     def clear(self) -> None:
-        """Clear all recorded frames from memory."""
-        self.frames.clear()
+        """Abort an active stream and reset recording state."""
+        process = self._process
+        self._process = None
+
+        if process is not None:
+            if process.stdin is not None:
+                try:
+                    process.stdin.close()
+                except (BrokenPipeError, OSError):
+                    pass
+            if process.poll() is None:
+                process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+            self._finish_stderr_reader(process)
+
+        if self._stream_path is not None:
+            self._stream_path.unlink(missing_ok=True)
+            self._stream_path = None
+
+        self._frame_size = None
+        self._frame_count = 0
+        self._finalized = False
         self.is_recording = False
 
+    def has_pending_output(self) -> bool:
+        """Return whether a finalized or active recording still needs handling."""
+        return self._process is not None or self._stream_path is not None
+
     def frame_count(self) -> int:
-        """Return the number of recorded frames."""
-        return len(self.frames)
+        """Return the number of frames written to FFmpeg."""
+        return self._frame_count
 
     def get_duration(self) -> float:
-        """Calculate duration of video in seconds."""
-        if self.fps <= 0:
-            return 0.0
-        return len(self.frames) / self.fps
+        """Return the encoded duration implied by frame count and FPS."""
+        return self._frame_count / self.fps
+
+    def __del__(self):
+        # Best-effort protection for direct MovieWriter users who leave an
+        # encoder running or abandon a finalized staging file.
+        try:
+            if getattr(self, "_process", None) is not None or getattr(self, "_stream_path", None) is not None:
+                self.clear()
+        except Exception:
+            pass
 
     @staticmethod
     def _is_ffmpeg_available() -> bool:
-        """Check if ffmpeg is installed and available."""
+        """Return whether a working ``ffmpeg`` executable is available on PATH."""
         try:
-            subprocess.run(["ffmpeg", "-version"], capture_output=True, timeout=5)
-            return True
-        except (FileNotFoundError, subprocess.TimeoutExpired):
+            result = subprocess.run(
+                ["ffmpeg", "-version"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=5,
+            )
+            return result.returncode == 0
+        except (OSError, subprocess.TimeoutExpired):
             return False

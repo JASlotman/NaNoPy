@@ -2,9 +2,8 @@ from sdl2 import SDL_Event
 
 from sdl2 import SDL_Init
 from sdl2 import SDL_GetWindowFlags
-from sdl2 import SDL_CreateRGBSurface
-from sdl2 import SDL_FreeSurface
 from sdl2 import SDL_RenderReadPixels
+from sdl2 import SDL_GetError
 from sdl2 import SDL_ShowWindow
 from sdl2 import SDL_RenderPresent
 from sdl2 import SDL_PollEvent
@@ -24,27 +23,21 @@ from sdl2 import SDL_WINDOW_HIDDEN
 from sdl2 import SDL_WINDOWEVENT
 from sdl2 import SDL_WINDOWEVENT_CLOSE
 from sdl2 import SDL_WINDOWEVENT_RESIZED
-from sdl2 import SDL_PIXELFORMAT_ARGB8888
+from sdl2 import SDL_PIXELFORMAT_RGBA32
 from sdl2 import SDL_PIXELFORMAT_RGBA8888
 from sdl2 import SDL_TEXTUREACCESS_TARGET
 from sdl2 import SDL_BLENDMODE_BLEND
 
 from sdl2.sdlgfx import gfxPrimitivesSetFont
 
-from sdl2.rwops import rw_from_object
-from sdl2.sdlimage import IMG_SavePNG_RW
-
 import ctypes
-import warnings
-
 from typing import Optional, TYPE_CHECKING
 
 from NaNoPy.classes.moviewriter import MovieWriter
 from NaNoPy.classes.keylistener import KeyListener
-from NaNoPy.constants import ARGB_MASK, DEFAULT_CODEC
+from NaNoPy.constants import DEFAULT_CODEC
 
 from PIL import Image
-from io import BytesIO
 
 if TYPE_CHECKING:
     from NaNoPy.classes.canvas import CanvasNaive
@@ -102,45 +95,49 @@ class Mainloop:
 
         x_size, y_size = canvas.get_window_size()
 
-        # Create empty surface
-        surface = SDL_CreateRGBSurface(0, x_size, y_size, 32, *ARGB_MASK)
-
-        # Render screen to surface
-        SDL_RenderReadPixels(
-            ren,
-            None,
-            SDL_PIXELFORMAT_ARGB8888,
-            surface.contents.pixels,
-            surface.contents.pitch,
-        )
-        
-        surface_freed = False
-
         try:
-            output_buffer = BytesIO()
-            rw_stream = rw_from_object(output_buffer)
+            # RGBA32 is defined in byte order, so this stays portable across
+            # CPU endianness. Copy renderer data directly into Pillow instead
+            # of encoding and then decoding a PNG for every frame.
+            pitch = x_size * 4
+            pixels = (ctypes.c_ubyte * (pitch * y_size))()
+            result = SDL_RenderReadPixels(
+                ren,
+                None,
+                SDL_PIXELFORMAT_RGBA32,
+                pixels,
+                pitch,
+            )
+            if result != 0:
+                error = SDL_GetError()
+                if isinstance(error, bytes):
+                    detail = error.decode(errors="replace")
+                else:
+                    detail = str(error) if error else "unknown SDL error"
+                raise RuntimeError(f"SDL_RenderReadPixels failed: {detail}")
 
-            IMG_SavePNG_RW(surface, rw_stream, 0)
+            img = Image.frombytes(
+                "RGBA",
+                (x_size, y_size),
+                bytes(pixels),
+                "raw",
+                "RGBA",
+                pitch,
+                1,
+            )
 
-            SDL_FreeSurface(surface)
-            surface_freed = True
-
-            output_buffer.seek(0)
-            img = Image.open(output_buffer)
-
-            # Auto-capture frames when a recording is active
-            if self._movie_writer and self._movie_writer.is_recording:
-                self._movie_writer.add_frame(img)
-
-            return img   
         except Exception as e:
             print(f"Failed to save frame: {e}")
-
-            if not surface_freed:         # Free memory
-                SDL_FreeSurface(surface)
-
             # Return black image on error
-            return Image.new("1", (x_size, y_size))
+            return Image.new("RGBA", (x_size, y_size), (0, 0, 0, 255))
+
+        # Keep encoder failures outside the rendering fallback. A broken FFmpeg
+        # pipe must reach the caller instead of looking like a recoverable image
+        # conversion failure.
+        if self._movie_writer and self._movie_writer.is_recording:
+            self._movie_writer.add_frame(img)
+
+        return img
 
 
     def _handle_events(self):
@@ -162,32 +159,41 @@ class Mainloop:
     def pause(self, time):
         SDL_Delay(time)
 
-    def start_recording(self, output_path: str, fps: int = 30) -> MovieWriter:
+    def start_recording(
+        self, output_path: str, fps: int = 30, codec: str = DEFAULT_CODEC
+    ) -> MovieWriter:
         """Start recording animation frames to MP4.
         
         Args:
             output_path (str): Where to save the MP4 file
             fps (int): Frames per second for output video (default: 30)
+            codec (str): FFmpeg video encoder selected before frames arrive
         
         Returns:
             MovieWriter: The movie writer object (also stored internally)
         """
-        self._movie_writer = MovieWriter(output_path, fps)
+        if self._movie_writer:
+            if self._movie_writer.is_recording:
+                raise RuntimeError("A recording is already active.")
+            if self._movie_writer.has_pending_output():
+                raise RuntimeError("Save or clear the previous recording before starting another.")
+
+        self._movie_writer = MovieWriter(output_path, fps, codec)
         self._movie_writer.start_recording()
         return self._movie_writer
     
     def stop_recording(self) -> Optional[MovieWriter]:
-        """Stop recording frames. Call save() on returned object to encode."""
+        """Stop accepting frames and finalize the FFmpeg stream."""
         if self._movie_writer:
             self._movie_writer.stop_recording()
             return self._movie_writer
         return None
     
-    def save_recording(self, codec: str = DEFAULT_CODEC) -> Optional[str]:
-        """Save the recorded animation as MP4.
+    def save_recording(self, codec: Optional[str] = None) -> Optional[str]:
+        """Publish the finalized recording as MP4.
         
         Args:
-            codec (str): Video codec ("libx264", "libx265", etc.)
+            codec (str): Compatibility check for the codec selected at start
         
         Returns:
             str: Path to saved MP4 file, or None if no recording
@@ -203,13 +209,19 @@ class Mainloop:
         return self._movie_writer
 
     def stop(self):
+        if not self.running:
+            return
         self.running = False
 
-        for canvas in self.canvasses.values():
-            SDL_DestroyTexture(canvas._persistent_texture)
-            SDL_DestroyWindow(canvas.window)
+        try:
+            if self._movie_writer and self._movie_writer.is_recording:
+                self._movie_writer.stop_recording()
+        finally:
+            for canvas in self.canvasses.values():
+                SDL_DestroyTexture(canvas._persistent_texture)
+                SDL_DestroyWindow(canvas.window)
 
-        SDL_Quit()
+            SDL_Quit()
 
     def keep(self):
         while self.running:

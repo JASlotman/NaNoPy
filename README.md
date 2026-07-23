@@ -1,1 +1,4 @@
-NaNoPy is a pySDL2 based graphical engine used in the Nanobiology program of the Erasmus MC/TU Delft.
+# NaNoPy
+
+NaNoPy is a PySDL2-based graphical engine used in the Nanobiology program of
+Erasmus MC/TU Delft.

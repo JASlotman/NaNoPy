@@ -148,12 +148,15 @@ class CanvasNaive:
 
         return self._window_size_cache
 
-    def start_recording(self, output_path: str, fps: int = 30) -> MovieWriter:
+    def start_recording(
+        self, output_path: str, fps: int = 30, codec: str = DEFAULT_CODEC
+    ) -> MovieWriter:
         """Start recording animation frames to MP4.
 
         Args:
             output_path (str): Where to save the MP4 file
             fps (int): Frames per second for output video (default: 30)
+            codec (str): FFmpeg video encoder selected before frames arrive
 
         Returns:
             MovieWriter: The movie writer object
@@ -162,20 +165,20 @@ class CanvasNaive:
             >>> canvas = Canvas("my_window", 800, 600)
             >>> movie = canvas.start_recording("animation.mp4", fps=30)
             >>> # ... animation loop ...
-            >>> canvas.stop_recording()
-            >>> canvas.save_recording()  # Encodes MP4
+            >>> canvas.stop_recording()  # Finalizes the FFmpeg stream
+            >>> canvas.save_recording()  # Publishes the finished MP4
         """
-        return self.NNP.start_recording(output_path, fps)
+        return self.NNP.start_recording(output_path, fps, codec)
 
     def stop_recording(self) -> Optional[MovieWriter]:
-        """Stop recording frames. Call save_recording() to encode MP4."""
+        """Stop accepting frames and finalize the FFmpeg stream."""
         return self.NNP.stop_recording()
 
-    def save_recording(self, codec: str = DEFAULT_CODEC) -> Optional[str]:
-        """Save the recorded animation as MP4.
+    def save_recording(self, codec: Optional[str] = None) -> Optional[str]:
+        """Publish the finalized recording as MP4.
 
         Args:
-            codec (str): Video codec ("libx264", "libx265", etc.)
+            codec (str): Compatibility check for the codec selected at start
 
         Returns:
             str: Path to saved MP4 file, or None if no recording

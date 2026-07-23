@@ -96,7 +96,7 @@ def example_bouncing_ball_with_export():
         canvas.pause(16)  # ~60 FPS
         frame_count += 1
 
-    # STOP RECORDING AND SAVE (only triggers encoding when called)
+    # Stop finalizes the stream; save atomically publishes the finished file.
     canvas.stop_recording()
     output_path = canvas.save_recording()
     print(f"✓ Animation exported to: {output_path}")
@@ -312,7 +312,7 @@ def example_with_audio():
 MovieWriter supports several useful methods:
 
 1. Basic usage:
-   movie = MovieWriter("output.mp4", fps=30)
+   movie = MovieWriter("output.mp4", fps=30, codec="libx265")
    movie.start_recording()
    movie.add_frame(image)
    movie.save()
@@ -331,9 +331,9 @@ MovieWriter supports several useful methods:
 5. Save with audio (requires audio file):
    movie.save_with_audio("background.mp3")
 
-6. Different codecs:
-   movie.save(codec="libx265")  # H.265 for better compression
-   movie.save(codec="mpeg4")    # MPEG-4 format
+6. Different codecs (select before recording because frames stream immediately):
+   movie = MovieWriter("output.mp4", fps=30, codec="libx265")
+   movie = MovieWriter("output.mp4", fps=30, codec="mpeg4")
 
 7. Error handling:
    try:
@@ -353,7 +353,7 @@ if __name__ == "__main__":
     print("  - example_with_cleanup()")
     print("  - example_with_audio()  # Requires 'a.mp3' file")
     print("\nEach will save an MP4 file to the current directory.")
-    example_bouncing_ball_with_export()
+    # example_bouncing_ball_with_export()
     # example_rotating_square()
     # example_with_cleanup()
-    # example_with_audio()
+    example_with_audio()
