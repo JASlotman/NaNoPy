@@ -1,6 +1,7 @@
 # source: https://gitlab.tudelft.nl/nb1420_2025/individual/jelle-jpheij/-/blob/main/Final_project/Testing.py?ref_type=heads
-from NaNoPy import *
 import random as rnd
+
+from NaNoPy import Canvas, Color, Writer
 
 # Set up the screen, a title and the size
 xsize_screen, ysize_screen = 800, 600
@@ -23,18 +24,18 @@ number_nutrients = 300
 # Constants for the simulated biofilm
 xfilm, yfilm = xsize_screen/8, (ysize_screen-height_legend)/8 + 0.5*height_legend
 width_film, height_film = 3*xsize_screen/4, 3*ysize_screen/4
-color_film = color().white
+color_film = Color.white
 
-healthy_color = color().white
-starving_color = color().red
-dead_color = color().cyan
-repolarization_color = color().blue
+healthy_color = Color.white
+starving_color = Color.red
+dead_color = Color.cyan
+repolarization_color = Color.blue
 
-free_nutrient_color = color().green
-taken_up_nutrient_color = color().gray
+free_nutrient_color = Color.green
+taken_up_nutrient_color = Color.gray
 
-calcium_color_trapped = color().custom(r=255, g=165, b=0) # orange
-calcium_color_free = color().magenta
+calcium_color_trapped = Color.custom(r=255, g=165, b=0) # orange
+calcium_color_free = Color.magenta
 
 width_cells = width_film / number_columns
 height_cells = height_film / number_rows
@@ -316,48 +317,48 @@ def draw_everything():
 
 def create_legend():
     # Start with a black box
-    pen.draw_rectangle(0, 0, xsize_screen, height_legend, color().custom(r=0, g=0, b=0), True)
-    pen.draw_rectangle(0, 0, xsize_screen, height_legend, color().white, False)
+    pen.draw_rectangle(0, 0, xsize_screen, height_legend, Color.custom(r=0, g=0, b=0), True)
+    pen.draw_rectangle(0, 0, xsize_screen, height_legend, Color.white, False)
 
     # free nutrient
     pen.draw_circle(10, 3*height_legend/4, nutrient_radius, free_nutrient_color, True)
-    pen.draw_string(25, 3*height_legend/4 + 3, color().white, "Free nutrient")
+    pen.draw_string(25, 3*height_legend/4 + 3, Color.white, "Free nutrient")
 
     # trapped nutrient
     pen.draw_circle(10, height_legend/3, nutrient_radius, taken_up_nutrient_color, True)
-    pen.draw_string(25, height_legend/3 + 3, color().white, "Taken up nutrient")
+    pen.draw_string(25, height_legend/3 + 3, Color.white, "Taken up nutrient")
 
     # free calcium
     pen.draw_circle(10 + xsize_screen/4, 3*height_legend/4, nutrient_radius, calcium_color_free, True)
-    pen.draw_string(25 + xsize_screen/4, 3*height_legend/4 + 3, color().white, "Free calcium")
+    pen.draw_string(25 + xsize_screen/4, 3*height_legend/4 + 3, Color.white, "Free calcium")
 
     # trapped calcium
     pen.draw_circle(10 + xsize_screen/4, height_legend/3, nutrient_radius, calcium_color_trapped, True)
-    pen.draw_string(25 + xsize_screen/4, height_legend/3 + 3, color().white, "Trapped calcium")
+    pen.draw_string(25 + xsize_screen/4, height_legend/3 + 3, Color.white, "Trapped calcium")
 
     # Healthy cell
     pen.draw_rectangle(2*xsize_screen/4 - 10, 3*height_legend/4-10, 2*width_cells/7, 2*height_cells/7, healthy_color, False)
-    pen.draw_string(25 + 2*xsize_screen/4, 3*height_legend/4 + 3, color().white, "Healthy cell")
+    pen.draw_string(25 + 2*xsize_screen/4, 3*height_legend/4 + 3, Color.white, "Healthy cell")
 
     # Starving cell
     pen.draw_rectangle(2*xsize_screen/4 - 10, height_legend/4-8, 2*width_cells/7, 2*height_cells/7, starving_color, False)
-    pen.draw_string(25 + 2*xsize_screen/4, height_legend/4 + 5, color().white, "Starving cell")
+    pen.draw_string(25 + 2*xsize_screen/4, height_legend/4 + 5, Color.white, "Starving cell")
 
     # Repolarization cell
     pen.draw_rectangle(3*xsize_screen/4 - 10, 3*height_legend/4-10, 2*width_cells/7, 2*height_cells/7, repolarization_color, False)
-    pen.draw_string(25 + 3*xsize_screen/4, 3*height_legend/4 + 3, color().white, "Repolarization cell")
+    pen.draw_string(25 + 3*xsize_screen/4, 3*height_legend/4 + 3, Color.white, "Repolarization cell")
 
     # Dead cell
     pen.draw_rectangle(3*xsize_screen/4 - 10, height_legend/4-8, 2*width_cells/7, 2*height_cells/7, dead_color, False)
-    pen.draw_string(25 + 3*xsize_screen/4, height_legend/4 + 5, color().white, "Dead cell")
+    pen.draw_string(25 + 3*xsize_screen/4, height_legend/4 + 5, Color.white, "Dead cell")
 
 def create_graphs(height_graph, origin_x, origin_y, width_bar):
     height_dead = total_amount_dead/(number_rows*number_columns)*height_graph
     height_starving = total_amount_starving/(number_rows*number_columns)*height_graph
     height_healthy = total_amount_healthy/(number_rows*number_columns)*height_graph
-    graph_pen.draw_string(10, 10, color().white, "Dead")
-    graph_pen.draw_string(origin_x+width_bar, 100, color().white, "Starving")
-    graph_pen.draw_string(origin_x+2*width_bar, 100, color().white, "Healthy")
+    graph_pen.draw_string(10, 10, Color.white, "Dead")
+    graph_pen.draw_string(origin_x+width_bar, 100, Color.white, "Starving")
+    graph_pen.draw_string(origin_x+2*width_bar, 100, Color.white, "Healthy")
 
     graph_pen.draw_rectangle(origin_x, origin_y, width_bar, height_dead, dead_color, True)
     graph_pen.draw_rectangle(origin_x+width_bar, origin_y, width_bar, height_starving, starving_color, True)

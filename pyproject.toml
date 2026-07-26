@@ -32,6 +32,9 @@ interactive = [
 [project.urls]
 Homepage = "https://erasmusoic.nl"
 
+[tool.setuptools.package-data]
+"NaNoPy.demos" = ["*.ipynb", "resources/*.mp3"]
+
 [tool.ruff]
 # Ruff is code formater and linter by UV.
 # Allow lines to be as long as 150. Default is 88, maximum is 320.

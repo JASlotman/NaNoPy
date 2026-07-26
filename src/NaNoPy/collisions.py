@@ -4,9 +4,9 @@ from math import floor
 from operator import index as operator_index
 from typing import Callable, Iterable, Iterator, Optional, TypeVar
 
-
 _MISSING_COORDINATE = object()
 _GridSize = TypeVar("_GridSize")
+_PairCallback = TypeVar("_PairCallback", bound=Callable[[int, int], object])
 
 
 def _validate_gridsize(gridsize: _GridSize) -> _GridSize:
@@ -53,7 +53,14 @@ def _iter_indexed_points(
 
 
 def _floor_cell_coordinate(coordinate: float, gridsize: float) -> int:
-    """Calculate one cell coordinate without rounding exact numeric values."""
+    """Floor ``coordinate / gridsize`` without lossy float coercion.
+
+    A plain ``floor(coordinate / gridsize)`` is insufficient for large integers
+    and for exact values close to a cell boundary: the division can round into
+    the neighboring cell before ``floor`` sees it. Integer division and exact
+    ``as_integer_ratio`` arithmetic avoid that error. The final branch retains
+    compatibility with custom numeric types that offer neither protocol.
+    """
 
     try:
         integer_coordinate = operator_index(coordinate)
@@ -72,9 +79,7 @@ def _floor_cell_coordinate(coordinate: float, gridsize: float) -> int:
         # (cn / cd) / (gn / gd) == (cn * gd) / (cd * gn). All
         # built-in ratio providers return exact integers with positive
         # denominators, and gridsize has already been validated as positive.
-        return (coordinate_numerator * gridsize_denominator) // (
-            coordinate_denominator * gridsize_numerator
-        )
+        return (coordinate_numerator * gridsize_denominator) // (coordinate_denominator * gridsize_numerator)
 
     # Retain support for custom numeric types that implement compatible
     # division and floor conversion but do not expose an exact ratio.
@@ -167,10 +172,7 @@ def _get_close_AB_pairs(
 
     # Consume and validate both A coordinate iterables before yielding any
     # pairs, so a late length mismatch cannot produce partially applied work.
-    particles_A = [
-        (i, _calc_chunk_id(x, y, gridsize))
-        for i, x, y in _iter_indexed_points(xs_A, ys_A, label="A")
-    ]
+    particles_A = [(i, _calc_chunk_id(x, y, gridsize)) for i, x, y in _iter_indexed_points(xs_A, ys_A, label="A")]
 
     for i, own_chunk_id in particles_A:
         for chunk_id in _get_chunk_id_neighbors(own_chunk_id):
@@ -222,18 +224,21 @@ def apply_to_close_pairs(
     gridsize: float,
     xs_B: Optional[Iterable[float]] = None,
     ys_B: Optional[Iterable[float]] = None,
-) -> Callable[[Callable[[int, int], object]], None]:
+) -> Callable[[_PairCallback], _PairCallback]:
     """Apply a decorated function once to every candidate pair.
 
     Omitting both B iterables applies the function to AA pairs. Supplying both
     applies it to ordered AB pairs. Validation and cell semantics are identical
-    to :func:`get_close_pairs`.
+    to :func:`get_close_pairs`. Pair processing happens immediately when Python
+    executes the decorated function definition; the original function is then
+    returned so it remains callable normally.
     """
 
     close_pairs = get_close_pairs(xs_A, ys_A, gridsize, xs_B, ys_B)
 
-    def decorator(func: Callable[[int, int], object]) -> None:
+    def decorator(func: _PairCallback) -> _PairCallback:
         for i, j in close_pairs:
             func(i, j)
+        return func
 
     return decorator

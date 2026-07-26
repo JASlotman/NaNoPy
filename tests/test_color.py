@@ -9,21 +9,23 @@ from unittest.mock import patch
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
-from sdl2 import SDL_CreateRenderer
-from sdl2 import SDL_CreateWindow
-from sdl2 import SDL_DestroyRenderer
-from sdl2 import SDL_DestroyWindow
-from sdl2 import SDL_GetError
-from sdl2 import SDL_Init
-from sdl2 import SDL_INIT_VIDEO
-from sdl2 import SDL_PIXELFORMAT_RGBA32
-from sdl2 import SDL_QuitSubSystem
-from sdl2 import SDL_RENDERER_SOFTWARE
-from sdl2 import SDL_RenderClear
-from sdl2 import SDL_RenderReadPixels
-from sdl2 import SDL_SetRenderDrawColor
-from sdl2 import SDL_WasInit
-from sdl2 import SDL_WINDOW_HIDDEN
+from sdl2 import (
+    SDL_INIT_VIDEO,
+    SDL_PIXELFORMAT_RGBA32,
+    SDL_RENDERER_SOFTWARE,
+    SDL_WINDOW_HIDDEN,
+    SDL_CreateRenderer,
+    SDL_CreateWindow,
+    SDL_DestroyRenderer,
+    SDL_DestroyWindow,
+    SDL_GetError,
+    SDL_Init,
+    SDL_QuitSubSystem,
+    SDL_RenderClear,
+    SDL_RenderReadPixels,
+    SDL_SetRenderDrawColor,
+    SDL_WasInit,
+)
 from sdl2.sdlgfx import pixelColor
 
 from NaNoPy.classes.color import Color
@@ -53,11 +55,38 @@ class ColorSemanticsTests(unittest.TestCase):
             "tangerine": (230, 90, 0, 255),
             "lime": (180, 255, 0, 255),
             "brown": (100, 50, 0, 255),
+            "breeze": (28, 220, 155, 255),
         }
 
         for name, expected in expected_colors.items():
             with self.subTest(name=name):
                 self.assert_rgba(getattr(Color, name), expected)
+
+    def test_named_colors_discovers_the_palette_without_duplicate_metadata(self):
+        palette = Color.named_colors()
+
+        self.assertEqual(
+            list(palette),
+            [
+                "red",
+                "blue",
+                "green",
+                "yellow",
+                "magenta",
+                "cyan",
+                "white",
+                "gray",
+                "black",
+                "purple",
+                "orange",
+                "tangerine",
+                "lime",
+                "brown",
+                "breeze",
+            ],
+        )
+        self.assertTrue(all(type(value) is Color for value in palette.values()))
+        self.assertIsNot(palette["red"], Color.named_colors()["red"])
 
     def test_custom_factory_preserves_full_and_defaulted_rgba_values(self):
         full = Color.custom(r=1, g=2, b=3, a=4)

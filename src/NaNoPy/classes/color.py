@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from sdl2.ext import Color as Colorsdl2
-
-from NaNoPy.constants._color_data import CSS4_KEYS
-from NaNoPy.constants._color_data import CSS4_COLORS
-
-from typing import Optional
-
 import sys
 import warnings
+from typing import Optional
+
+from sdl2.ext import Color as Colorsdl2
+
+from NaNoPy.constants._color_data import CSS4_COLORS, CSS4_KEYS
 
 
 class _ColorValue:
@@ -26,7 +24,9 @@ class _ColorValue:
 class Color(Colorsdl2):
     """Palette helper for NaNoPy shapes.
 
-    Available colors: red, blue, green, yellow, magenta, cyan, white, gray.
+    Available colors: red, blue, green, yellow, magenta, cyan, white, gray,
+    black, purple, orange, tangerine, lime, brown, and breeze. Use
+    :meth:`named_colors` to discover the palette programmatically.
 
     Usage example ``Color.red``.
 
@@ -60,6 +60,18 @@ class Color(Colorsdl2):
     tangerine = _ColorValue(r=230, g=90, b=0, a=255)
     lime = _ColorValue(r=180, g=255, b=0, a=255)
     brown = _ColorValue(r=100, g=50, b=0, a=255)
+    breeze = _ColorValue(r=28, g=220, b=155, a=255)
+
+    @classmethod
+    def named_colors(cls) -> dict[str, Color]:
+        """Return fresh values for every color in NaNoPy's built-in palette.
+
+        The mapping follows the declaration order shown in the documentation.
+        It lets demos and user interfaces discover the palette without relying
+        on private descriptors or maintaining a duplicate list of names.
+        """
+
+        return {name: getattr(cls, name) for name, value in vars(Color).items() if isinstance(value, _ColorValue)}
 
     @classmethod
     def _from_rgba(cls, r: int, g: int, b: int, a: int) -> Color:
@@ -185,8 +197,7 @@ class Color(Colorsdl2):
 
     def __init__(self) -> None:
         warnings.warn(
-            "Instantiating Color is deprecated; access colors directly via"
-            " class attributes (e.g. Color.red).",
+            "Instantiating Color is deprecated; access colors directly via class attributes (e.g. Color.red).",
             DeprecationWarning,
             stacklevel=2,
         )

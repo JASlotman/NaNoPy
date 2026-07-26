@@ -1,11 +1,13 @@
 """Stream animation frames to FFmpeg and export them as a video."""
 
 import os
-from pathlib import Path
+import re
 import secrets
 import stat
 import subprocess
 import threading
+from operator import index as operator_index
+from pathlib import Path
 from typing import Optional
 
 from PIL import Image
@@ -29,16 +31,25 @@ class MovieWriter:
 
     _FINALIZE_TIMEOUT_SECONDS = 60
     _STDERR_JOIN_TIMEOUT_SECONDS = 5
+    _CODEC_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]*\Z")
 
     def __init__(self, output_path: str, fps: int = 30, codec: str = DEFAULT_CODEC):
-        if fps <= 0:
+        if isinstance(fps, bool):
+            raise TypeError("fps must be an integer")
+        try:
+            validated_fps = operator_index(fps)
+        except TypeError as exc:
+            raise TypeError("fps must be an integer") from exc
+        if validated_fps <= 0:
             raise ValueError("fps must be positive")
-        if not codec:
-            raise ValueError("codec must not be empty")
+        if not isinstance(codec, str):
+            raise TypeError("codec must be a string")
+        if not self._CODEC_NAME.fullmatch(codec):
+            raise ValueError("codec must be a non-empty FFmpeg encoder name containing only letters, digits, dots, underscores, or hyphens")
 
         self.output_path = Path(output_path)
         self._target_path = self.output_path.absolute()
-        self.fps = fps
+        self.fps = int(validated_fps)
         self.codec = codec
         self.is_recording = False
 
@@ -91,10 +102,7 @@ class MovieWriter:
             self._start_ffmpeg(frame.size)
             self._frame_size = frame.size
         elif frame.size != self._frame_size:
-            raise ValueError(
-                f"Frame size changed from {self._frame_size} to {frame.size}. "
-                "All frames in a recording must have identical dimensions."
-            )
+            raise ValueError(f"Frame size changed from {self._frame_size} to {frame.size}. All frames in a recording must have identical dimensions.")
 
         rgba_frame = frame if frame.mode == "RGBA" else frame.convert("RGBA")
         self._write_bytes(rgba_frame.tobytes())
@@ -136,12 +144,15 @@ class MovieWriter:
 
         try:
             # Unbuffered stdin ensures each frame is handed to FFmpeg immediately.
+            # Every value is a separate argv element and shell execution stays
+            # disabled, so output paths cannot be interpreted as shell syntax.
             self._process = subprocess.Popen(
                 cmd,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE,
                 bufsize=0,
+                shell=False,
             )
             if self._process.stderr is not None:
                 self._stderr_buffer.clear()

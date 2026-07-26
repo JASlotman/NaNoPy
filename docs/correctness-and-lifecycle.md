@@ -95,6 +95,76 @@ The collision functions reject ambiguous or unsafe inputs:
 
 One-shot iterables such as generators are supported.
 
+### Applying a function to candidates
+
+`apply_to_close_pairs()` is the decorator form of the same broad-phase query.
+It runs the decorated callback immediately for every candidate pair when the
+function definition is executed. The callback still needs an exact distance
+or overlap check:
+
+```python
+from math import hypot
+
+from NaNoPy import apply_to_close_pairs
+
+xs = [0.0, 0.4, 10.0]
+ys = [0.0, 0.3, 10.0]
+maximum_distance = 1.0
+
+
+@apply_to_close_pairs(xs, ys, gridsize=maximum_distance)
+def handle_candidate(i: int, j: int) -> None:
+    if hypot(xs[i] - xs[j], ys[i] - ys[j]) <= maximum_distance:
+        print(f"particles {i} and {j} overlap")
+```
+
+The original callback is returned after this eager pass, so it can still be
+called directly. For AB matching, pass `xs_B=` and `ys_B=` by keyword; the
+callback receives the A index first and the B index second.
+
+## Keyboard input
+
+`KeyListener` callbacks always receive the triggering SDL event. A callback
+that only needs to perform an action can ignore it explicitly:
+
+```python
+from NaNoPy.classes import KeyListener
+
+listener = KeyListener()
+listener.bind("space", lambda _event: print("space pressed"))
+canvas.add_listener(listener)
+```
+
+Handlers that need event details use the same one-argument signature:
+
+```python
+from sdl2 import SDL_Event
+
+
+def on_left(event: SDL_Event) -> None:
+    print(event.key.keysym.sym, event.key.repeat)
+
+
+listener.bind("left", on_press=on_left)
+```
+
+Each binding can provide an `on_press` callback, an `on_release` callback, or
+both. `KeyListener.bind_many()` accepts a mapping when several keys share the
+same setup code.
+
+## Recording dimensions and FFmpeg arguments
+
+The first captured frame fixes a recording's dimensions. Video streams require
+a stable frame size, so resizing the canvas during an active recording causes
+the next capture to raise `ValueError` before the differently sized frame is
+written. Resize back to the original dimensions to continue, or stop and start
+a new recording for the new size.
+
+`fps` must be a positive integer and codec names are restricted to ordinary
+FFmpeg encoder-name characters. Paths are passed to FFmpeg as individual
+process arguments with shell execution disabled, so spaces and shell
+punctuation in a file name are not executed as commands.
+
 ## Drawing coordinates
 
 Every public `Writer` primitive uses Cartesian canvas coordinates:
@@ -114,6 +184,12 @@ Coordinates are converted to integers but are not clipped. Custom polygons
 use this same coordinate system and accept integer or floating-point point
 coordinates. Stars, regular polygons, and custom polygons require at least
 three points/sides.
+
+Rectangles, circles, stars, polygons, and closed splines accept a keyword-only
+`fill_color`. Supplying it requests a fill even if `filled` remains `False` and
+draws `color` as a separate outline. Use `filled=True` without `fill_color` for
+the original single-color fill behavior. A spline must also have `loop=True`
+before either fill option has an effect.
 
 ### Migration note
 

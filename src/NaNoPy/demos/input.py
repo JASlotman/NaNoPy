@@ -1,4 +1,4 @@
-from NaNoPy import Canvas, Writer, Color
+from NaNoPy import Canvas, Color, Writer
 from NaNoPy.classes import KeyListener
 
 
@@ -43,14 +43,19 @@ def demo() -> None:
     def release_right(_):
         _release("right")
 
-    listener = KeyListener(
-        name="move",
-        bindings={
+    # Simplest form: bind one key to a callback. Every callback receives the
+    # SDL event; name it ``_event`` when the callback does not need it.
+    listener = KeyListener(name="move")
+    listener.bind("space", lambda _event: print("Space pressed"))
+
+    # For continuous movement, bind press and release handlers in a batch.
+    listener.bind_many(
+        {
             "left": (press_left, release_left),
             "right": (press_right, release_right),
             "a": (lambda _: _press("left"), lambda _: _release("left")),
             "d": (lambda _: _press("right"), lambda _: _release("right")),
-        },
+        }
     )
     screen.add_listener(listener)
 

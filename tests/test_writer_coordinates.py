@@ -7,21 +7,23 @@ from unittest.mock import patch
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
-from sdl2 import SDL_CreateRenderer
-from sdl2 import SDL_CreateWindow
-from sdl2 import SDL_DestroyRenderer
-from sdl2 import SDL_DestroyWindow
-from sdl2 import SDL_GetError
-from sdl2 import SDL_Init
-from sdl2 import SDL_INIT_VIDEO
-from sdl2 import SDL_PIXELFORMAT_RGBA32
-from sdl2 import SDL_QuitSubSystem
-from sdl2 import SDL_RENDERER_SOFTWARE
-from sdl2 import SDL_RenderClear
-from sdl2 import SDL_RenderReadPixels
-from sdl2 import SDL_SetRenderDrawColor
-from sdl2 import SDL_WasInit
-from sdl2 import SDL_WINDOW_HIDDEN
+from sdl2 import (
+    SDL_INIT_VIDEO,
+    SDL_PIXELFORMAT_RGBA32,
+    SDL_RENDERER_SOFTWARE,
+    SDL_WINDOW_HIDDEN,
+    SDL_CreateRenderer,
+    SDL_CreateWindow,
+    SDL_DestroyRenderer,
+    SDL_DestroyWindow,
+    SDL_GetError,
+    SDL_Init,
+    SDL_QuitSubSystem,
+    SDL_RenderClear,
+    SDL_RenderReadPixels,
+    SDL_SetRenderDrawColor,
+    SDL_WasInit,
+)
 
 writer_module = importlib.import_module("NaNoPy.classes.writer")
 mainloop_module = importlib.import_module("NaNoPy.classes.mainloop")
@@ -113,6 +115,59 @@ class WriterCoordinateTests(unittest.TestCase):
         self.assertEqual(list(filled_args[1]), [1, 5, 9])
         self.assertEqual(list(filled_args[2]), [96, 88, 78])
         self.assertEqual(filled_args[3:], (3, self.color))
+
+    def test_fill_color_requests_a_separate_fill_and_outline_for_shapes(self):
+        fill_color = object()
+        points = [(1, 2), (5, 10), (9, 20)]
+
+        with (
+            patch.object(writer_module, "boxColor") as box,
+            patch.object(writer_module, "rectangleColor") as rectangle,
+            patch.object(writer_module, "filledCircleColor") as filled_circle,
+            patch.object(writer_module, "aacircleColor") as circle,
+            patch.object(writer_module, "filledPolygonColor") as filled_polygon,
+            patch.object(writer_module, "aapolygonColor") as polygon,
+        ):
+            self.writer.draw_rectangle(
+                1,
+                2,
+                3,
+                4,
+                self.color,
+                filled=False,
+                fill_color=fill_color,
+            )
+            self.writer.draw_circle(
+                5,
+                50,
+                2,
+                self.color,
+                filled=False,
+                fill_color=fill_color,
+            )
+            self.writer.draw_polygon_custom(
+                points,
+                self.color,
+                filled=False,
+                fill_color=fill_color,
+            )
+
+        box.assert_called_once_with(self.canvas.renderer, 1, 97, 4, 93, fill_color)
+        rectangle.assert_called_once_with(self.canvas.renderer, 1, 97, 4, 93, self.color)
+        filled_circle.assert_called_once_with(self.canvas.renderer, 5, 49, 2, fill_color)
+        circle.assert_called_once_with(self.canvas.renderer, 5, 49, 2, self.color)
+        self.assertIs(filled_polygon.call_args.args[-1], fill_color)
+        self.assertIs(polygon.call_args.args[-1], self.color)
+
+    def test_regular_shapes_forward_the_optional_fill_color(self):
+        fill_color = object()
+
+        with patch.object(self.writer, "draw_polygon_custom") as polygon:
+            self.writer.draw_polygon(10, 20, 4, 4, self.color, fill_color=fill_color)
+            self.assertIs(polygon.call_args.kwargs["fill_color"], fill_color)
+
+            self.writer.draw_star(10, 20, 4, 4, self.color, fill_color=fill_color)
+            self.assertIs(polygon.call_args.kwargs["fill_color"], fill_color)
 
     def test_custom_polygon_rejects_fewer_than_three_points(self):
         with patch.object(writer_module, "aapolygonColor") as polygon:

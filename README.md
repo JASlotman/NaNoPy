@@ -9,4 +9,5 @@ Erasmus MC/TU Delft.
   documents SDL initialization and cleanup, color representation, collision
   candidate selection, and the public drawing coordinate system.
 
-preview sound source https://freesound.org/people/envirOmaniac2/sounds/467494/
+The packaged demo audio preview is derived from
+["Preview sound" by envirOmaniac2](https://freesound.org/people/envirOmaniac2/sounds/467494/).

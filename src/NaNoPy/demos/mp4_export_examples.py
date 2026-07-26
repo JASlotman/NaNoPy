@@ -21,14 +21,24 @@ Requirements:
 #   from NaNoPy.decorators import loop
 #   from NaNoPy import Canvas, Writer, Color
 #   import math
+#   from pathlib import Path
 #
-#   @loop(frame_count=120, xSize=400, ySize=400, record_mp4="my_animation.mp4", fps=30)
+#   output_dir = Path.cwd() / "nanopy-output"
+#   output_dir.mkdir(parents=True, exist_ok=True)
+#
+#   @loop(
+#       frame_count=120,
+#       xSize=400,
+#       ySize=400,
+#       record_mp4=str(output_dir / "my_animation.mp4"),
+#       fps=30,
+#   )
 #   def animated_circle(screen: Canvas, pen: Writer, i: int):
 #       x = 200 + 100 * math.sin(i * 0.05)
 #       y = 200 + 100 * math.cos(i * 0.05)
 #       pen.draw_circle(int(x), int(y), 20, Color.red, filled=True)
 #
-# The animation will be displayed in the notebook AND saved to "my_animation.mp4"
+# The animation is displayed in the notebook and saved under "nanopy-output".
 #
 # ============================================================================
 
@@ -42,8 +52,20 @@ Requirements:
 # - Call update() to display the window
 # - Call update_embedded() to capture frames for MP4
 
-from NaNoPy import Canvas, Writer, Color
 import math
+from importlib.resources import as_file, files
+from pathlib import Path
+
+from NaNoPy import Canvas, Color, Writer
+
+OUTPUT_DIRECTORY = Path.cwd() / "nanopy-output"
+
+
+def _output_path(filename: str) -> str:
+    """Return an explicit, ignored directory for generated demo videos."""
+
+    OUTPUT_DIRECTORY.mkdir(parents=True, exist_ok=True)
+    return str(OUTPUT_DIRECTORY / filename)
 
 
 def example_bouncing_ball_with_export():
@@ -58,7 +80,7 @@ def example_bouncing_ball_with_export():
     pen = Writer(canvas)
 
     # Start recording to file
-    canvas.start_recording("bouncing_ball.mp4", fps=60)
+    canvas.start_recording(_output_path("bouncing_ball.mp4"), fps=60)
 
     # Animation parameters
     x, y = 300, 200
@@ -114,7 +136,7 @@ def example_rotating_square():
     pen = Writer(canvas)
 
     # Start recording to file
-    canvas.start_recording("rotating_square.mp4", fps=30)
+    canvas.start_recording(_output_path("rotating_square.mp4"), fps=30)
 
     max_frames = 180
     frame = 0
@@ -163,7 +185,7 @@ def example_with_cleanup():
     pen = Writer(canvas)
 
     # Create MovieWriter instance
-    movie = MovieWriter("advanced_export.mp4", fps=24)
+    movie = MovieWriter(_output_path("advanced_export.mp4"), fps=24)
     movie.start_recording()
 
     # Animation with manual frame capture
@@ -194,7 +216,7 @@ def example_with_audio():
     """Example: Star animation with audio track
 
     Creates a 10-second animation with background music.
-    Requires an 'a.mp3' file in the same directory.
+    Uses the short preview audio clip packaged with the demo.
     """
     import random as rnd
 
@@ -220,7 +242,7 @@ def example_with_audio():
     x = 0.0
 
     # Start recording
-    movie = canvas.start_recording("star_animation_with_audio.mp4", fps=FPS)
+    movie = canvas.start_recording(_output_path("star_animation_with_audio.mp4"), fps=FPS)
 
     # Create background stars
     for i in range(500):
@@ -287,15 +309,16 @@ def example_with_audio():
     canvas.stop_recording()
     movie_writer = movie
 
-    import os
-
-    if os.path.exists("a.mp3"):
-        output_path = movie_writer.save_with_audio("a.mp3")
+    audio_resource = files("NaNoPy.demos").joinpath("resources/preview.mp3")
+    if audio_resource.is_file():
+        # ``as_file`` also works when package resources are not ordinary files.
+        with as_file(audio_resource) as audio_path:
+            output_path = movie_writer.save_with_audio(str(audio_path))
         print(f"✓ Animation with audio saved to: {output_path}")
         print(f"  Frames recorded: {movie_writer.frame_count()}")
         print(f"  Duration: {movie_writer.get_duration():.2f} seconds")
     else:
-        print("⚠ Warning: 'a.mp3' file not found in current directory")
+        print("⚠ Warning: packaged preview audio was not found")
         print("   Saving without audio instead...")
         output_path = movie_writer.save()
         print(f"✓ Animation (no audio) saved to: {output_path}")
@@ -351,8 +374,8 @@ if __name__ == "__main__":
     print("  - example_bouncing_ball_with_export()")
     print("  - example_rotating_square()")
     print("  - example_with_cleanup()")
-    print("  - example_with_audio()  # Requires 'a.mp3' file")
-    print("\nEach will save an MP4 file to the current directory.")
+    print("  - example_with_audio()")
+    print(f"\nEach will save an MP4 file under: {OUTPUT_DIRECTORY}")
     # example_bouncing_ball_with_export()
     # example_rotating_square()
     # example_with_cleanup()

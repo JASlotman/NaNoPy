@@ -1,13 +1,14 @@
-from decimal import Decimal, localcontext
-from fractions import Fraction
 import math
 import random
 import unittest
+from decimal import Decimal, localcontext
+from fractions import Fraction
 
 from NaNoPy.collisions import (
     _calc_chunk_id,
-    get_close_AB_pairs,
+    apply_to_close_pairs,
     get_close_AA_pairs,
+    get_close_AB_pairs,
     get_close_pairs,
 )
 
@@ -195,6 +196,19 @@ class CollisionPairTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "B x and y coordinate iterables"):
             list(get_close_pairs([0.0], [0.0], 1.0, xs_B, ys_B))
+
+    def test_pair_decorator_runs_eagerly_and_preserves_the_function(self):
+        calls = []
+
+        @apply_to_close_pairs([0.0, 0.5], [0.0, 0.5], 1.0)
+        def collect(i, j):
+            calls.append((i, j))
+
+        self.assertEqual(calls, [(0, 1)])
+        self.assertTrue(callable(collect))
+
+        collect(4, 5)
+        self.assertEqual(calls[-1], (4, 5))
 
 
 if __name__ == "__main__":

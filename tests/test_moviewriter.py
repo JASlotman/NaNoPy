@@ -1,9 +1,9 @@
 import io
 import os
-from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
@@ -83,6 +83,41 @@ class MovieWriterTests(unittest.TestCase):
         self.addCleanup(popen.stop)
         writer.start_recording()
         return writer, popen_calls
+
+    def test_constructor_rejects_non_integer_or_non_positive_fps(self):
+        for fps in (True, 1.5, "30", None):
+            with self.subTest(fps=fps):
+                with self.assertRaisesRegex(TypeError, "fps must be an integer"):
+                    MovieWriter("movie.mp4", fps=fps)
+
+        for fps in (0, -1):
+            with self.subTest(fps=fps):
+                with self.assertRaisesRegex(ValueError, "fps must be positive"):
+                    MovieWriter("movie.mp4", fps=fps)
+
+    def test_constructor_rejects_invalid_codec_values(self):
+        for codec in (None, 123):
+            with self.subTest(codec=codec):
+                with self.assertRaisesRegex(TypeError, "codec must be a string"):
+                    MovieWriter("movie.mp4", codec=codec)
+
+        for codec in ("", "libx264 -y", "$(touch unexpected)", "-version"):
+            with self.subTest(codec=codec):
+                with self.assertRaisesRegex(ValueError, "FFmpeg encoder name"):
+                    MovieWriter("movie.mp4", codec=codec)
+
+    def test_output_path_is_passed_as_one_argv_element_without_a_shell(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory, "movie;not-a-command.mp4")
+            process = FakeProcess()
+            writer, popen_calls = self.make_started_writer(output, process)
+
+            writer.add_frame(Image.new("RGBA", (2, 2)))
+            command, options = popen_calls[0]
+
+            self.assertIn(";not-a-command", command[-1])
+            self.assertIs(options["shell"], False)
+            writer.clear()
 
     def test_streams_rgba_frames_to_one_lazy_process(self):
         with tempfile.TemporaryDirectory() as directory:

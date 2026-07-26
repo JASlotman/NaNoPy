@@ -1,12 +1,11 @@
-from NaNoPy import Canvas, Writer, Color
-from random import randint, random
-from dataclasses import dataclass, field
-from math import sqrt
-from time import perf_counter
-from math import ceil
-import random as rnd
 import math
-from NaNoPy import get_close_pairs, apply_to_close_pairs
+import random as rnd
+from dataclasses import dataclass, field
+from math import ceil, sqrt
+from random import randint, random
+from time import perf_counter
+
+from NaNoPy import NNP, Canvas, Color, Writer, apply_to_close_pairs, get_close_pairs
 
 
 @dataclass
@@ -466,6 +465,11 @@ if __name__ == "__main__":
 
     for demo in demos:
         start = perf_counter()
-        demo(**kwargs)
-        elapsed = perf_counter() - start
-        print(f"method {str(demo.__name__)} took {elapsed:.3f} seconds for {n_steps} timesteps")
+        try:
+            demo(**kwargs)
+            elapsed = perf_counter() - start
+            print(f"method {str(demo.__name__)} took {elapsed:.3f} seconds for {n_steps} timesteps")
+        finally:
+            # Each benchmark owns one canvas. Release it before the next demo
+            # reuses the "test" name and initializes a fresh mainloop runtime.
+            NNP.stop()

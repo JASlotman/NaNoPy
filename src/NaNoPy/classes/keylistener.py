@@ -6,7 +6,6 @@ from typing import Callable, Mapping
 from sdl2 import (
     SDL_KEYDOWN,
     SDL_KEYUP,
-    SDL_Event,
     SDLK_DOWN,
     SDLK_ESCAPE,
     SDLK_LALT,
@@ -18,8 +17,8 @@ from sdl2 import (
     SDLK_SPACE,
     SDLK_TAB,
     SDLK_UP,
+    SDL_Event,
 )
-
 
 KeyHandler = Callable[[SDL_Event], None]
 
@@ -56,10 +55,23 @@ COMMON_KEYS: dict[str, int] = {
 
 
 class KeyListener:
-    """
-    Beginner-friendly keyboard listener.
+    """Beginner-friendly keyboard listener.
 
-    Example:
+    Every callback receives the triggering :class:`SDL_Event`. Use a dummy
+    parameter when the event details are irrelevant::
+
+        listener = KeyListener()
+        listener.bind("space", lambda _event: print("space pressed"))
+
+    The event remains available for handlers that need SDL metadata::
+
+        def on_left(event: SDL_Event) -> None:
+            print(event.key.keysym.sym, event.key.repeat)
+
+        listener.bind("left", on_press=on_left)
+
+    Several press/release pairs can also be supplied at construction time::
+
         listener = KeyListener(
             bindings={
                 "left": (on_left_down, on_key_up),
