@@ -1,21 +1,22 @@
-from NaNoPy import Canvas, Writer, Color
 import random
+
+from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:
-    xSize = 800
-    ySize = 400
+    x_size = 800
+    y_size = 400
 
-    screen = Canvas("Name", xSize, ySize)
+    screen = Canvas("Name", x_size, y_size)
     pen = Writer(screen)
 
     n = 10
     x = []
     y = []
 
-    for i in range(n):
-        x.append(random.randint(0, xSize))
-        y.append(random.randint(0, ySize))
+    for _ in range(n):
+        x.append(random.randint(0, x_size))
+        y.append(random.randint(0, y_size))
 
     frame = 1
 
@@ -24,7 +25,7 @@ def demo() -> None:
         for i in range(n):
             dx = random.randint(-4, 4)
             dy = random.randint(-4, 4)
-            if x[i] + dx > 0 and x[i] + dx < xSize and y[i] + dy > 0 and y[i] + dy < ySize:
+            if x[i] + dx > 0 and x[i] + dx < x_size and y[i] + dy > 0 and y[i] + dy < y_size:
                 x[i] += dx
                 y[i] += dy
 

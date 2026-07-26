@@ -119,7 +119,7 @@ def handle_candidate(i: int, j: int) -> None:
 ```
 
 The original callback is returned after this eager pass, so it can still be
-called directly. For AB matching, pass `xs_B=` and `ys_B=` by keyword; the
+called directly. For AB matching, pass `xs_b=` and `ys_b=` by keyword; the
 callback receives the A index first and the B index second.
 
 ## Keyboard input

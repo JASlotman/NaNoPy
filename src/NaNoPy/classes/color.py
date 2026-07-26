@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 import warnings
-from typing import Optional
 
 from sdl2.ext import Color as Colorsdl2
 
@@ -17,7 +16,7 @@ class _ColorValue:
     def __init__(self, *, r: int, g: int, b: int, a: int) -> None:
         self._rgba = (r, g, b, a)
 
-    def __get__(self, instance, owner) -> Color:
+    def __get__(self, instance: object | None, owner: type[Color]) -> Color:
         return Color._from_rgba(*self._rgba)
 
 
@@ -70,23 +69,21 @@ class Color(Colorsdl2):
         It lets demos and user interfaces discover the palette without relying
         on private descriptors or maintaining a duplicate list of names.
         """
-
         return {name: getattr(cls, name) for name, value in vars(Color).items() if isinstance(value, _ColorValue)}
 
     @classmethod
-    def _from_rgba(cls, r: int, g: int, b: int, a: int) -> Color:
+    def _from_rgba(cls, r: float, g: float, b: float, a: float) -> Color:
         """Construct a frozen ``Color`` directly, bypassing the deprecated public constructor."""
-
         self = object.__new__(cls)
         for name, val in (("_r", r), ("_g", g), ("_b", b), ("_a", a)):
             Colorsdl2._verify_rgba_value(self, val)
             object.__setattr__(self, name, float(int(val)))
         return self
 
-    def __setattr__(self, name, value) -> None:
+    def __setattr__(self, name: str, value: object) -> None:
         raise AttributeError(f"{type(self).__name__} is immutable")
 
-    def __delattr__(self, name) -> None:
+    def __delattr__(self, name: str) -> None:
         raise AttributeError(f"{type(self).__name__} is immutable")
 
     def __hash__(self) -> int:
@@ -102,7 +99,6 @@ class Color(Colorsdl2):
         ``0xRRGGBBAA``, which swaps channels when passed through ctypes on a
         little-endian host.
         """
-
         rgba_bytes = bytes((self.r, self.g, self.b, self.a))
         return int.from_bytes(rgba_bytes, byteorder=sys.byteorder)
 
@@ -117,27 +113,22 @@ class Color(Colorsdl2):
 
     def __long__(self) -> int:
         """Return the native SDL_gfx value for PySDL2 API compatibility."""
-
         return self._as_sdl_gfx_uint32()
 
     def __hex__(self) -> str:
         """Return the native SDL_gfx value in hexadecimal form."""
-
         return hex(self._as_sdl_gfx_uint32())
 
     def __oct__(self) -> str:
         """Return the native SDL_gfx value in octal form."""
-
         return oct(self._as_sdl_gfx_uint32())
 
     def __copy__(self) -> Color:
         """Return this immutable value without losing NaNoPy's packing hooks."""
-
         return self
 
-    def __deepcopy__(self, memo) -> Color:
+    def __deepcopy__(self, memo: dict[int, object]) -> Color:
         """Return this immutable value without losing NaNoPy's packing hooks."""
-
         return self
 
     def __invert__(self) -> Color:
@@ -168,7 +159,6 @@ class Color(Colorsdl2):
 
     def __div__(self, color: Colorsdl2) -> Color:
         """Compatibility alias matching PySDL2's legacy division hook."""
-
         return self.__truediv__(color)
 
     def __mul__(self, color: Colorsdl2) -> Color:
@@ -205,17 +195,16 @@ class Color(Colorsdl2):
     @staticmethod
     def custom(
         *,
-        r: Optional[int] = None,
-        g: Optional[int] = None,
-        b: Optional[int] = None,
-        a: Optional[int] = None,
+        r: int | None = None,
+        g: int | None = None,
+        b: int | None = None,
+        a: int | None = None,
     ) -> Color:
         """Return a custom SDL2 color with sane defaults.
 
         At least one RGB channel must be provided. Missing RGB channels default
         to 0 and alpha defaults to 255.
         """
-
         if r is None and g is None and b is None:
             raise ValueError("Provide at least one of r, g or b when requesting a custom color.")
 
@@ -227,39 +216,43 @@ class Color(Colorsdl2):
 
     @staticmethod
     def css(color_name: CSS4_KEYS) -> Color:
-        """
-        Create a Color object from an CSS4 color name.
+        """Create a Color object from an CSS4 color name.
+
         Args:
             color_name (CSS4_COLORS): The name of the CSS4 color to retrieve.
                 Must be a valid key from the CSS4_COLORS dictionary.
+
         Returns:
             Color: A Color object initialized from the hexadecimal value
                 of the specified CSS4 color. White if not found.
+
         Example:
             >>> red = Color.css("red")
             >>> blue = Color.css("blanchedalmond")
-        """
 
+        """
         return Color.hex(CSS4_COLORS.get(color_name, "#ffffff"))
 
     @staticmethod
     def hex(hex_value: str) -> Color:
-        """
-        Create a Color from a hexadecimal color string.
+        """Create a Color from a hexadecimal color string.
         Converts a hex color string (with or without '#' prefix) to a Color object.
         If only RGB values are provided (6 characters), alpha is set to 255 (fully opaque).
+
         Args:
             hex_value (str): A hexadecimal color string in the format '#RRGGBB' or '#RRGGBBAA'.
                             The '#' prefix is optional. Supports both 6-character (RGB) and
                             8-character (RGBA) hex values.
+
         Returns:
             Color: A Color object with the specified RGBA values.
+
         Examples:
             >>> color1 = Color.hex("#FF5733")  # RGB with alpha defaulting to 255
             >>> color2 = Color.hex("FF5733FF")  # RGBA without '#' prefix
             >>> color3 = Color.hex("#000000")   # Black with full opacity
-        """
 
+        """
         hex_value = hex_value.lstrip("#")
 
         # Add alpha 255 by default
@@ -276,10 +269,10 @@ class Color(Colorsdl2):
     def __call__(
         self,
         *,
-        r: Optional[int] = None,
-        g: Optional[int] = None,
-        b: Optional[int] = None,
-        a: Optional[int] = None,
+        r: int | None = None,
+        g: int | None = None,
+        b: int | None = None,
+        a: int | None = None,
     ) -> Colorsdl2:
         warnings.warn(
             "Calling Color instances is deprecated; use Color.custom(...) instead.",

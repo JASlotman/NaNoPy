@@ -5,6 +5,7 @@ import operator
 import os
 import sys
 import unittest
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import patch
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
@@ -32,14 +33,17 @@ from NaNoPy.classes.color import Color
 
 color_module = importlib.import_module("NaNoPy.classes.color")
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
 
 class ColorSemanticsTests(unittest.TestCase):
-    def assert_rgba(self, color, expected):
-        self.assertEqual((color.r, color.g, color.b, color.a), expected)
-        self.assertEqual(tuple(color), expected)
-        self.assertEqual(tuple(color[index] for index in range(4)), expected)
+    def assert_rgba(self, color: Color, expected: tuple[int, int, int, int]) -> None:
+        self.assertEqual(expected, (color.r, color.g, color.b, color.a))
+        self.assertEqual(expected, tuple(cast("Iterable[int]", color)))
+        self.assertEqual(expected, tuple(color[index] for index in range(4)))
 
-    def test_named_colors_expose_channels_in_rgba_order(self):
+    def test_named_colors_expose_channels_in_rgba_order(self) -> None:
         expected_colors = {
             "red": (255, 0, 0, 255),
             "blue": (0, 0, 255, 255),
@@ -62,7 +66,7 @@ class ColorSemanticsTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assert_rgba(getattr(Color, name), expected)
 
-    def test_named_colors_discovers_the_palette_without_duplicate_metadata(self):
+    def test_named_colors_discovers_the_palette_without_duplicate_metadata(self) -> None:
         palette = Color.named_colors()
 
         self.assertEqual(
@@ -88,7 +92,7 @@ class ColorSemanticsTests(unittest.TestCase):
         self.assertTrue(all(type(value) is Color for value in palette.values()))
         self.assertIsNot(palette["red"], Color.named_colors()["red"])
 
-    def test_custom_factory_preserves_full_and_defaulted_rgba_values(self):
+    def test_custom_factory_preserves_full_and_defaulted_rgba_values(self) -> None:
         full = Color.custom(r=1, g=2, b=3, a=4)
         defaulted = Color.custom(g=17)
 
@@ -96,18 +100,18 @@ class ColorSemanticsTests(unittest.TestCase):
         self.assertEqual(repr(full), "Color(r=1, g=2, b=3, a=4)")
         self.assert_rgba(defaulted, (0, 17, 0, 255))
 
-    def test_css_factory_preserves_rgba_values(self):
+    def test_css_factory_preserves_rgba_values(self) -> None:
         self.assert_rgba(Color.css("rebeccapurple"), (102, 51, 153, 255))
-        self.assert_rgba(Color.css("not-a-css-color"), (255, 255, 255, 255))
+        self.assert_rgba(Color.css(cast("Any", "not-a-css-color")), (255, 255, 255, 255))
 
-    def test_hex_factory_preserves_rgb_and_optional_alpha(self):
+    def test_hex_factory_preserves_rgb_and_optional_alpha(self) -> None:
         self.assert_rgba(Color.hex("#123456"), (18, 52, 86, 255))
         self.assert_rgba(Color.hex("12345678"), (18, 52, 86, 120))
 
-    def test_integer_protocol_uses_native_rgba_byte_packing(self):
+    def test_integer_protocol_uses_native_rgba_byte_packing(self) -> None:
         color = Color.custom(r=0x11, g=0x22, b=0x33, a=0x44)
         expected = int.from_bytes(bytes((0x11, 0x22, 0x33, 0x44)), sys.byteorder)
-        native_value = ctypes.c_uint32(color)
+        native_value = ctypes.c_uint32(cast("int", color))
 
         self.assertEqual(int(color), expected)
         self.assertEqual(operator.index(color), expected)
@@ -123,19 +127,18 @@ class ColorSemanticsTests(unittest.TestCase):
         self.assertEqual(color.__hex__(), hex(expected))
         self.assertEqual(color.__oct__(), oct(expected))
 
-    def test_integer_packing_adapts_to_both_host_byte_orders(self):
+    def test_integer_packing_adapts_to_both_host_byte_orders(self) -> None:
         color = Color.custom(r=0x11, g=0x22, b=0x33, a=0x44)
 
         for byteorder, expected in (("little", 0x44332211), ("big", 0x11223344)):
-            with self.subTest(byteorder=byteorder):
-                with patch.object(color_module.sys, "byteorder", byteorder):
-                    self.assertEqual(int(color), expected)
-                    self.assertEqual(operator.index(color), expected)
-                    self.assertEqual(color.__long__(), expected)
-                    self.assertEqual(color.__hex__(), hex(expected))
-                    self.assertEqual(color.__oct__(), oct(expected))
+            with self.subTest(byteorder=byteorder), patch.object(color_module.sys, "byteorder", byteorder):
+                self.assertEqual(int(color), expected)
+                self.assertEqual(operator.index(color), expected)
+                self.assertEqual(color.__long__(), expected)
+                self.assertEqual(color.__hex__(), hex(expected))
+                self.assertEqual(color.__oct__(), oct(expected))
 
-    def test_arithmetic_keeps_immutable_nanopy_colors_and_native_packing(self):
+    def test_arithmetic_keeps_immutable_nanopy_colors_and_native_packing(self) -> None:
         left = Color.custom(r=10, g=20, b=30, a=40)
         right = Color.custom(r=3, g=6, b=7, a=9)
         operations = {
@@ -157,7 +160,7 @@ class ColorSemanticsTests(unittest.TestCase):
                 with self.assertRaisesRegex(AttributeError, "immutable"):
                     result.r = 0
 
-    def test_copying_an_immutable_color_preserves_nanopy_type_and_packing(self):
+    def test_copying_an_immutable_color_preserves_nanopy_type_and_packing(self) -> None:
         color = Color.custom(r=10, g=20, b=30, a=40)
 
         self.assertIs(copy.copy(color), color)
@@ -167,7 +170,7 @@ class ColorSemanticsTests(unittest.TestCase):
 
 class ColorSDLRenderingTests(unittest.TestCase):
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls.owns_video_subsystem = SDL_WasInit(SDL_INIT_VIDEO) == 0
         if cls.owns_video_subsystem and SDL_Init(SDL_INIT_VIDEO) != 0:
             raise RuntimeError(f"SDL video initialization failed: {SDL_GetError()!r}")
@@ -186,13 +189,13 @@ class ColorSDLRenderingTests(unittest.TestCase):
             raise RuntimeError(f"SDL software renderer creation failed: {SDL_GetError()!r}")
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         SDL_DestroyRenderer(cls.renderer)
         SDL_DestroyWindow(cls.window)
         if cls.owns_video_subsystem:
             SDL_QuitSubSystem(SDL_INIT_VIDEO)
 
-    def test_packed_color_reaches_sdl_gfx_without_channel_swapping(self):
+    def test_packed_color_reaches_sdl_gfx_without_channel_swapping(self) -> None:
         color = Color.custom(r=17, g=34, b=51, a=255)
 
         self.assertEqual(SDL_SetRenderDrawColor(self.renderer, 0, 0, 0, 255), 0)

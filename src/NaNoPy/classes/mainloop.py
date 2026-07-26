@@ -1,73 +1,73 @@
-from sdl2 import SDL_Event
-
-from sdl2 import SDL_InitSubSystem
-from sdl2 import SDL_GetWindowFlags
-from sdl2 import SDL_GetWindowFromID
-from sdl2 import SDL_GetWindowID
-from sdl2 import SDL_RenderReadPixels
-from sdl2 import SDL_GetError
-from sdl2 import SDL_ShowWindow
-from sdl2 import SDL_RenderPresent
-from sdl2 import SDL_PollEvent
-from sdl2 import SDL_PushEvent
-from sdl2 import SDL_SetRenderDrawColor
-from sdl2 import SDL_RenderClear
-from sdl2 import SDL_Delay
-from sdl2 import SDL_DestroyWindow
-from sdl2 import SDL_QuitSubSystem
-from sdl2 import SDL_DestroyTexture
-from sdl2 import SDL_DestroyRenderer
-from sdl2 import SDL_CreateTexture
-from sdl2 import SDL_SetRenderTarget
-from sdl2 import SDL_RenderCopy
-from sdl2 import SDL_SetTextureBlendMode
-
-from sdl2 import SDL_INIT_VIDEO
-from sdl2 import SDL_WINDOW_HIDDEN
-from sdl2 import SDL_WINDOWEVENT
-from sdl2 import SDL_WINDOWEVENT_CLOSE
-from sdl2 import SDL_WINDOWEVENT_RESIZED
-from sdl2 import SDL_KEYDOWN
-from sdl2 import SDL_KEYUP
-from sdl2 import SDL_TEXTEDITING
-from sdl2 import SDL_TEXTINPUT
-from sdl2 import SDL_MOUSEMOTION
-from sdl2 import SDL_MOUSEBUTTONDOWN
-from sdl2 import SDL_MOUSEBUTTONUP
-from sdl2 import SDL_MOUSEWHEEL
-from sdl2 import SDL_DROPFILE
-from sdl2 import SDL_DROPTEXT
-from sdl2 import SDL_DROPBEGIN
-from sdl2 import SDL_DROPCOMPLETE
-from sdl2 import SDL_USEREVENT
-from sdl2 import SDL_LASTEVENT
-from sdl2 import SDL_PIXELFORMAT_RGBA32
-from sdl2 import SDL_PIXELFORMAT_RGBA8888
-from sdl2 import SDL_TEXTUREACCESS_TARGET
-from sdl2 import SDL_BLENDMODE_BLEND
-
-from sdl2.sdlgfx import gfxPrimitivesSetFont
-
 import ctypes
 import threading
 import warnings
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
+
+from PIL import Image
+from sdl2 import (
+    SDL_BLENDMODE_BLEND,
+    SDL_DROPBEGIN,
+    SDL_DROPCOMPLETE,
+    SDL_DROPFILE,
+    SDL_DROPTEXT,
+    SDL_INIT_VIDEO,
+    SDL_KEYDOWN,
+    SDL_KEYUP,
+    SDL_LASTEVENT,
+    SDL_MOUSEBUTTONDOWN,
+    SDL_MOUSEBUTTONUP,
+    SDL_MOUSEMOTION,
+    SDL_MOUSEWHEEL,
+    SDL_PIXELFORMAT_RGBA32,
+    SDL_PIXELFORMAT_RGBA8888,
+    SDL_TEXTEDITING,
+    SDL_TEXTINPUT,
+    SDL_TEXTUREACCESS_TARGET,
+    SDL_USEREVENT,
+    SDL_WINDOW_HIDDEN,
+    SDL_WINDOWEVENT,
+    SDL_WINDOWEVENT_CLOSE,
+    SDL_WINDOWEVENT_RESIZED,
+    SDL_CreateTexture,
+    SDL_Delay,
+    SDL_DestroyRenderer,
+    SDL_DestroyTexture,
+    SDL_DestroyWindow,
+    SDL_Event,
+    SDL_GetError,
+    SDL_GetWindowFlags,
+    SDL_GetWindowFromID,
+    SDL_GetWindowID,
+    SDL_InitSubSystem,
+    SDL_PollEvent,
+    SDL_PushEvent,
+    SDL_QuitSubSystem,
+    SDL_RenderClear,
+    SDL_RenderCopy,
+    SDL_RenderPresent,
+    SDL_RenderReadPixels,
+    SDL_SetRenderDrawColor,
+    SDL_SetRenderTarget,
+    SDL_SetTextureBlendMode,
+    SDL_ShowWindow,
+)
+from sdl2.sdlgfx import gfxPrimitivesSetFont
 
 from NaNoPy.classes.keylistener import KeyListener
 from NaNoPy.classes.listener import Listener
 from NaNoPy.classes.moviewriter import MovieWriter
 from NaNoPy.constants import DEFAULT_CODEC
 
-from PIL import Image
-
 try:
     # Added in SDL 2.0.22; keep NaNoPy importable with older PySDL2 bindings.
-    from sdl2 import SDL_TEXTEDITING_EXT
+    from sdl2 import SDL_TEXTEDITING_EXT as _sdl_textediting_ext
 except ImportError:  # pragma: no cover - depends on the installed SDL bindings
-    SDL_TEXTEDITING_EXT = None
+    _sdl_textediting_ext = None
 
 if TYPE_CHECKING:
     from NaNoPy.classes.canvas import CanvasNaive
+
+_UNKNOWN_SDL_ERROR = "unknown SDL error"
 
 
 class Mainloop:
@@ -81,7 +81,7 @@ class Mainloop:
     signal policy to the host application.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.event = SDL_Event()
         self.running: bool = False
         self.canvasses: dict[str, CanvasNaive] = {}
@@ -89,18 +89,17 @@ class Mainloop:
 
         self.multiple_windows = False
         self._persistent_textures: dict[str, ctypes.c_void_p] = {}
-        self._movie_writer: Optional[MovieWriter] = None
+        self._movie_writer: MovieWriter | None = None
         self._sdl_initialized = False
         self._runtime_thread_id: int | None = None
 
     @staticmethod
     def _sdl_error() -> str:
         """Return SDL's current error as readable text."""
-
         error = SDL_GetError()
         if isinstance(error, bytes):
-            return error.decode(errors="replace") or "unknown SDL error"
-        return str(error) if error else "unknown SDL error"
+            return error.decode(errors="replace") or _UNKNOWN_SDL_ERROR
+        return str(error) if error else _UNKNOWN_SDL_ERROR
 
     def ensure_initialized(self) -> None:
         """Initialize SDL for canvas use, raising a useful error on failure.
@@ -110,7 +109,6 @@ class Mainloop:
         reference, so independent mainloops and external SDL users cannot
         shut one another down.
         """
-
         if self._sdl_initialized:
             self._require_runtime_thread()
             self.running = True
@@ -130,14 +128,9 @@ class Mainloop:
         backends. Silently tearing them down from another thread can leave
         native pointers stale or crash the host process.
         """
-
-        if (
-            self._sdl_initialized
-            and self._runtime_thread_id != threading.get_ident()
-        ):
+        if self._sdl_initialized and self._runtime_thread_id != threading.get_ident():
             raise RuntimeError(
-                "Canvas operations, including Mainloop.stop(), must run on "
-                "the thread that created the first active canvas."
+                "Canvas operations, including Mainloop.stop(), must run on the thread that created the first active canvas.",
             )
 
     def _canvas_is_active(self, canvas: "CanvasNaive") -> bool:
@@ -147,40 +140,29 @@ class Mainloop:
         animation iteration therefore become harmless no-ops. Cross-thread SDL
         access remains a programming error and is reported explicitly.
         """
-
         self._require_runtime_thread()
         return bool(
-            self._sdl_initialized
-            and self.running
-            and getattr(canvas, "window", None)
-            and getattr(canvas, "renderer", None)
+            self._sdl_initialized and self.running and getattr(canvas, "window", None) and getattr(canvas, "renderer", None),
         )
 
     def _require_active_canvas(self, canvas: "CanvasNaive") -> None:
         """Require a live canvas for an operation that cannot be skipped."""
-
         if not self._canvas_is_active(canvas):
             raise RuntimeError("Canvas is closed and can no longer be rendered.")
 
     @staticmethod
     def _closed_canvas_image(canvas: "CanvasNaive") -> Image.Image:
         """Return a deterministic frame without consulting destroyed SDL data."""
-
         size = getattr(canvas, "_window_size_cache", None) or (1, 1)
         return Image.new("RGBA", size, (0, 0, 0, 255))
 
     def _owns_window_id(self, window_id: int) -> bool:
         """Return whether an SDL window ID belongs to this mainloop."""
-
-        return any(
-            canvas.window and SDL_GetWindowID(canvas.window) == window_id
-            for canvas in self.canvasses.values()
-        )
+        return any(canvas.window and SDL_GetWindowID(canvas.window) == window_id for canvas in self.canvasses.values())
 
     @staticmethod
     def _event_window_id(event: SDL_Event) -> int:
         """Return the owning window ID for any window-scoped SDL event."""
-
         event_type = event.type
         if event_type == SDL_WINDOWEVENT:
             return event.window.windowID
@@ -190,7 +172,7 @@ class Mainloop:
             return event.edit.windowID
         if event_type == SDL_TEXTINPUT:
             return event.text.windowID
-        if SDL_TEXTEDITING_EXT is not None and event_type == SDL_TEXTEDITING_EXT:
+        if _sdl_textediting_ext is not None and event_type == _sdl_textediting_ext:
             return event.editExt.windowID
         if event_type == SDL_MOUSEMOTION:
             return event.motion.windowID
@@ -206,7 +188,6 @@ class Mainloop:
 
     def _deactivate_runtime(self) -> None:
         """Release process-level state after all canvas resources are gone."""
-
         if self._sdl_initialized:
             SDL_QuitSubSystem(SDL_INIT_VIDEO)
         self._sdl_initialized = False
@@ -215,22 +196,19 @@ class Mainloop:
 
     def release_if_unused(self) -> None:
         """Undo lazy initialization after a first-canvas construction failure."""
-
         if not self.canvasses:
             self._require_runtime_thread()
             self._deactivate_runtime()
 
     def _require_canvas_name_available(self, name: str) -> None:
         """Reject duplicate names before they can orphan native resources."""
-
         self._require_runtime_thread()
         if name in self.canvasses:
             raise ValueError(
-                f"A canvas named {name!r} already exists in this Mainloop. "
-                "Canvas names must be unique while their windows are active."
+                f"A canvas named {name!r} already exists in this Mainloop. Canvas names must be unique while their windows are active.",
             )
 
-    def add_canvas(self, canvas: "CanvasNaive"):
+    def add_canvas(self, canvas: "CanvasNaive") -> None:
         self._require_canvas_name_available(canvas.name)
         self.ensure_initialized()
         self.canvasses[canvas.name] = canvas
@@ -241,7 +219,6 @@ class Mainloop:
 
     def update(self, canvas: "CanvasNaive") -> bool:
         """Present one frame and return whether the mainloop remains active."""
-
         if not self._canvas_is_active(canvas):
             return False
 
@@ -249,7 +226,7 @@ class Mainloop:
         ren = canvas.renderer
 
         flags = SDL_GetWindowFlags(window)
-        if (flags & SDL_WINDOW_HIDDEN):
+        if flags & SDL_WINDOW_HIDDEN:
             SDL_ShowWindow(window)
 
         if self.multiple_windows and canvas._reload_fonts:
@@ -302,8 +279,10 @@ class Mainloop:
                 error = SDL_GetError()
                 if isinstance(error, bytes):
                     detail = error.decode(errors="replace")
+                elif error:
+                    detail = str(error)
                 else:
-                    detail = str(error) if error else "unknown SDL error"
+                    detail = _UNKNOWN_SDL_ERROR
                 raise RuntimeError(f"SDL_RenderReadPixels failed: {detail}")
 
             img = Image.frombytes(
@@ -316,8 +295,8 @@ class Mainloop:
                 1,
             )
 
-        except Exception as e:
-            print(f"Failed to save frame: {e}")
+        except Exception as exc:  # noqa: BLE001 - capture must degrade safely
+            warnings.warn(f"Failed to save frame: {exc}", RuntimeWarning, stacklevel=2)
             # Return black image on error
             return Image.new("RGBA", (x_size, y_size), (0, 0, 0, 255))
 
@@ -329,10 +308,8 @@ class Mainloop:
 
         return img
 
-
     def _handle_events(self) -> bool:
         """Dispatch pending events and report whether rendering may continue."""
-
         self._require_runtime_thread()
         foreign_events: list[SDL_Event] = []
         try:
@@ -353,23 +330,17 @@ class Mainloop:
                         foreign_events.append(event_copy)
                     continue
 
-                if (
-                    self.event.type == SDL_WINDOWEVENT
-                    and self.event.window.event == SDL_WINDOWEVENT_CLOSE
-                ):
+                if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_CLOSE:
                     self.stop()
                     return False
 
-                if (
-                    self.event.type == SDL_WINDOWEVENT
-                    and self.event.window.event == SDL_WINDOWEVENT_RESIZED
-                ):
+                if self.event.type == SDL_WINDOWEVENT and self.event.window.event == SDL_WINDOWEVENT_RESIZED:
                     for canvas in self.canvasses.values():
                         canvas._window_size_cache = None
 
                 # A listener may stop the loop or change listener registration.
                 # Iterate a snapshot and stop immediately after native teardown.
-                for listener in list(self.listeners.values()):
+                for listener in tuple(self.listeners.values()):
                     listener.run(self.event)
                     if not self.running:
                         return False
@@ -381,28 +352,31 @@ class Mainloop:
 
     def clear(self, canvas: "CanvasNaive") -> bool:
         """Clear a live canvas, or do nothing after its window has closed."""
-
         if not self._canvas_is_active(canvas):
             return False
         SDL_SetRenderDrawColor(canvas.renderer, 0, 0, 0, 255)
         SDL_RenderClear(canvas.renderer)
         return True
 
-    def pause(self, time):
+    def pause(self, time: int) -> None:
         SDL_Delay(time)
 
     def start_recording(
-        self, output_path: str, fps: int = 30, codec: str = DEFAULT_CODEC
+        self,
+        output_path: str,
+        fps: int = 30,
+        codec: str = DEFAULT_CODEC,
     ) -> MovieWriter:
         """Start recording animation frames to MP4.
-        
+
         Args:
             output_path (str): Where to save the MP4 file
             fps (int): Frames per second for output video (default: 30)
             codec (str): FFmpeg video encoder selected before frames arrive
-        
+
         Returns:
             MovieWriter: The movie writer object (also stored internally)
+
         """
         if self._movie_writer:
             if self._movie_writer.is_recording:
@@ -413,30 +387,31 @@ class Mainloop:
         self._movie_writer = MovieWriter(output_path, fps, codec)
         self._movie_writer.start_recording()
         return self._movie_writer
-    
-    def stop_recording(self) -> Optional[MovieWriter]:
+
+    def stop_recording(self) -> MovieWriter | None:
         """Stop accepting frames and finalize the FFmpeg stream."""
         if self._movie_writer:
             self._movie_writer.stop_recording()
             return self._movie_writer
         return None
-    
-    def save_recording(self, codec: Optional[str] = None) -> Optional[str]:
+
+    def save_recording(self, codec: str | None = None) -> str | None:
         """Publish the finalized recording as MP4.
-        
+
         Args:
             codec (str): Compatibility check for the codec selected at start
-        
+
         Returns:
             str: Path to saved MP4 file, or None if no recording
+
         """
         if self._movie_writer:
             path = self._movie_writer.save(codec)
             self._movie_writer = None
             return str(path)
         return None
-    
-    def get_movie_writer(self) -> Optional[MovieWriter]:
+
+    def get_movie_writer(self) -> MovieWriter | None:
         """Get the current movie writer object (useful for advanced usage)."""
         return self._movie_writer
 
@@ -446,14 +421,13 @@ class Mainloop:
         The method is idempotent.  It deliberately retains a finalized movie
         writer so callers can still publish a recording after a window closes.
         """
-
         self._require_runtime_thread()
 
         try:
             if self._movie_writer and self._movie_writer.is_recording:
                 self._movie_writer.stop_recording()
         finally:
-            for canvas in list(self.canvasses.values()):
+            for canvas in tuple(self.canvasses.values()):
                 self._destroy_canvas_resources(canvas)
 
             self.canvasses.clear()
@@ -462,14 +436,13 @@ class Mainloop:
             self.multiple_windows = False
             self._deactivate_runtime()
 
-    def keep(self):
+    def keep(self) -> None:
         """Process events until this mainloop's window is closed.
 
         Reusing the normal dispatcher is important because SDL's event queue
         is process-wide: a close event for an independent mainloop must be
         returned to that loop instead of stopping this one.
         """
-
         self._require_runtime_thread()
         while self.running:
             if not self._handle_events():
@@ -482,20 +455,18 @@ class Mainloop:
     def addlistener(self, listener: KeyListener | Listener) -> None:
         """Deprecated alias for :meth:`add_listener`."""
         warnings.warn(
-            "addlistener() is deprecated and will be removed in a future version. "
-            "Use add_listener() instead.",
+            "addlistener() is deprecated and will be removed in a future version. Use add_listener() instead.",
             DeprecationWarning,
             stacklevel=2,
         )
         self.add_listener(listener)
 
-    def ensure_persistent_texture(self, canvas: "CanvasNaive"):
+    def ensure_persistent_texture(self, canvas: "CanvasNaive") -> object:
         """Create and configure the canvas render target.
 
         A missing target texture is fatal: allowing construction to continue
         would make later drawing calls silently operate on a null SDL pointer.
         """
-
         self._require_active_canvas(canvas)
         texture = canvas._persistent_texture
 
@@ -514,8 +485,7 @@ class Mainloop:
         )
         if not texture:
             raise RuntimeError(
-                f"Unable to create render texture for canvas {canvas.name!r} "
-                f"({x_size}x{y_size}): {self._sdl_error()}"
+                f"Unable to create render texture for canvas {canvas.name!r} ({x_size}x{y_size}): {self._sdl_error()}",
             )
 
         try:
@@ -534,13 +504,11 @@ class Mainloop:
             raise
 
         canvas._persistent_texture = texture
-
         return texture
 
     @staticmethod
     def _destroy_canvas_resources(canvas: "CanvasNaive") -> None:
         """Destroy one canvas's SDL resources in dependency order."""
-
         texture = getattr(canvas, "_persistent_texture", None)
         if texture:
             SDL_DestroyTexture(texture)
@@ -556,12 +524,12 @@ class Mainloop:
             SDL_DestroyWindow(window)
             canvas.window = None
 
-    def _copy_persistent_texture(self, canvas: "CanvasNaive") -> Optional[ctypes.c_void_p]:
+    def _copy_persistent_texture(self, canvas: "CanvasNaive") -> ctypes.c_void_p | None:
         texture = canvas._persistent_texture
 
         if not texture:
             return None
-        
+
         SDL_SetRenderTarget(canvas.renderer, None)
         SDL_RenderCopy(canvas.renderer, texture, None, None)
 

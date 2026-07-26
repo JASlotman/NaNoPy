@@ -10,7 +10,6 @@ def _draw_checkerboard(
     tile_size: int = 8,
 ) -> None:
     """Draw an 8-by-8-pixel transparency-style contrast background."""
-
     shades = (Color.custom(r=96, g=96, b=96), Color.custom(r=160, g=160, b=160))
     for y in range(0, height, tile_size):
         for x in range(0, width, tile_size):
@@ -27,7 +26,6 @@ def _draw_text_with_stroke(
     stroke_color: Color = Color.black,
 ) -> None:
     """Draw bitmap text with a one-pixel outline for contrast."""
-
     for dx, dy in ((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)):
         writer.draw_string(x + dx, y + dy, stroke_color, text)
     writer.draw_string(x, y, color, text)
@@ -35,7 +33,6 @@ def _draw_text_with_stroke(
 
 def demo() -> None:
     """Display every color exposed by NaNoPy's built-in palette."""
-
     colors = list(Color.named_colors().items())
     x_size = 1000
     y_size = 600

@@ -1,3 +1,3 @@
-from typing import Union, SupportsFloat, SupportsInt
+from typing import SupportsFloat, SupportsInt
 
-NumberLike = Union[int, float, SupportsFloat, SupportsInt]
+NumberLike = int | float | SupportsFloat | SupportsInt

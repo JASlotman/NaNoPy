@@ -35,15 +35,15 @@ Mainloop = mainloop_module.Mainloop
 class FakeMainloop:
     multiple_windows = False
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.active = True
 
-    def _canvas_is_active(self, _canvas):
+    def _canvas_is_active(self, _canvas: object) -> bool:
         return self.active
 
 
 class FakeCanvas:
-    def __init__(self, *, width=120, height=100):
+    def __init__(self, *, width: int = 120, height: int = 100) -> None:
         self.window = object()
         self.renderer = object()
         self.name = "coordinate-test"
@@ -51,22 +51,22 @@ class FakeCanvas:
         self._reload_fonts = False
         self._size = (width, height)
 
-    def get_window_size(self):
+    def get_window_size(self) -> tuple[int, int]:
         return self._size
 
 
 class WriterCoordinateTests(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.canvas = FakeCanvas()
-        self.writer = WriterNaive(self.canvas, NNP=self.canvas.NNP)
+        self.writer = WriterNaive(self.canvas, mainloop=self.canvas.NNP)
         self.color = object()
 
-    def test_cartesian_y_conversion_includes_last_pixel_row(self):
+    def test_cartesian_y_conversion_includes_last_pixel_row(self) -> None:
         self.assertEqual(self.writer._to_sdl_y(0), 99)
         self.assertEqual(self.writer._to_sdl_y(99), 0)
         self.assertEqual(self.writer._to_sdl_y(10.25), 88)
 
-    def test_point_line_rectangle_circle_and_string_share_conversion(self):
+    def test_point_line_rectangle_circle_and_string_share_conversion(self) -> None:
         with (
             patch.object(writer_module, "pixelColor") as pixel,
             patch.object(writer_module, "aalineColor") as line,
@@ -95,7 +95,7 @@ class WriterCoordinateTests(unittest.TestCase):
         circle.assert_called_once_with(self.canvas.renderer, 5, 49, 2, self.color)
         string.assert_called_once_with(self.canvas.renderer, 6, 0, b"test", self.color)
 
-    def test_custom_polygon_casts_float_points_and_converts_y(self):
+    def test_custom_polygon_casts_float_points_and_converts_y(self) -> None:
         points = [(1.9, 2.25), (5.1, 10.8), (9.9, 20.2)]
 
         with (
@@ -116,7 +116,7 @@ class WriterCoordinateTests(unittest.TestCase):
         self.assertEqual(list(filled_args[2]), [96, 88, 78])
         self.assertEqual(filled_args[3:], (3, self.color))
 
-    def test_fill_color_requests_a_separate_fill_and_outline_for_shapes(self):
+    def test_fill_color_requests_a_separate_fill_and_outline_for_shapes(self) -> None:
         fill_color = object()
         points = [(1, 2), (5, 10), (9, 20)]
 
@@ -159,7 +159,7 @@ class WriterCoordinateTests(unittest.TestCase):
         self.assertIs(filled_polygon.call_args.args[-1], fill_color)
         self.assertIs(polygon.call_args.args[-1], self.color)
 
-    def test_regular_shapes_forward_the_optional_fill_color(self):
+    def test_regular_shapes_forward_the_optional_fill_color(self) -> None:
         fill_color = object()
 
         with patch.object(self.writer, "draw_polygon_custom") as polygon:
@@ -169,16 +169,15 @@ class WriterCoordinateTests(unittest.TestCase):
             self.writer.draw_star(10, 20, 4, 4, self.color, fill_color=fill_color)
             self.assertIs(polygon.call_args.kwargs["fill_color"], fill_color)
 
-    def test_custom_polygon_rejects_fewer_than_three_points(self):
+    def test_custom_polygon_rejects_fewer_than_three_points(self) -> None:
         with patch.object(writer_module, "aapolygonColor") as polygon:
             for points in ([], [(1, 2)], [(1, 2), (3, 4)]):
-                with self.subTest(points=points):
-                    with self.assertRaisesRegex(ValueError, "at least three points"):
-                        self.writer.draw_polygon_custom(points, self.color)
+                with self.subTest(points=points), self.assertRaisesRegex(ValueError, "at least three points"):
+                    self.writer.draw_polygon_custom(points, self.color)
 
         polygon.assert_not_called()
 
-    def test_drawing_after_window_close_is_a_safe_no_op(self):
+    def test_drawing_after_window_close_is_a_safe_no_op(self) -> None:
         self.canvas.NNP.active = False
 
         with (
@@ -199,20 +198,18 @@ class WriterCoordinateTests(unittest.TestCase):
         polygon.assert_not_called()
         string.assert_not_called()
 
-    def test_regular_polygon_and_star_validate_n_before_building_points(self):
+    def test_regular_polygon_and_star_validate_n_before_building_points(self) -> None:
         with patch.object(self.writer, "draw_polygon_custom") as polygon:
             for n in (0, 1, 2):
-                with self.subTest(shape="polygon", n=n):
-                    with self.assertRaisesRegex(ValueError, "at least three points"):
-                        self.writer.draw_polygon(10, 20, 4, n, self.color)
+                with self.subTest(shape="polygon", n=n), self.assertRaisesRegex(ValueError, "at least three points"):
+                    self.writer.draw_polygon(10, 20, 4, n, self.color)
 
-                with self.subTest(shape="star", n=n):
-                    with self.assertRaisesRegex(ValueError, "at least three points"):
-                        self.writer.draw_star(10, 20, 4, n, self.color)
+                with self.subTest(shape="star", n=n), self.assertRaisesRegex(ValueError, "at least three points"):
+                    self.writer.draw_star(10, 20, 4, n, self.color)
 
         polygon.assert_not_called()
 
-    def test_regular_polygon_builds_cartesian_points_then_converts_once(self):
+    def test_regular_polygon_builds_cartesian_points_then_converts_once(self) -> None:
         with patch.object(writer_module, "aapolygonColor") as polygon:
             self.writer.draw_polygon(10, 20, 4, 4, self.color)
 
@@ -220,7 +217,7 @@ class WriterCoordinateTests(unittest.TestCase):
         self.assertEqual(list(args[1]), [10, 14, 10, 6])
         self.assertEqual(list(args[2]), [75, 79, 83, 79])
 
-    def test_star_passes_public_coordinates_to_custom_polygon(self):
+    def test_star_passes_public_coordinates_to_custom_polygon(self) -> None:
         with patch.object(self.writer, "draw_polygon_custom") as polygon:
             self.writer.draw_star(10, 20, 4, 4, self.color, filled=True)
 
@@ -234,14 +231,14 @@ class WriterCoordinateTests(unittest.TestCase):
 
 
 class WriterSafetyTests(unittest.TestCase):
-    def test_cross_thread_drawing_is_rejected_before_sdl_gfx_call(self):
+    def test_cross_thread_drawing_is_rejected_before_sdl_gfx_call(self) -> None:
         loop = Mainloop()
         canvas = FakeCanvas()
         canvas.NNP = loop
-        writer = WriterNaive(canvas, NNP=loop)
+        writer = WriterNaive(canvas, mainloop=loop)
         errors = []
 
-        def draw_from_worker():
+        def draw_from_worker() -> None:
             try:
                 writer.draw_pixel(1, 2, Color.red)
             except Exception as exc:
@@ -265,7 +262,7 @@ class WriterSafetyTests(unittest.TestCase):
 
 class WriterSDLCoordinateTests(unittest.TestCase):
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls._owns_video_subsystem = not bool(SDL_WasInit(SDL_INIT_VIDEO))
         if cls._owns_video_subsystem and SDL_Init(SDL_INIT_VIDEO) != 0:
             raise RuntimeError(f"SDL video initialization failed: {SDL_GetError()!r}")
@@ -286,16 +283,16 @@ class WriterSDLCoordinateTests(unittest.TestCase):
         cls.canvas = FakeCanvas(width=1, height=3)
         cls.canvas.window = cls.window
         cls.canvas.renderer = cls.renderer
-        cls.writer = WriterNaive(cls.canvas, NNP=cls.canvas.NNP)
+        cls.writer = WriterNaive(cls.canvas, mainloop=cls.canvas.NNP)
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         SDL_DestroyRenderer(cls.renderer)
         SDL_DestroyWindow(cls.window)
         if cls._owns_video_subsystem:
             SDL_QuitSubSystem(SDL_INIT_VIDEO)
 
-    def read_rows(self):
+    def read_rows(self) -> list[tuple[int, ...]]:
         pixels = (ctypes.c_ubyte * 12)()
         self.assertEqual(
             SDL_RenderReadPixels(
@@ -309,7 +306,7 @@ class WriterSDLCoordinateTests(unittest.TestCase):
         )
         return [tuple(pixels[offset : offset + 4]) for offset in range(0, 12, 4)]
 
-    def test_bottom_and_top_cartesian_pixels_reach_last_and_first_sdl_rows(self):
+    def test_bottom_and_top_cartesian_pixels_reach_last_and_first_sdl_rows(self) -> None:
         self.assertEqual(SDL_SetRenderDrawColor(self.renderer, 0, 0, 0, 255), 0)
         self.assertEqual(SDL_RenderClear(self.renderer), 0)
         self.writer.draw_pixel(0, 0, Color.custom(r=17, g=34, b=51))

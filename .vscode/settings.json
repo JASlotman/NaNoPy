@@ -1,6 +1,12 @@
 {
-    "python.analysis.typeCheckingMode": "standard",
-    "python.analysis.diagnosticSeverityOverrides": {
-        "reportPossiblyUnboundVariable": "none" // Conditional imports are flagged wrongly
-    },
+    "python.analysis.typeCheckingMode": "strict",
+    "python.analysis.diagnosticMode": "workspace",
+    "sonarlint.rules": {
+        "python:S2245": {
+            "level": "off"
+        },
+        "python:S3776": {
+            "level": "off"
+        }
+    }
 }

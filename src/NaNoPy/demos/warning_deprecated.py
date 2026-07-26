@@ -1,5 +1,6 @@
-from NaNoPy import canvas, writer
 from time import sleep
+
+from NaNoPy import canvas, writer
 
 screen = canvas("title", 200, 200)
 pen = writer(screen)

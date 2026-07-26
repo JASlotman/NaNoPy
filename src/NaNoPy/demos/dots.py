@@ -1,5 +1,6 @@
-from NaNoPy import Canvas, Writer, Color
 import random
+
+from NaNoPy import Canvas, Color, Writer
 
 
 def demo(hundreds: int = 2) -> None:

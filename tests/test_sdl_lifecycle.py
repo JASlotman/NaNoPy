@@ -2,11 +2,11 @@ import importlib
 import os
 import threading
 import unittest
+from collections.abc import Callable
 from types import SimpleNamespace
 from unittest.mock import MagicMock, call, patch
 
 from sdl2 import SDL_WasInit
-
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
@@ -18,7 +18,7 @@ Mainloop = mainloop_module.Mainloop
 
 
 class MainloopInitializationTests(unittest.TestCase):
-    def test_construction_is_lazy_and_has_no_process_side_effects(self):
+    def test_construction_is_lazy_and_has_no_process_side_effects(self) -> None:
         with patch.object(mainloop_module, "SDL_InitSubSystem") as initialize:
             loop = Mainloop()
 
@@ -26,19 +26,19 @@ class MainloopInitializationTests(unittest.TestCase):
         self.assertFalse(loop._sdl_initialized)
         initialize.assert_not_called()
 
-    def test_initialization_failure_contains_sdl_diagnostic(self):
+    def test_initialization_failure_contains_sdl_diagnostic(self) -> None:
         loop = Mainloop()
         with (
             patch.object(mainloop_module, "SDL_InitSubSystem", return_value=-1),
             patch.object(mainloop_module, "SDL_GetError", return_value=b"video unavailable"),
+            self.assertRaisesRegex(RuntimeError, "video unavailable"),
         ):
-            with self.assertRaisesRegex(RuntimeError, "video unavailable"):
-                loop.ensure_initialized()
+            loop.ensure_initialized()
 
         self.assertFalse(loop.running)
         self.assertFalse(loop._sdl_initialized)
 
-    def test_stop_clears_resources_and_allows_reuse(self):
+    def test_stop_clears_resources_and_allows_reuse(self) -> None:
         canvas = SimpleNamespace(
             _persistent_texture=object(),
             renderer=object(),
@@ -77,7 +77,7 @@ class MainloopInitializationTests(unittest.TestCase):
         self.assertEqual(initialize.call_count, 2)
         self.assertEqual(quit_subsystem.call_count, 2)
 
-    def test_independent_mainloops_hold_balanced_sdl_references(self):
+    def test_independent_mainloops_hold_balanced_sdl_references(self) -> None:
         initial_state = SDL_WasInit(mainloop_module.SDL_INIT_VIDEO)
         first = Mainloop()
         second = Mainloop()
@@ -102,7 +102,7 @@ class MainloopInitializationTests(unittest.TestCase):
             if second._sdl_initialized:
                 second.stop()
 
-    def test_cross_thread_stop_is_rejected_without_tearing_down_sdl(self):
+    def test_cross_thread_stop_is_rejected_without_tearing_down_sdl(self) -> None:
         loop = Mainloop()
         errors = []
 
@@ -113,7 +113,7 @@ class MainloopInitializationTests(unittest.TestCase):
             loop.ensure_initialized()
 
             worker = threading.Thread(
-                target=lambda: self._capture_exception(loop.stop, errors)
+                target=lambda: self._capture_exception(loop.stop, errors),
             )
             worker.start()
             worker.join()
@@ -129,13 +129,13 @@ class MainloopInitializationTests(unittest.TestCase):
         quit_subsystem.assert_called_once_with(mainloop_module.SDL_INIT_VIDEO)
 
     @staticmethod
-    def _capture_exception(func, errors):
+    def _capture_exception(func: Callable[[], object], errors: list[BaseException]) -> None:
         try:
             func()
         except Exception as exc:
             errors.append(exc)
 
-    def test_listener_can_stop_without_mutating_active_iteration(self):
+    def test_listener_can_stop_without_mutating_active_iteration(self) -> None:
         loop = Mainloop()
         first_listener = MagicMock()
         second_listener = MagicMock()
@@ -156,7 +156,7 @@ class MainloopInitializationTests(unittest.TestCase):
         first_listener.run.assert_called_once()
         second_listener.run.assert_not_called()
 
-    def test_embedded_close_returns_quietly_without_reading_destroyed_renderer(self):
+    def test_embedded_close_returns_quietly_without_reading_destroyed_renderer(self) -> None:
         loop = Mainloop()
         canvas = SimpleNamespace(
             name="closing",
@@ -180,7 +180,7 @@ class MainloopInitializationTests(unittest.TestCase):
             loop.ensure_initialized()
             loop.canvasses[canvas.name] = canvas
 
-            def close_during_events():
+            def close_during_events() -> bool:
                 loop.stop()
                 return False
 
@@ -194,9 +194,8 @@ class MainloopInitializationTests(unittest.TestCase):
         read_pixels.assert_not_called()
         clear_renderer.assert_not_called()
 
-    def test_update_then_clear_is_quiet_when_close_arrives_during_update(self):
+    def test_update_then_clear_is_quiet_when_close_arrives_during_update(self) -> None:
         """Regression test for the animation-loop shutdown traceback."""
-
         loop = Mainloop()
         canvas = SimpleNamespace(
             name="closing",
@@ -218,7 +217,7 @@ class MainloopInitializationTests(unittest.TestCase):
             loop.ensure_initialized()
             loop.canvasses[canvas.name] = canvas
 
-            def close_during_update():
+            def close_during_update() -> bool:
                 loop.stop()
                 return False
 
@@ -232,7 +231,7 @@ class MainloopInitializationTests(unittest.TestCase):
 
         clear_renderer.assert_not_called()
 
-    def test_foreign_window_event_is_requeued_for_its_own_mainloop(self):
+    def test_foreign_window_event_is_requeued_for_its_own_mainloop(self) -> None:
         loop = Mainloop()
         canvas = SimpleNamespace(
             name="owned",
@@ -264,7 +263,7 @@ class MainloopInitializationTests(unittest.TestCase):
             push_event.assert_called_once()
             loop.stop()
 
-    def test_foreign_keyboard_event_is_not_delivered_to_this_loops_listeners(self):
+    def test_foreign_keyboard_event_is_not_delivered_to_this_loops_listeners(self) -> None:
         loop = Mainloop()
         listener = MagicMock()
         canvas = SimpleNamespace(
@@ -295,18 +294,19 @@ class MainloopInitializationTests(unittest.TestCase):
             push_event.assert_called_once()
             loop.stop()
 
-    def test_duplicate_canvas_name_cannot_replace_the_registered_canvas(self):
+    def test_duplicate_canvas_name_cannot_replace_the_registered_canvas(self) -> None:
         loop = Mainloop()
         original = SimpleNamespace(name="duplicate")
         loop.canvasses[original.name] = original
+        duplicate = SimpleNamespace(name="duplicate")
 
         with self.assertRaisesRegex(ValueError, "must be unique"):
-            loop.add_canvas(SimpleNamespace(name="duplicate"))
+            loop.add_canvas(duplicate)
 
         self.assertIs(loop.canvasses[original.name], original)
         self.assertFalse(loop._sdl_initialized)
 
-    def test_keep_uses_the_window_aware_event_dispatcher(self):
+    def test_keep_uses_the_window_aware_event_dispatcher(self) -> None:
         loop = Mainloop()
         dispatch_results = iter((True, False))
 
@@ -325,36 +325,34 @@ class MainloopInitializationTests(unittest.TestCase):
 
 
 class CanvasResourceTests(unittest.TestCase):
-    def make_loop(self):
+    def make_loop(self) -> MagicMock:
         loop = MagicMock()
         loop._sdl_error.return_value = "mock SDL failure"
         return loop
 
-    def test_duplicate_name_is_rejected_before_any_sdl_allocation(self):
+    def test_duplicate_name_is_rejected_before_any_sdl_allocation(self) -> None:
         loop = self.make_loop()
         loop._require_canvas_name_available.side_effect = ValueError(
-            "Canvas names must be unique"
+            "Canvas names must be unique",
         )
 
-        with patch.object(canvas_module, "SDL_CreateWindow") as create_window:
-            with self.assertRaisesRegex(ValueError, "must be unique"):
-                CanvasNaive("duplicate", 20, 10, NNP=loop)
+        with patch.object(canvas_module, "SDL_CreateWindow") as create_window, self.assertRaisesRegex(ValueError, "must be unique"):
+            CanvasNaive("duplicate", 20, 10, mainloop=loop)
 
         create_window.assert_not_called()
         loop.ensure_initialized.assert_not_called()
         loop._destroy_canvas_resources.assert_not_called()
 
-    def test_window_creation_failure_raises_and_does_not_register_canvas(self):
+    def test_window_creation_failure_raises_and_does_not_register_canvas(self) -> None:
         loop = self.make_loop()
-        with patch.object(canvas_module, "SDL_CreateWindow", return_value=None):
-            with self.assertRaisesRegex(RuntimeError, "mock SDL failure"):
-                CanvasNaive("broken", 20, 10, NNP=loop)
+        with patch.object(canvas_module, "SDL_CreateWindow", return_value=None), self.assertRaisesRegex(RuntimeError, "mock SDL failure"):
+            CanvasNaive("broken", 20, 10, mainloop=loop)
 
         loop.add_canvas.assert_not_called()
         loop._destroy_canvas_resources.assert_called_once()
         loop.release_if_unused.assert_called_once()
 
-    def test_default_renderer_falls_back_to_target_capable_software(self):
+    def test_default_renderer_falls_back_to_target_capable_software(self) -> None:
         loop = self.make_loop()
         window = object()
         renderer = object()
@@ -367,7 +365,7 @@ class CanvasResourceTests(unittest.TestCase):
                 side_effect=[None, renderer],
             ) as create_renderer,
         ):
-            canvas = CanvasNaive("headless", 20, 10, NNP=loop)
+            canvas = CanvasNaive("headless", 20, 10, mainloop=loop)
 
         self.assertIs(canvas.renderer, renderer)
         self.assertEqual(
@@ -377,28 +375,27 @@ class CanvasResourceTests(unittest.TestCase):
                 call(
                     window,
                     -1,
-                    canvas_module.SDL_RENDERER_SOFTWARE
-                    | canvas_module.SDL_RENDERER_TARGETTEXTURE,
+                    canvas_module.SDL_RENDERER_SOFTWARE | canvas_module.SDL_RENDERER_TARGETTEXTURE,
                 ),
             ],
         )
         loop.ensure_persistent_texture.assert_called_once_with(canvas)
         loop.add_canvas.assert_called_once_with(canvas)
 
-    def test_explicit_renderer_failure_does_not_silently_fallback(self):
+    def test_explicit_renderer_failure_does_not_silently_fallback(self) -> None:
         loop = self.make_loop()
         with (
             patch.object(canvas_module, "SDL_CreateWindow", return_value=object()),
             patch.object(canvas_module, "SDL_CreateRenderer", return_value=None) as create_renderer,
+            self.assertRaisesRegex(RuntimeError, "mock SDL failure"),
         ):
-            with self.assertRaisesRegex(RuntimeError, "mock SDL failure"):
-                CanvasNaive("broken renderer", 20, 10, driver=3, NNP=loop)
+            CanvasNaive("broken renderer", 20, 10, driver=3, mainloop=loop)
 
         create_renderer.assert_called_once()
         loop.add_canvas.assert_not_called()
         loop._destroy_canvas_resources.assert_called_once()
 
-    def test_texture_creation_failure_is_fatal(self):
+    def test_texture_creation_failure_is_fatal(self) -> None:
         loop = Mainloop()
         canvas = SimpleNamespace(
             name="textureless",

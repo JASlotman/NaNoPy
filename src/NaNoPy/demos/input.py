@@ -1,3 +1,5 @@
+from sdl2 import SDL_Event
+
 from NaNoPy import Canvas, Color, Writer
 from NaNoPy.classes import KeyListener
 
@@ -31,16 +33,16 @@ def demo() -> None:
         pressed.discard(direction)
         _apply_state()
 
-    def press_left(_):
+    def press_left(_: SDL_Event) -> None:
         _press("left")
 
-    def press_right(_):
+    def press_right(_: SDL_Event) -> None:
         _press("right")
 
-    def release_left(_):
+    def release_left(_: SDL_Event) -> None:
         _release("left")
 
-    def release_right(_):
+    def release_right(_: SDL_Event) -> None:
         _release("right")
 
     # Simplest form: bind one key to a callback. Every callback receives the
@@ -55,7 +57,7 @@ def demo() -> None:
             "right": (press_right, release_right),
             "a": (lambda _: _press("left"), lambda _: _release("left")),
             "d": (lambda _: _press("right"), lambda _: _release("right")),
-        }
+        },
     )
     screen.add_listener(listener)
 

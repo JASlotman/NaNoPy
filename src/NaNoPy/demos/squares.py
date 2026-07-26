@@ -1,4 +1,4 @@
-from NaNoPy import Canvas, Writer, Color
+from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:
@@ -7,10 +7,6 @@ def demo() -> None:
 
     screen = Canvas("screen1", x_size, y_size, xpos=50, ypos=50)
     pen = Writer(screen)
-
-    # help(canvas)
-    # help(pen)
-    # help(color)
 
     green = Color.green
     green_mid = Color.custom(r=0, g=255, a=150)

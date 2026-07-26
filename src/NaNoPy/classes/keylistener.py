@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Callable, Mapping
 
 from sdl2 import (
     SDL_KEYDOWN,
@@ -84,7 +84,7 @@ class KeyListener:
         self,
         bindings: Mapping[str | int, KeyBinding | tuple[KeyHandler | None, KeyHandler | None]] | None = None,
         name: str = "keyboard",
-    ):
+    ) -> None:
         self.name = name
         self._bindings: dict[int, KeyBinding] = {}
 
@@ -96,7 +96,7 @@ class KeyListener:
         key: str | int,
         on_press: KeyHandler | None = None,
         on_release: KeyHandler | None = None,
-    ) -> "KeyListener":
+    ) -> KeyListener:
         keycode = self._resolve_key(key)
 
         if on_press is None and on_release is None:
@@ -108,7 +108,7 @@ class KeyListener:
     def bind_many(
         self,
         bindings: Mapping[str | int, KeyBinding | tuple[KeyHandler | None, KeyHandler | None]],
-    ) -> "KeyListener":
+    ) -> KeyListener:
         for key, value in bindings.items():
             if isinstance(value, KeyBinding):
                 self.bind(key, value.on_press, value.on_release)

@@ -1,7 +1,8 @@
 import ctypes
 import math
 import warnings
-from typing import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
+from typing import cast
 
 from sdl2.sdlgfx import (
     aacircleColor,
@@ -22,6 +23,18 @@ from NaNoPy.classes.color import Color
 from NaNoPy.classes.mainloop import Mainloop
 from NaNoPy.classes.spline import Spline
 
+_LEGACY_DRAW_METHODS = {
+    "drawCircle": "draw_circle",
+    "drawLine": "draw_line",
+    "drawPixel": "draw_pixel",
+    "drawPolygon": "draw_polygon",
+    "drawRectangle": "draw_rectangle",
+    "drawSpline": "draw_spline",
+    "drawStar": "draw_star",
+    "drawString": "draw_string",
+    "drawThickLine": "draw_line_thick",
+}
+
 
 class WriterNaive:
     """Object to draw shapes on a NaNoPy canvas.
@@ -40,34 +53,44 @@ class WriterNaive:
     ``canvas``: NaNoPy canvas
     """
 
-    def __init__(self, canvas: CanvasNaive, *, NNP: Mainloop):
+    def __init__(self, canvas: CanvasNaive, *, mainloop: Mainloop) -> None:
         self.canvas = canvas
         self._window_name = self.canvas.name
-        self._NNP = NNP
+        self._NNP = mainloop
+
+    def __getattr__(self, name: str) -> Callable[..., None]:
+        """Resolve deprecated camelCase drawing names without exposing them as fields."""
+        replacement = _LEGACY_DRAW_METHODS.get(name)
+        if replacement is None:
+            raise AttributeError(f"{type(self).__name__!s} has no attribute {name!r}")
+
+        warnings.warn(
+            f"{name}() is deprecated and will be removed in a future version. Use {replacement}() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return cast("Callable[..., None]", getattr(self, replacement))
 
     @property
-    def window(self):
+    def window(self) -> object | None:
         """Return the live SDL window pointer, or ``None`` after closure."""
-
         if not self.canvas.NNP._canvas_is_active(self.canvas):
             return None
         return self.canvas.window
 
     @property
-    def renderer(self):
+    def renderer(self) -> object | None:
         """Return the live SDL renderer pointer, or ``None`` after closure."""
-
         if not self.canvas.NNP._canvas_is_active(self.canvas):
             return None
         return self.canvas.renderer
 
-    def _active_renderer(self):
+    def _active_renderer(self) -> object | None:
         """Return a safe renderer for drawing, or ``None`` after close."""
-
         return self.renderer
 
     @property
-    def y_size(self):
+    def y_size(self) -> int:
         return self.canvas.get_window_size()[1]
 
     def _to_sdl_y(self, y: float) -> int:
@@ -83,19 +106,6 @@ class WriterNaive:
             return
         pixelColor(renderer, int(x), self._to_sdl_y(y), color)
 
-    def drawPixel(self, x: float, y: float, color: Color = Color.white) -> None:
-        """(deprecated, use draw_pixel() instead)
-
-        Draws pixels of given color on x,y coordinate"""
-
-        warnings.warn(
-            "drawPixel() is deprecated and will be removed in a future version. Use draw_pixel() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        self.draw_pixel(x, y, color)
-
     def draw_line(
         self,
         x1: float,
@@ -109,27 +119,6 @@ class WriterNaive:
         if renderer is None:
             return
         aalineColor(renderer, int(x1), self._to_sdl_y(y1), int(x2), self._to_sdl_y(y2), color)
-
-    def drawLine(
-        self,
-        x1: float,
-        y1: float,
-        x2: float,
-        y2: float,
-        color: Color = Color.white,
-    ) -> None:
-        """(deprecated, use draw_line() instead)
-
-        Draws line of 1 pixel wide between x1,y1 and x2,y2 of given color.
-        """
-
-        warnings.warn(
-            "drawLine() is deprecated and will be removed in a future version. Use draw_line() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        self.draw_line(x1, y1, x2, y2, color)
 
     def draw_line_thick(
         self,
@@ -153,28 +142,6 @@ class WriterNaive:
             int(width),
             color,
         )
-
-    def drawThickLine(
-        self,
-        x1: float,
-        y1: float,
-        x2: float,
-        y2: float,
-        w: float,
-        color: Color = Color.white,
-    ) -> None:
-        """(deprecated, use draw_line_thick() instead)
-
-        Draws line of w pixels wide between x1,y1 and x2,y2 of given color.
-        """
-
-        warnings.warn(
-            "drawThickLine() is deprecated and will be removed in a future version. Use draw_line_thick() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        self.draw_line_thick(x1, y1, x2, y2, w, color)
 
     def draw_rectangle(
         self,
@@ -224,29 +191,6 @@ class WriterNaive:
                 color,
             )
 
-    def drawRectangle(
-        self,
-        x1: float,
-        y1: float,
-        w: float,
-        h: float,
-        color: Color = Color.white,
-        filled: bool = False,
-    ) -> None:
-        """(deprecated, use draw_rectangle() instead)
-        Draws rectangle with x1,y1 being the bottom-left corner, w being the
-        width and h the height, and set filled to true to fill it with the
-        given color.
-        """
-
-        warnings.warn(
-            "drawRectangle() is deprecated and will be removed in a future version. Use draw_rectangle() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        self.draw_rectangle(x1, y1, w, h, color, filled)
-
     def draw_circle(
         self,
         x: float,
@@ -279,25 +223,6 @@ class WriterNaive:
         else:
             aacircleColor(renderer, int(x), self._to_sdl_y(y), int(radius), color)
 
-    def drawCircle(
-        self,
-        x: float,
-        y: float,
-        r: float,
-        color: Color = Color.white,
-        filled: bool = False,
-    ) -> None:
-        """(deprecated, use draw_circle() instead)
-        Draws circle with radius r, and x,y being the centre location and set filled to true to fill it with given color"""
-
-        warnings.warn(
-            "drawCircle() is deprecated and will be removed in a future version. Use draw_circle() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        self.draw_circle(x, y, r, color, filled)
-
     def draw_star(
         self,
         x: float,
@@ -316,6 +241,7 @@ class WriterNaive:
 
         Raises:
             ValueError: If ``n`` is less than three.
+
         """
         if n < 3:
             raise ValueError("A star requires at least three points")
@@ -329,32 +255,10 @@ class WriterNaive:
                 (
                     x + math.cos(angle) * point_radius,
                     y - math.sin(angle) * point_radius,
-                )
+                ),
             )
 
         self.draw_polygon_custom(points, color, filled, fill_color=fill_color)
-
-    def drawStar(
-        self,
-        x: float,
-        y: float,
-        r: float,
-        n: int,
-        color: Color = Color.white,
-        filled: bool = False,
-    ) -> None:
-        """(deprecated, use draw_star() instead)
-
-        Draws star with n points with radius r, and x,y being the centre location and set filled to true to fill it with given color
-        """
-
-        warnings.warn(
-            "drawStar() is deprecated and will be removed in a future version. Use draw_star() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        self.draw_star(x, y, r, n, color, filled)
 
     def draw_polygon_custom(
         self,
@@ -415,6 +319,7 @@ class WriterNaive:
 
         Raises:
             ValueError: If ``n`` is less than three.
+
         """
         if n < 3:
             raise ValueError("A polygon requires at least three points")
@@ -427,30 +332,10 @@ class WriterNaive:
                 (
                     x + math.cos(angle) * radius,
                     y - math.sin(angle) * radius,
-                )
+                ),
             )
 
         self.draw_polygon_custom(points, color, filled, fill_color=fill_color)
-
-    def drawPolygon(
-        self,
-        x: float,
-        y: float,
-        r: float,
-        n: int,
-        color: Color = Color.white,
-        filled: bool = False,
-    ) -> None:
-        """(deprecated, use draw_polygon instead)
-        Draws n sided polygon with radius r, and x,y being the centre location and set filled to true to fill it with given color"""
-
-        warnings.warn(
-            "drawPolygon() is deprecated and will be removed in a future version. Use draw_polygon() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        self.draw_polygon(x, y, r, n, color, filled)
 
     def draw_spline(
         self,
@@ -481,27 +366,6 @@ class WriterNaive:
         for v in zip(self.spln.splinex, self.spln.spliney, strict=True):
             self.draw_pixel(v[0], v[1], color)
 
-    def drawSpline(
-        self,
-        xs: Iterable[float],
-        ys: Iterable[float],
-        color: Color = Color.white,
-        loop: bool = False,
-        filled: bool = False,
-    ) -> None:
-        """(deprecated, use draw_spline() instead)
-
-        Draws spline through list of coordinates xs,ys of given color, loop false gives a line, loop true gives a closed loop
-        coordinate information of complete line available in writer.spln object"""
-
-        warnings.warn(
-            "drawSpline() is deprecated and will be removed in a future version. Use draw_spline() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        self.draw_spline(xs, ys, color, loop, filled)
-
     def draw_string(
         self,
         x: float,
@@ -518,21 +382,3 @@ class WriterNaive:
             gfxPrimitivesSetFont(None, 0, 0)
             self.canvas._reload_fonts = False
         stringColor(renderer, int(x), self._to_sdl_y(y), str.encode(text), color)
-
-    def drawString(
-        self,
-        x: float,
-        y: float,
-        color: Color = Color.white,
-        text: str = "placeholder",
-    ) -> None:
-        """(deprecated, use draw_string() instead)
-
-        Draws string on location x,y with given color"""
-        warnings.warn(
-            "drawString() is deprecated and will be removed in a future version. Use draw_string() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        self.draw_string(x, y, color, text)

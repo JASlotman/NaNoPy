@@ -6,9 +6,10 @@ import secrets
 import stat
 import subprocess
 import threading
+from contextlib import suppress
 from operator import index as operator_index
 from pathlib import Path
-from typing import Optional
+from typing import BinaryIO
 
 from PIL import Image
 
@@ -27,13 +28,14 @@ class MovieWriter:
         fps: Frames per second for the output video.
         codec: FFmpeg video encoder. Because encoding happens while frames arrive,
             the codec must be selected when the writer is created.
+
     """
 
     _FINALIZE_TIMEOUT_SECONDS = 60
     _STDERR_JOIN_TIMEOUT_SECONDS = 5
     _CODEC_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]*\Z")
 
-    def __init__(self, output_path: str, fps: int = 30, codec: str = DEFAULT_CODEC):
+    def __init__(self, output_path: str, fps: int = 30, codec: str = DEFAULT_CODEC) -> None:
         if isinstance(fps, bool):
             raise TypeError("fps must be an integer")
         try:
@@ -42,7 +44,7 @@ class MovieWriter:
             raise TypeError("fps must be an integer") from exc
         if validated_fps <= 0:
             raise ValueError("fps must be positive")
-        if not isinstance(codec, str):
+        if not isinstance(codec, str):  # pyright: ignore[reportUnnecessaryIsInstance]
             raise TypeError("codec must be a string")
         if not self._CODEC_NAME.fullmatch(codec):
             raise ValueError("codec must be a non-empty FFmpeg encoder name containing only letters, digits, dots, underscores, or hyphens")
@@ -53,11 +55,11 @@ class MovieWriter:
         self.codec = codec
         self.is_recording = False
 
-        self._process: Optional[subprocess.Popen] = None
-        self._stream_path: Optional[Path] = None
+        self._process: subprocess.Popen[bytes] | None = None
+        self._stream_path: Path | None = None
         self._stderr_buffer = bytearray()
-        self._stderr_thread: Optional[threading.Thread] = None
-        self._frame_size: Optional[tuple[int, int]] = None
+        self._stderr_thread: threading.Thread | None = None
+        self._frame_size: tuple[int, int] | None = None
         self._frame_count = 0
         self._finalized = False
 
@@ -74,7 +76,7 @@ class MovieWriter:
                 "ffmpeg not found. Please install ffmpeg:\n"
                 "  Ubuntu/Debian: sudo apt-get install ffmpeg\n"
                 "  macOS: brew install ffmpeg\n"
-                "  Windows: choco install ffmpeg (or download from ffmpeg.org)"
+                "  Windows: choco install ffmpeg (or download from ffmpeg.org)",
             )
 
         self._frame_size = None
@@ -95,7 +97,7 @@ class MovieWriter:
         """Write one Pillow image to the active FFmpeg stream."""
         if not self.is_recording:
             raise RuntimeError("Recording not started. Call start_recording() first.")
-        if not isinstance(frame, Image.Image):
+        if not isinstance(frame, Image.Image):  # pyright: ignore[reportUnnecessaryIsInstance]
             raise TypeError("Frame must be a PIL Image")
 
         if self._frame_size is None:
@@ -146,7 +148,7 @@ class MovieWriter:
             # Unbuffered stdin ensures each frame is handed to FFmpeg immediately.
             # Every value is a separate argv element and shell execution stays
             # disabled, so output paths cannot be interpreted as shell syntax.
-            self._process = subprocess.Popen(
+            self._process = subprocess.Popen(  # noqa: S603 - argv is never executed through a shell
                 cmd,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.DEVNULL,
@@ -163,14 +165,13 @@ class MovieWriter:
                 )
                 self._stderr_thread.start()
         except OSError as exc:
-            if self._stream_path is not None:
-                self._stream_path.unlink(missing_ok=True)
-                self._stream_path = None
+            self._stream_path.unlink(missing_ok=True)
+            self._stream_path = None
             self.is_recording = False
             raise RuntimeError(f"Unable to start ffmpeg: {exc}") from exc
 
     @staticmethod
-    def _drain_stderr(stream, buffer: bytearray) -> None:
+    def _drain_stderr(stream: BinaryIO, buffer: bytearray) -> None:
         """Drain FFmpeg diagnostics so its stderr pipe cannot block encoding."""
         while True:
             chunk = stream.read(4096)
@@ -180,7 +181,7 @@ class MovieWriter:
             if len(buffer) > 65536:
                 del buffer[:-65536]
 
-    def _finish_stderr_reader(self, process: subprocess.Popen) -> bytes:
+    def _finish_stderr_reader(self, process: subprocess.Popen[bytes]) -> bytes:
         if self._stderr_thread is not None:
             self._stderr_thread.join(timeout=self._STDERR_JOIN_TIMEOUT_SECONDS)
             if self._stderr_thread.is_alive() and process.stderr is not None:
@@ -209,20 +210,20 @@ class MovieWriter:
                 if not written:
                     raise BrokenPipeError("ffmpeg stopped accepting frame data")
                 remaining = remaining[written:]
-        except (BrokenPipeError, OSError) as exc:
+        except OSError as exc:
             self.is_recording = False
             self._finalize_video(write_error=exc)
 
-    def _finalize_video(self, write_error: Optional[BaseException] = None) -> None:
+    def _finalize_video(self, write_error: BaseException | None = None) -> None:
         process = self._process
         if process is None:
             return
 
-        close_error: Optional[BaseException] = None
+        close_error: BaseException | None = None
         if process.stdin is not None:
             try:
                 process.stdin.close()
-            except (BrokenPipeError, OSError) as exc:
+            except OSError as exc:
                 close_error = exc
 
         timed_out = False
@@ -272,20 +273,19 @@ class MovieWriter:
 
         return ["-c:v", codec, "-pix_fmt", "yuv420p"]
 
-    def _validate_save_codec(self, codec: Optional[str]) -> None:
+    def _validate_save_codec(self, codec: str | None) -> None:
         if codec is not None and codec != self.codec:
             raise ValueError(
                 f"This recording is already encoded with {self.codec!r}. "
                 "Select a codec in MovieWriter(..., codec=...) or "
-                "canvas.start_recording(..., codec=...) before adding frames."
+                "canvas.start_recording(..., codec=...) before adding frames.",
             )
 
     def _create_staging_path(self, purpose: str) -> Path:
         """Securely reserve a sibling path with normal user-file permissions."""
         suffix = self._target_path.suffix or ".mp4"
         flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-        if hasattr(os, "O_BINARY"):
-            flags |= os.O_BINARY
+        flags |= getattr(os, "O_BINARY", 0)
 
         for _ in range(100):
             token = secrets.token_hex(8)
@@ -307,7 +307,7 @@ class MovieWriter:
             existing_mode = None
         if existing_mode is not None:
             staging_path.chmod(existing_mode)
-        os.replace(staging_path, self._target_path)
+        staging_path.replace(self._target_path)
 
     def _ensure_finalized(self) -> None:
         """Finish the encoder while keeping its private output unpublished."""
@@ -322,7 +322,7 @@ class MovieWriter:
         if not self._finalized:
             raise RuntimeError("The recording could not be finalized.")
 
-    def save(self, codec: Optional[str] = None) -> Path:
+    def save(self, codec: str | None = None) -> Path:
         """Finalize and atomically publish the encoded video.
 
         ``codec`` remains accepted for compatibility when it matches the codec
@@ -336,7 +336,7 @@ class MovieWriter:
             self._stream_path = None
         return self._target_path
 
-    def save_with_audio(self, audio_path: str, codec: Optional[str] = None) -> Path:
+    def save_with_audio(self, audio_path: str, codec: str | None = None) -> Path:
         """Finalize video and mux it with a lossless FLAC audio stream.
 
         Audio is supplied after recording in the existing API, so a second FFmpeg
@@ -351,7 +351,7 @@ class MovieWriter:
         self._ensure_finalized()
         video_input = self._stream_path or self._target_path
 
-        temporary_path: Optional[Path] = None
+        temporary_path: Path | None = None
         try:
             temporary_path = self._create_staging_path("audio")
 
@@ -377,7 +377,7 @@ class MovieWriter:
                 str(temporary_path),
             ]
             try:
-                subprocess.run(
+                subprocess.run(  # noqa: S603 - fixed executable with an argv list
                     cmd,
                     check=True,
                     stdout=subprocess.DEVNULL,
@@ -411,10 +411,8 @@ class MovieWriter:
 
         if process is not None:
             if process.stdin is not None:
-                try:
+                with suppress(BrokenPipeError, OSError):
                     process.stdin.close()
-                except (BrokenPipeError, OSError):
-                    pass
             if process.poll() is None:
                 process.terminate()
             try:
@@ -445,25 +443,25 @@ class MovieWriter:
         """Return the encoded duration implied by frame count and FPS."""
         return self._frame_count / self.fps
 
-    def __del__(self):
+    def __del__(self) -> None:
         # Best-effort protection for direct MovieWriter users who leave an
         # encoder running or abandon a finalized staging file.
-        try:
+        with suppress(Exception):
             if getattr(self, "_process", None) is not None or getattr(self, "_stream_path", None) is not None:
                 self.clear()
-        except Exception:
-            pass
 
     @staticmethod
     def _is_ffmpeg_available() -> bool:
         """Return whether a working ``ffmpeg`` executable is available on PATH."""
         try:
             result = subprocess.run(
-                ["ffmpeg", "-version"],
+                ["ffmpeg", "-version"],  # noqa: S607 - discovery intentionally uses PATH
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 timeout=5,
+                check=False,
             )
-            return result.returncode == 0
         except (OSError, subprocess.TimeoutExpired):
             return False
+        else:
+            return result.returncode == 0

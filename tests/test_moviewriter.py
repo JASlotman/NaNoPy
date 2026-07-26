@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any, cast
 from unittest.mock import patch
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
@@ -14,24 +15,24 @@ from NaNoPy.classes.moviewriter import MovieWriter
 
 
 class FakeStdin:
-    def __init__(self, max_write=None):
+    def __init__(self, max_write: int | None = None) -> None:
         self.data = bytearray()
         self.max_write = max_write
         self.closed = False
 
-    def write(self, data):
+    def write(self, data: bytes | memoryview) -> int:
         if self.closed:
             raise BrokenPipeError("closed")
         size = len(data) if self.max_write is None else min(len(data), self.max_write)
         self.data.extend(data[:size])
         return size
 
-    def close(self):
+    def close(self) -> None:
         self.closed = True
 
 
 class FakeProcess:
-    def __init__(self, *, return_code=0, stderr=b"", max_write=None):
+    def __init__(self, *, return_code: int = 0, stderr: bytes = b"", max_write: int | None = None) -> None:
         self.stdin = FakeStdin(max_write=max_write)
         self.stderr = io.BytesIO(stderr)
         self.return_code = return_code
@@ -40,25 +41,25 @@ class FakeProcess:
         self.killed = False
         self.wait_calls = 0
 
-    def poll(self):
+    def poll(self) -> int | None:
         return self.return_code if self.exited else None
 
-    def wait(self, timeout=None):
+    def wait(self, timeout: float | None = None) -> int:
         self.wait_calls += 1
         self.exited = True
         return self.return_code
 
-    def terminate(self):
+    def terminate(self) -> None:
         self.terminated = True
         self.exited = True
 
-    def kill(self):
+    def kill(self) -> None:
         self.killed = True
         self.exited = True
 
 
 class TimeoutProcess(FakeProcess):
-    def wait(self, timeout=None):
+    def wait(self, timeout: float | None = None) -> int:
         self.wait_calls += 1
         if timeout is not None and not self.killed:
             raise subprocess.TimeoutExpired(["ffmpeg"], timeout)
@@ -67,11 +68,18 @@ class TimeoutProcess(FakeProcess):
 
 
 class MovieWriterTests(unittest.TestCase):
-    def make_started_writer(self, output, process, *, fps=24, codec="libx265"):
+    def make_started_writer(
+        self,
+        output: Path,
+        process: FakeProcess,
+        *,
+        fps: int = 24,
+        codec: str = "libx265",
+    ) -> tuple[MovieWriter, list[tuple[list[str], dict[str, object]]]]:
         writer = MovieWriter(str(output), fps=fps, codec=codec)
         popen_calls = []
 
-        def fake_popen(command, **kwargs):
+        def fake_popen(command: list[str], **kwargs: object) -> FakeProcess:
             popen_calls.append((command, kwargs))
             return process
 
@@ -84,29 +92,33 @@ class MovieWriterTests(unittest.TestCase):
         writer.start_recording()
         return writer, popen_calls
 
-    def test_constructor_rejects_non_integer_or_non_positive_fps(self):
+    def test_constructor_rejects_non_integer_or_non_positive_fps(self) -> None:
         for fps in (True, 1.5, "30", None):
             with self.subTest(fps=fps):
+                invalid_fps = cast("Any", fps)
                 with self.assertRaisesRegex(TypeError, "fps must be an integer"):
-                    MovieWriter("movie.mp4", fps=fps)
+                    MovieWriter("movie.mp4", fps=invalid_fps)
 
         for fps in (0, -1):
             with self.subTest(fps=fps):
-                with self.assertRaisesRegex(ValueError, "fps must be positive"):
+                expected_message = "fps must be positive"
+                with self.assertRaisesRegex(ValueError, expected_message):
                     MovieWriter("movie.mp4", fps=fps)
 
-    def test_constructor_rejects_invalid_codec_values(self):
+    def test_constructor_rejects_invalid_codec_values(self) -> None:
         for codec in (None, 123):
             with self.subTest(codec=codec):
+                invalid_codec = cast("Any", codec)
                 with self.assertRaisesRegex(TypeError, "codec must be a string"):
-                    MovieWriter("movie.mp4", codec=codec)
+                    MovieWriter("movie.mp4", codec=invalid_codec)
 
         for codec in ("", "libx264 -y", "$(touch unexpected)", "-version"):
             with self.subTest(codec=codec):
-                with self.assertRaisesRegex(ValueError, "FFmpeg encoder name"):
+                expected_message = "FFmpeg encoder name"
+                with self.assertRaisesRegex(ValueError, expected_message):
                     MovieWriter("movie.mp4", codec=codec)
 
-    def test_output_path_is_passed_as_one_argv_element_without_a_shell(self):
+    def test_output_path_is_passed_as_one_argv_element_without_a_shell(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory, "movie;not-a-command.mp4")
             process = FakeProcess()
@@ -119,7 +131,7 @@ class MovieWriterTests(unittest.TestCase):
             self.assertIs(options["shell"], False)
             writer.clear()
 
-    def test_streams_rgba_frames_to_one_lazy_process(self):
+    def test_streams_rgba_frames_to_one_lazy_process(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory, "movie.mp4")
             output.write_bytes(b"existing")
@@ -157,19 +169,20 @@ class MovieWriterTests(unittest.TestCase):
             self.assertEqual(writer.save(), output)
             self.assertNotEqual(output.read_bytes(), b"existing")
 
-    def test_dimension_change_does_not_increment_count(self):
+    def test_dimension_change_does_not_increment_count(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             process = FakeProcess()
             writer, _ = self.make_started_writer(Path(directory, "movie.mp4"), process)
             writer.add_frame(Image.new("RGBA", (2, 2)))
+            mismatched_frame = Image.new("RGBA", (3, 2))
 
             with self.assertRaisesRegex(ValueError, "Frame size changed"):
-                writer.add_frame(Image.new("RGBA", (3, 2)))
+                writer.add_frame(mismatched_frame)
 
             self.assertEqual(writer.frame_count(), 1)
             writer.clear()
 
-    def test_clear_aborts_staging_without_touching_existing_output(self):
+    def test_clear_aborts_staging_without_touching_existing_output(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory, "movie.mp4")
             output.write_bytes(b"keep me")
@@ -187,7 +200,7 @@ class MovieWriterTests(unittest.TestCase):
             self.assertFalse(writer.is_recording)
             self.assertTrue(process.terminated)
 
-    def test_encoder_failure_reports_stderr_and_preserves_output(self):
+    def test_encoder_failure_reports_stderr_and_preserves_output(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory, "movie.mp4")
             output.write_bytes(b"keep me")
@@ -202,7 +215,7 @@ class MovieWriterTests(unittest.TestCase):
             self.assertEqual(output.read_bytes(), b"keep me")
             self.assertFalse(staging.exists())
 
-    def test_encoder_timeout_is_killed_and_cleaned_up(self):
+    def test_encoder_timeout_is_killed_and_cleaned_up(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory, "movie.mp4")
             output.write_bytes(b"keep me")
@@ -218,7 +231,7 @@ class MovieWriterTests(unittest.TestCase):
             self.assertFalse(staging.exists())
             self.assertEqual(output.read_bytes(), b"keep me")
 
-    def test_audio_mux_copies_video_and_atomically_publishes(self):
+    def test_audio_mux_copies_video_and_atomically_publishes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory, "movie.mp4")
             output.write_bytes(b"old output")
@@ -229,10 +242,11 @@ class MovieWriterTests(unittest.TestCase):
             writer.add_frame(Image.new("RGBA", (2, 2)))
             writer.stop_recording()
             stream_path = writer._stream_path
+            assert stream_path is not None
             stream_path.write_bytes(b"encoded video")
             mux_commands = []
 
-            def fake_run(command, **kwargs):
+            def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
                 mux_commands.append(command)
                 Path(command[-1]).write_bytes(b"muxed output")
                 return subprocess.CompletedProcess(command, 0)
@@ -248,7 +262,7 @@ class MovieWriterTests(unittest.TestCase):
             self.assertIn(["-c:a", "flac"], [command[index : index + 2] for index in range(len(command) - 1)])
             self.assertIn("-shortest", command)
 
-    def test_audio_mux_failure_preserves_existing_and_retry_source(self):
+    def test_audio_mux_failure_preserves_existing_and_retry_source(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory, "movie.mp4")
             output.write_bytes(b"old output")
@@ -259,12 +273,15 @@ class MovieWriterTests(unittest.TestCase):
             writer.add_frame(Image.new("RGBA", (2, 2)))
             writer.stop_recording()
             stream_path = writer._stream_path
+            assert stream_path is not None
             stream_path.write_bytes(b"encoded video")
             failure = subprocess.CalledProcessError(1, ["ffmpeg"], stderr="mux exploded")
+            audio_path = str(audio)
 
             with patch("NaNoPy.classes.moviewriter.subprocess.run", side_effect=failure):
-                with self.assertRaisesRegex(RuntimeError, "mux exploded"):
-                    writer.save_with_audio(str(audio))
+                expected_message = "mux exploded"
+                with self.assertRaisesRegex(RuntimeError, expected_message):
+                    writer.save_with_audio(audio_path)
 
             self.assertEqual(output.read_bytes(), b"old output")
             self.assertEqual(stream_path.read_bytes(), b"encoded video")
@@ -272,7 +289,7 @@ class MovieWriterTests(unittest.TestCase):
             self.assertEqual(list(Path(directory).glob(".*-audio-*.mp4")), [])
             writer.clear()
 
-    def test_late_codec_change_is_rejected(self):
+    def test_late_codec_change_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             process = FakeProcess()
             writer, _ = self.make_started_writer(Path(directory, "movie.mp4"), process)
@@ -281,10 +298,11 @@ class MovieWriterTests(unittest.TestCase):
                 writer.save(codec="libx264")
             writer.clear()
 
-    def test_empty_recording_and_unavailable_ffmpeg(self):
+    def test_empty_recording_and_unavailable_ffmpeg(self) -> None:
         writer = MovieWriter("unused.mp4")
         with patch.object(MovieWriter, "_is_ffmpeg_available", return_value=False):
-            with self.assertRaisesRegex(RuntimeError, "ffmpeg not found"):
+            expected_message = "ffmpeg not found"
+            with self.assertRaisesRegex(RuntimeError, expected_message):
                 writer.start_recording()
 
         with patch.object(MovieWriter, "_is_ffmpeg_available", return_value=True):
@@ -293,19 +311,22 @@ class MovieWriterTests(unittest.TestCase):
             writer.save()
         writer.clear()
 
-    def test_setup_failure_resets_recording_state(self):
+    def test_setup_failure_resets_recording_state(self) -> None:
         writer = MovieWriter("movie.mp4")
         with patch.object(MovieWriter, "_is_ffmpeg_available", return_value=True):
             writer.start_recording()
-        with patch.object(writer, "_create_staging_path", side_effect=PermissionError("denied")):
+        with (
+            patch.object(writer, "_create_staging_path", side_effect=PermissionError("denied")),
+        ):
+            frame = Image.new("RGBA", (2, 2))
             with self.assertRaisesRegex(RuntimeError, "Unable to prepare"):
-                writer.add_frame(Image.new("RGBA", (2, 2)))
+                writer.add_frame(frame)
 
         self.assertFalse(writer.is_recording)
         self.assertIsNone(writer._frame_size)
         self.assertFalse(writer.has_pending_output())
 
-    def test_relative_output_is_anchored_when_working_directory_changes(self):
+    def test_relative_output_is_anchored_when_working_directory_changes(self) -> None:
         original_directory = Path.cwd()
         with tempfile.TemporaryDirectory() as first, tempfile.TemporaryDirectory() as second:
             try:

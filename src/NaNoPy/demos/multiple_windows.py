@@ -1,13 +1,13 @@
 # simple test
-from NaNoPy import Canvas, Writer, Color
+from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:
-    xSize = 800
-    ySize = 400
+    x_size = 800
+    y_size = 400
 
-    screen_main = Canvas("screen1", xSize, ySize, xpos=50, ypos=50)
-    screen_side = Canvas("screen2", xSize, ySize, xpos=50 + xSize, ypos=50)
+    screen_main = Canvas("screen1", x_size, y_size, xpos=50, ypos=50)
+    screen_side = Canvas("screen2", x_size, y_size, xpos=50 + x_size, ypos=50)
     pen_main = Writer(screen_main)
     pen_side = Writer(screen_side)
 

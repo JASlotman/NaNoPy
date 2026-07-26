@@ -1,5 +1,4 @@
-"""
-MP4 Export Examples for NaNoPy
+"""MP4 Export Examples for NaNoPy
 
 This file demonstrates how to export animations as MP4 videos in both
 Jupyter notebook and non-Jupyter (standard Python) modes.
@@ -53,28 +52,28 @@ Requirements:
 # - Call update_embedded() to capture frames for MP4
 
 import math
+import random as rnd
 from importlib.resources import as_file, files
 from pathlib import Path
 
 from NaNoPy import Canvas, Color, Writer
+from NaNoPy.classes.moviewriter import MovieWriter
 
 OUTPUT_DIRECTORY = Path.cwd() / "nanopy-output"
 
 
 def _output_path(filename: str) -> str:
     """Return an explicit, ignored directory for generated demo videos."""
-
     OUTPUT_DIRECTORY.mkdir(parents=True, exist_ok=True)
     return str(OUTPUT_DIRECTORY / filename)
 
 
-def example_bouncing_ball_with_export():
+def example_bouncing_ball_with_export() -> None:
     """Example: Export a bouncing ball animation as MP4
 
     Shows the animation window while recording.
     Uses update() to display + update_embedded() to capture frames.
     """
-
     # Create canvas
     canvas = Canvas("Bouncing Ball", 600, 400)
     pen = Writer(canvas)
@@ -126,12 +125,11 @@ def example_bouncing_ball_with_export():
     canvas.NNP.stop()
 
 
-def example_rotating_square():
+def example_rotating_square() -> None:
     """Example: Export a rotating square animation
 
     Shows the animation window while recording.
     """
-
     canvas = Canvas("Rotating Square", 500, 500)
     pen = Writer(canvas)
 
@@ -176,11 +174,8 @@ def example_rotating_square():
     canvas.NNP.stop()
 
 
-def example_with_cleanup():
+def example_with_cleanup() -> None:
     """Example showing how to use MovieWriter directly for advanced control"""
-
-    from NaNoPy.classes.moviewriter import MovieWriter
-
     canvas = Canvas("Advanced Recording", 400, 300)
     pen = Writer(canvas)
 
@@ -212,20 +207,18 @@ def example_with_cleanup():
     canvas.NNP.stop()
 
 
-def example_with_audio():
+def example_with_audio() -> None:
     """Example: Star animation with audio track
 
     Creates a 10-second animation with background music.
     Uses the short preview audio clip packaged with the demo.
     """
-    import random as rnd
-
     # Setup
     FPS = 240
     dt = 1.0 / FPS
     x_size, y_size = 1900, 1000
     y = y_size / 2
-    stars = []
+    stars = [(rnd.randint(0, x_size), rnd.randint(0, y_size)) for _ in range(500)]
     particles = []
     canvas = Canvas("Star Animation with Audio", x_size, y_size)
     pen = Writer(canvas)
@@ -243,10 +236,6 @@ def example_with_audio():
 
     # Start recording
     movie = canvas.start_recording(_output_path("star_animation_with_audio.mp4"), fps=FPS)
-
-    # Create background stars
-    for i in range(500):
-        stars.append((rnd.randint(0, x_size), rnd.randint(0, y_size)))
 
     # Animation parameters
     max_frames = 10 * FPS  # 10 seconds
@@ -267,16 +256,16 @@ def example_with_audio():
         particle_spawn_accum += particle_spawn_rate * dt
         spawn_count = int(particle_spawn_accum)
         particle_spawn_accum -= spawn_count
-        for _ in range(spawn_count):
-            particles.append(
-                [
-                    x,
-                    y,
-                    rnd.uniform(*particle_vx_range),
-                    rnd.uniform(*particle_vy_range),
-                    rnd.uniform(*particle_life_range),
-                ]
-            )
+        particles.extend(
+            [
+                x,
+                y,
+                rnd.uniform(*particle_vx_range),
+                rnd.uniform(*particle_vy_range),
+                rnd.uniform(*particle_life_range),
+            ]
+            for _ in range(spawn_count)
+        )
 
         # Update and draw particles
         i = 0
@@ -376,7 +365,4 @@ if __name__ == "__main__":
     print("  - example_with_cleanup()")
     print("  - example_with_audio()")
     print(f"\nEach will save an MP4 file under: {OUTPUT_DIRECTORY}")
-    # example_bouncing_ball_with_export()
-    # example_rotating_square()
-    # example_with_cleanup()
     example_with_audio()

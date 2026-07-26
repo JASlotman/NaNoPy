@@ -1,7 +1,9 @@
 import math
+from collections.abc import Iterable
+
 import numpy as np
-from typing import Iterable
 from numpy.typing import NDArray
+
 from NaNoPy.custom_types.generalized_types import NumberLike
 
 Array1D = NDArray[np.float64]
@@ -84,7 +86,7 @@ class Spline:
         spliney = []
         splinedydx = []
 
-        for idx, sample_count in zip(indices, counts):
+        for idx, sample_count in zip(indices, counts, strict=True):
             t = np.linspace(0.0, 1.0, num=sample_count, endpoint=True)
             x_values = self._eval_cubic(self.ax[idx], self.bx[idx], self.cx[idx], self.dx[idx], t)
             y_values = self._eval_cubic(self.ay[idx], self.by[idx], self.cy[idx], self.dy[idx], t)
@@ -141,8 +143,8 @@ class Spline:
         min_y = float(np.min(self.spliney))
         max_y = float(np.max(self.spliney))
 
-        height = max(1, int(math.ceil(max_y - min_y)) + 1)
-        width = max(1, int(math.ceil(max_x - min_x)) + 1)
+        height = max(1, math.ceil(max_y - min_y) + 1)
+        width = max(1, math.ceil(max_x - min_x) + 1)
 
         mins = np.full(height, float(width))
         maxs = np.zeros(height)
@@ -191,5 +193,5 @@ class Spline:
         with np.errstate(divide="ignore", invalid="ignore"):
             xints = x_coords + (y - y_coords) * (x_next - x_coords) / denom
         xints = np.where(intersects, xints, np.nan)
-        crossings = np.count_nonzero((x < xints))
+        crossings = np.count_nonzero(x < xints)
         return bool(crossings % 2)

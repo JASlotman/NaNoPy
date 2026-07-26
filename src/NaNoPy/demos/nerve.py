@@ -1,5 +1,6 @@
 import numpy as np
-from NaNoPy import Canvas, Writer, Color
+
+from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:
@@ -25,7 +26,9 @@ def demo() -> None:
     while screen.running():
         jitter = rng.integers(-3, 4, size=control_count)
         control_y[1:-1] = np.clip(
-            control_y[1:-1] + jitter[1:-1], control_bounds[0], control_bounds[1]
+            control_y[1:-1] + jitter[1:-1],
+            control_bounds[0],
+            control_bounds[1],
         )
 
         wall_color = Color.custom(r=30, g=140, b=200)
@@ -53,12 +56,12 @@ def demo() -> None:
 
         glow_color = Color.custom(r=255, g=180, b=20, a=100)
         spark_color = Color.custom(r=255, g=255, b=200, a=220)
-        for px, py in zip(particles_x, particles_y):
+        for px, py in zip(particles_x, particles_y, strict=True):
             pen.draw_circle(px, py, 6, glow_color, True)
             pen.draw_star(px, py, 4, 5, spark_color, True)
 
         anchor_color = Color.custom(r=90, g=220, b=255, a=180)
-        for cx, cy in zip(control_x[1:-1], control_y[1:-1]):
+        for cx, cy in zip(control_x[1:-1], control_y[1:-1], strict=True):
             pen.draw_circle(cx, cy, 3, anchor_color, True)
 
         screen.update()

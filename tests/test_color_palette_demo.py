@@ -1,12 +1,16 @@
 import unittest
+from typing import TYPE_CHECKING, cast
 from unittest.mock import Mock
 
 from NaNoPy import Color
 from NaNoPy.demos.color_palette import _draw_checkerboard, _draw_text_with_stroke
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
 
 class ColorPaletteDemoTests(unittest.TestCase):
-    def test_checkerboard_draws_alternating_eight_pixel_tiles(self):
+    def test_checkerboard_draws_alternating_eight_pixel_tiles(self) -> None:
         writer = Mock()
 
         _draw_checkerboard(writer, width=16, height=16)
@@ -25,7 +29,7 @@ class ColorPaletteDemoTests(unittest.TestCase):
         )
         self.assertTrue(all(call.kwargs == {"filled": True} for call in calls))
 
-    def test_text_stroke_surrounds_the_foreground_label(self):
+    def test_text_stroke_surrounds_the_foreground_label(self) -> None:
         writer = Mock()
 
         _draw_text_with_stroke(writer, 10, 20, "black")
@@ -36,10 +40,11 @@ class ColorPaletteDemoTests(unittest.TestCase):
             [call.args[:2] for call in calls[:-1]],
             [(9, 19), (10, 19), (11, 19), (9, 20), (11, 20), (9, 21), (10, 21), (11, 21)],
         )
-        self.assertTrue(all(tuple(call.args[2]) == tuple(Color.black) for call in calls[:-1]))
+        black = tuple(cast("Iterable[int]", Color.black))
+        self.assertTrue(all(tuple(call.args[2]) == black for call in calls[:-1]))
         self.assertTrue(all(call.args[3] == "black" for call in calls[:-1]))
         self.assertEqual(calls[-1].args[:2], (10, 20))
-        self.assertEqual(tuple(calls[-1].args[2]), tuple(Color.white))
+        self.assertEqual(tuple(calls[-1].args[2]), tuple(cast("Iterable[int]", Color.white)))
         self.assertEqual(calls[-1].args[3], "black")
 
 
