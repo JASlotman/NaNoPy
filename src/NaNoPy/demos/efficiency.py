@@ -1,6 +1,6 @@
 """Stress test: how much per-frame Python work a canvas can take.
 
-Run it with ``python -m NaNoPy.demos.efficiency`` or::
+Run it with ``nanopy efficiency`` or::
 
     from NaNoPy.demos import efficiency
     efficiency()

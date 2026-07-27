@@ -1,6 +1,6 @@
 """Glowing particles flowing through a wobbling spline channel.
 
-Run it with ``python -m NaNoPy.demos.nerve`` or::
+Run it with ``nanopy nerve`` or::
 
     from NaNoPy.demos import nerve
     nerve()

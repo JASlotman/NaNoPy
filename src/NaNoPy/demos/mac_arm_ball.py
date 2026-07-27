@@ -1,6 +1,6 @@
 """macOS ARM check: drawing without an animation loop, using the old API.
 
-Run it with ``python -m NaNoPy.demos.mac_arm_ball`` or::
+Run it with ``nanopy mac_arm_ball`` or::
 
     from NaNoPy.demos import mac_arm_ball
     mac_arm_ball()

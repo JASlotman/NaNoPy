@@ -1,6 +1,6 @@
 """Shows the deprecation warnings raised by the old lowercase API.
 
-Run it with ``python -m NaNoPy.demos.warning_deprecated`` or::
+Run it with ``nanopy warning_deprecated`` or::
 
     from NaNoPy.demos import warning_deprecated
     warning_deprecated()

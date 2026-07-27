@@ -1,6 +1,6 @@
 """Overview of every named color NaNoPy ships with.
 
-Run it with ``python -m NaNoPy.demos.color_palette`` or::
+Run it with ``nanopy color_palette`` or::
 
     from NaNoPy.demos import color_palette
     color_palette()

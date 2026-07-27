@@ -6,17 +6,18 @@ Every demo is a normal function: import it, ask what it does, then call it.
     >>> help(dots)          # what does this demo show?
     >>> dots()              # run it
 
-To see what is available, use :func:`list_demos` (or ``python -m NaNoPy.demos
---list``)::
+To see what is available, use :func:`list_demos`::
 
     >>> from NaNoPy.demos import list_demos
     >>> list_demos()
 
-Every demo is also a standalone script, so the same demo can be run without
-writing any code::
+Installing NaNoPy also provides the ``nanopy`` command, so a demo can be run
+without writing any code::
 
-    python -m NaNoPy.demos dots            # run it through this package
-    python -m NaNoPy.demos.dots            # run the demo's own file
+    nanopy                                 # list every demo
+    nanopy dots                            # run one demo
+    python -m NaNoPy dots                  # same, without the executable
+    python -m NaNoPy.demos.dots            # or run the demo's own file
 
 Drawing basics
     ``squares``, ``funky_polygons``, ``color_palette``, ``dots``

@@ -3,8 +3,11 @@
 This file demonstrates how to export animations as MP4 videos in both
 Jupyter notebook and non-Jupyter (standard Python) modes.
 
-Run ``python -m NaNoPy.demos.mp4_export_examples --help`` to list the
-standard-Python examples, then pass the desired example as a subcommand.
+Run ``nanopy --list`` to see the examples as ``mp4_bouncing_ball``,
+``mp4_rotating_square``, ``mp4_advanced_recording`` and ``mp4_with_audio``, then
+run one with e.g. ``nanopy mp4_bouncing_ball``. This file also has its own
+command-line interface: ``python -m NaNoPy.demos.mp4_export_examples --help``
+lists the examples as subcommands.
 
 The same examples can be imported and called from your own code::
 

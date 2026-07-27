@@ -4,8 +4,8 @@ Every variant simulates binding particles and draws the same picture, so you
 can compare both the code and the runtime. ``collision_benchmark`` runs them
 all in sequence and prints how long each one took.
 
-Run the benchmark with ``python -m NaNoPy.demos.collision_demo`` or import the
-variant you want::
+Run the benchmark with ``nanopy collision_benchmark`` or import the variant you
+want::
 
     from NaNoPy.demos import collision_benchmark, collision_iterator_single
 
