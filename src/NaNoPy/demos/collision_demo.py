@@ -30,8 +30,8 @@ class Particle:
     y: int
     bound: bool = False
     stepsize: int = 4
-    p_unbind = 0.05
-    radius = 3
+    p_unbind: float = 0.05
+    radius: int = 3
     color_bound: Color = Color.red
     color_unbound: Color = Color.green
     particle_type: int = 0
