@@ -1,6 +1,6 @@
 """Random-walking dots labelled with their own coordinates.
 
-Run it with ``python -m NaNoPy.demos.randommove`` or::
+Run it with ``nanopy randommove`` or::
 
     from NaNoPy.demos import randommove
     randommove()

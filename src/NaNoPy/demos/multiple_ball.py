@@ -1,6 +1,6 @@
 """Two windows whose balls are pulled towards their own window centre.
 
-Run it with ``python -m NaNoPy.demos.multiple_ball`` or::
+Run it with ``nanopy multiple_ball`` or::
 
     from NaNoPy.demos import multiple_ball
     multiple_ball()

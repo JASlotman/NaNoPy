@@ -1,6 +1,6 @@
 """Particles that random-walk inside a closed spline.
 
-Run it with ``python -m NaNoPy.demos.blobby`` or::
+Run it with ``nanopy blobby`` or::
 
     from NaNoPy.demos import blobby
     blobby()

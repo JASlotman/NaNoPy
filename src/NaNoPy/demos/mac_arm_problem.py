@@ -1,6 +1,6 @@
 """Reproduces a macOS-only problem with static drawings.
 
-Run it with ``python -m NaNoPy.demos.mac_arm_problem`` or::
+Run it with ``nanopy mac_arm_problem`` or::
 
     from NaNoPy.demos import mac_arm_problem
     mac_arm_problem()

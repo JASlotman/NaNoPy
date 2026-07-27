@@ -10,7 +10,8 @@ from io import StringIO
 from unittest.mock import patch
 
 import NaNoPy.demos as demos_package
-from NaNoPy import NNP
+from NaNoPy import NNP, cli
+from NaNoPy import __main__ as nanopy_main
 from NaNoPy.demos import DEMOS, dots, list_demos, squares
 from NaNoPy.demos import __main__ as demos_main
 
@@ -75,15 +76,15 @@ class DemoImportTests(unittest.TestCase):
             )
 
 
-class DemosCliTests(unittest.TestCase):
-    """Verify ``python -m NaNoPy.demos`` selects demos without editing code."""
+class NanopyCommandTests(unittest.TestCase):
+    """Verify the ``nanopy`` command selects demos without editing code."""
 
     def test_named_demo_is_run(self) -> None:
         calls: list[str] = []
         output = StringIO()
 
-        with patch.dict(demos_main.DEMOS, {"dots": lambda: calls.append("dots")}), redirect_stdout(output):
-            demos_main.main(["dots"])
+        with patch.dict(cli.DEMOS, {"dots": lambda: calls.append("dots")}), redirect_stdout(output):
+            cli.main(["dots"])
 
         self.assertEqual(calls, ["dots"])
 
@@ -91,28 +92,41 @@ class DemosCliTests(unittest.TestCase):
         output = StringIO()
 
         with redirect_stdout(output):
-            demos_main.main(["--list"])
+            cli.main(["--list"])
 
         self.assertIn("dots", output.getvalue())
+
+    def test_no_argument_lists_every_demo(self) -> None:
+        output = StringIO()
+
+        with redirect_stdout(output):
+            cli.main([])
+
+        printed = output.getvalue()
+        for name in DEMOS:
+            self.assertIn(name, printed)
 
     def test_unknown_demo_is_rejected(self) -> None:
         errors = StringIO()
 
         with redirect_stderr(errors), self.assertRaises(SystemExit) as raised:
-            demos_main.main(["does-not-exist"])
+            cli.main(["does-not-exist"])
 
         self.assertEqual(raised.exception.code, 2)
 
-    def test_missing_demo_lists_and_fails(self) -> None:
+    def test_version_is_reported(self) -> None:
         output = StringIO()
-        errors = StringIO()
 
-        with redirect_stdout(output), redirect_stderr(errors), self.assertRaises(SystemExit) as raised:
-            demos_main.main([])
+        with redirect_stdout(output), self.assertRaises(SystemExit) as raised:
+            cli.main(["--version"])
 
-        self.assertEqual(raised.exception.code, 2)
-        self.assertIn("dots", output.getvalue())
-        self.assertIn("no demo selected", errors.getvalue())
+        self.assertEqual(raised.exception.code, 0)
+        self.assertIn("NaNoPy", output.getvalue())
+
+    def test_module_entry_points_share_the_cli(self) -> None:
+        """``python -m NaNoPy`` and ``python -m NaNoPy.demos`` reuse ``cli.main``."""
+        self.assertIs(nanopy_main.main, cli.main)
+        self.assertIs(demos_main.main, cli.main)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 """Two canvases driven by one mainloop.
 
-Run it with ``python -m NaNoPy.demos.multiple_windows`` or::
+Run it with ``nanopy multiple_windows`` or::
 
     from NaNoPy.demos import multiple_windows
     multiple_windows()

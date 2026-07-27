@@ -3,7 +3,7 @@
 Student project reused as a regression demo: with two windows open, text drawn
 in the graph window used to pick up the wrong font.
 
-Run it with ``python -m NaNoPy.demos.font_bug_on_graph_window`` or::
+Run it with ``nanopy font_bug_on_graph_window`` or::
 
     from NaNoPy.demos import font_bug_on_graph_window
     font_bug_on_graph_window()

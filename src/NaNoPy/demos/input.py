@@ -1,6 +1,6 @@
 """Keyboard input: move a paddle with a KeyListener.
 
-Run it with ``python -m NaNoPy.demos.input`` or::
+Run it with ``nanopy keyboard_input`` or::
 
     from NaNoPy.demos import keyboard_input
     keyboard_input()

@@ -1,6 +1,6 @@
 """Reference sheet of rectangles, polygons, and splines.
 
-Run it with ``python -m NaNoPy.demos.squares`` or::
+Run it with ``nanopy squares`` or::
 
     from NaNoPy.demos import squares
     squares()

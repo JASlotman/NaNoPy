@@ -1,6 +1,6 @@
 """Static drawing of a custom polygon, a star, and a hexagon.
 
-Run it with ``python -m NaNoPy.demos.funky_polygons`` or::
+Run it with ``nanopy funky_polygons`` or::
 
     from NaNoPy.demos import funky_polygons
     funky_polygons()

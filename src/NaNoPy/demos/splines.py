@@ -1,6 +1,6 @@
 """Particles carried along by a flowing spline channel.
 
-Run it with ``python -m NaNoPy.demos.splines`` or::
+Run it with ``nanopy splines`` or::
 
     from NaNoPy.demos import splines
     splines()

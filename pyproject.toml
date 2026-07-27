@@ -29,6 +29,12 @@ interactive = [
     "ipython"
 ]
 
+[project.scripts]
+# Both spellings install the same command, so `nanopy dots` and `NaNoPy dots`
+# work regardless of how the package name is remembered.
+nanopy = "NaNoPy.cli:main"
+NaNoPy = "NaNoPy.cli:main"
+
 [project.urls]
 Homepage = "https://erasmusoic.nl"
 
@@ -60,6 +66,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "src/NaNoPy/__init__.py" = ["ANN401"]
+"src/NaNoPy/cli.py" = ["T201"]  # A command-line interface reports through stdout.
 "src/NaNoPy/demos/**" = [
   "ANN401", "ARG", "ERA001", "EXE002", "INP001", "PLW0602", "PLW0603", "S311", "T201",
 ]

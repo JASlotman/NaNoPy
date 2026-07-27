@@ -1,6 +1,6 @@
 """Beginner demo: draw randomly placed dots, one per frame.
 
-Run it with ``python -m NaNoPy.demos.dots`` or::
+Run it with ``nanopy dots`` or::
 
     from NaNoPy.demos import dots
     dots()

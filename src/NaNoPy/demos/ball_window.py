@@ -1,6 +1,6 @@
 """Ball that reacts to where its window sits on the screen.
 
-Run it with ``python -m NaNoPy.demos.ball_window`` or::
+Run it with ``nanopy ball_window`` or::
 
     from NaNoPy.demos import ball_window
     ball_window()
