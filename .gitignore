@@ -47,6 +47,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+junit.xml
 *.cover
 *.py.cover
 .hypothesis/
@@ -236,3 +237,5 @@ Icon?
 .com.apple.timemachine.donotpresent
 
 
+sonar-project.properties
+.scannerwork/**
