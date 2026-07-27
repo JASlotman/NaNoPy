@@ -140,6 +140,10 @@ class Color(Colorsdl2):
         )
 
     def __mod__(self, color: Colorsdl2) -> Color:
+        """Preserve PySDL2's component-wise modulo compatibility operation.
+
+        This operator mirrors the base color API; it is not a typical color transform.
+        """
         return Color._from_rgba(
             self.r % color.r,
             self.g % color.g,
