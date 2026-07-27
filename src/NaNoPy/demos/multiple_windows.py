@@ -1,8 +1,22 @@
-# simple test
+"""Two canvases driven by one mainloop.
+
+Run it with ``python -m NaNoPy.demos.multiple_windows`` or::
+
+    from NaNoPy.demos import multiple_windows
+    multiple_windows()
+"""
+
 from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:
+    """Blink shapes and text in two windows placed side by side.
+
+    Each ``Canvas`` gets its own ``Writer``, but both are driven by the same
+    NaNoPy mainloop, so a single program can animate several windows.
+
+    Close either window to stop.
+    """
     x_size = 800
     y_size = 400
 

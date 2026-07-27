@@ -1,3 +1,11 @@
+"""Keyboard input: move a paddle with a KeyListener.
+
+Run it with ``python -m NaNoPy.demos.input`` or::
+
+    from NaNoPy.demos import keyboard_input
+    keyboard_input()
+"""
+
 from sdl2 import SDL_Event
 
 from NaNoPy import Canvas, Color, Writer
@@ -5,6 +13,15 @@ from NaNoPy.classes import KeyListener
 
 
 def demo() -> None:
+    """Move a paddle left and right with the arrow keys or ``a``/``d``.
+
+    Shows the two ways to bind keys: ``KeyListener.bind`` for a single key
+    (space prints a message) and ``KeyListener.bind_many`` for press/release
+    pairs. Holding both directions cancels out, because the handlers track
+    which keys are currently down instead of reacting to single events.
+
+    Close the window to stop.
+    """
     x_size = 800
     y_size = 600
 

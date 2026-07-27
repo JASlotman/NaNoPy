@@ -1,9 +1,25 @@
+"""Glowing particles flowing through a wobbling spline channel.
+
+Run it with ``python -m NaNoPy.demos.nerve`` or::
+
+    from NaNoPy.demos import nerve
+    nerve()
+"""
+
 import numpy as np
 
 from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:
+    """Animate sparks travelling along a nerve-like spline channel.
+
+    A numpy-based demo: the spline walls jitter every frame, and each
+    particle's height is interpolated from the spline curve at its own x
+    position. Also shows semi-transparent colors via ``Color.custom(a=...)``.
+
+    Close the window to stop.
+    """
     x_size = 800
     y_size = 400
 

@@ -1,3 +1,14 @@
+"""Quorum sensing in a biofilm, plus a live bar graph in a second window.
+
+Student project reused as a regression demo: with two windows open, text drawn
+in the graph window used to pick up the wrong font.
+
+Run it with ``python -m NaNoPy.demos.font_bug_on_graph_window`` or::
+
+    from NaNoPy.demos import font_bug_on_graph_window
+    font_bug_on_graph_window()
+"""
+
 from __future__ import annotations
 
 # source: https://gitlab.tudelft.nl/nb1420_2025/individual/jelle-jpheij/-/blob/main/Final_project/Testing.py?ref_type=heads
@@ -14,11 +25,13 @@ ysize_graphs = 400
 xstart_graph = 50
 ystart_graph = 250
 
-graph_screen = Canvas("Graphs", xsize_graphs, ysize_graphs, xpos=xstart_graph, ypos=ystart_graph)
-graph_pen = Writer(graph_screen)
+# The windows and their writers are created by demo(), so that importing this
+# module never opens a window. The helpers below use them as globals.
+graph_screen: Canvas
+graph_pen: Writer
 
-screen = Canvas("Quorum sensing in a biofilm", xsize_screen, ysize_screen)
-pen = Writer(screen)
+screen: Canvas
+pen: Writer
 
 number_rows, number_columns = 8, 8
 number_nutrients = 300
@@ -381,47 +394,76 @@ def create_graphs(height_graph: float, origin_x: float, origin_y: float, width_b
     graph_pen.draw_rectangle(origin_x + 2 * width_bar, origin_y, width_bar, height_healthy, healthy_color, True)
 
 
-initialize(number_rows, number_columns, number_nutrients)
+def demo() -> None:
+    """Simulate a quorum-sensing biofilm and graph its cell states live.
 
-while screen.running():
-    total_amount_dead = 0
-    total_amount_starving = 0
-    total_amount_healthy = 0
+    Nutrients flow in from the left and are taken up by cells; starving cells
+    release calcium, which can trigger their neighbours to depolarize as well.
+    A second, smaller window shows how many cells are dead, starving, and
+    healthy as three bars.
 
-    # move all the particles
-    for nutrient in nutrients:
-        nutrient.move()
-        nutrient.take_up(cells)
+    The graph window is what makes this a regression demo: drawing text there
+    while the main window is open used to render with the wrong font.
 
-    for cell in cells:
-        for calc_ion in cell.calcium_ions:
-            calc_ion.move()
-            for candidate_cell in cells:
-                candidate_cell.calcium_induced_release(calc_ion)
+    Close the main window to stop.
+    """
+    global graph_screen, graph_pen, screen, pen
+    global total_amount_dead, total_amount_starving, total_amount_healthy
 
-    for cell in cells:
-        cell.depolarize()
-        cell.die()
-        cell.update()
+    graph_screen = Canvas("Graphs", xsize_graphs, ysize_graphs, xpos=xstart_graph, ypos=ystart_graph)
+    graph_pen = Writer(graph_screen)
 
-        if cell.dead:
-            total_amount_dead += 1
-        if len(cell.nutrients_taken_up) > 0:
-            total_amount_healthy += 1
-        if len(cell.nutrients_taken_up) == 0:
-            total_amount_starving += 1
+    screen = Canvas("Quorum sensing in a biofilm", xsize_screen, ysize_screen)
+    pen = Writer(screen)
 
-    # Draw everything
-    draw_everything()
-    create_graphs(3 * ysize_graphs / 4, xsize_graphs / 6, ysize_graphs / 12, xsize_graphs / 4)
+    # Start from empty state so the demo can be run more than once per session.
+    cells.clear()
+    nutrients.clear()
+    initialize(number_rows, number_columns, number_nutrients)
 
-    screen.update()
-    screen.clear()
-    screen.pause(5)
+    while screen.running():
+        total_amount_dead = 0
+        total_amount_starving = 0
+        total_amount_healthy = 0
 
-    graph_screen.update()
-    graph_screen.pause(5)
-    graph_screen.clear()
+        # move all the particles
+        for nutrient in nutrients:
+            nutrient.move()
+            nutrient.take_up(cells)
+
+        for cell in cells:
+            for calc_ion in cell.calcium_ions:
+                calc_ion.move()
+                for candidate_cell in cells:
+                    candidate_cell.calcium_induced_release(calc_ion)
+
+        for cell in cells:
+            cell.depolarize()
+            cell.die()
+            cell.update()
+
+            if cell.dead:
+                total_amount_dead += 1
+            if len(cell.nutrients_taken_up) > 0:
+                total_amount_healthy += 1
+            if len(cell.nutrients_taken_up) == 0:
+                total_amount_starving += 1
+
+        # Draw everything
+        draw_everything()
+        create_graphs(3 * ysize_graphs / 4, xsize_graphs / 6, ysize_graphs / 12, xsize_graphs / 4)
+
+        screen.update()
+        screen.clear()
+        screen.pause(5)
+
+        graph_screen.update()
+        graph_screen.pause(5)
+        graph_screen.clear()
 
 
 # Future work: add more graphs for the simulation.
+
+
+if __name__ == "__main__":
+    demo()

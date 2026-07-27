@@ -3,6 +3,16 @@
 This file demonstrates how to export animations as MP4 videos in both
 Jupyter notebook and non-Jupyter (standard Python) modes.
 
+Run ``python -m NaNoPy.demos.mp4_export_examples --help`` to list the
+standard-Python examples, then pass the desired example as a subcommand.
+
+The same examples can be imported and called from your own code::
+
+    from NaNoPy.demos import mp4_bouncing_ball
+
+    help(mp4_bouncing_ball)
+    mp4_bouncing_ball()
+
 Requirements:
     - ffmpeg must be installed on your system
     - Ubuntu/Debian: sudo apt-get install ffmpeg
@@ -51,10 +61,13 @@ Requirements:
 # - Call update() to display the window
 # - Call update_embedded() to capture frames for MP4
 
+import argparse
 import math
 import random as rnd
+from collections.abc import Callable, Sequence
 from importlib.resources import as_file, files
 from pathlib import Path
+from typing import cast
 
 from NaNoPy import Canvas, Color, Writer
 from NaNoPy.classes.moviewriter import MovieWriter
@@ -69,10 +82,15 @@ def _output_path(filename: str) -> str:
 
 
 def example_bouncing_ball_with_export() -> None:
-    """Example: Export a bouncing ball animation as MP4
+    """Export a bouncing ball animation to MP4 while showing the window.
 
-    Shows the animation window while recording.
-    Uses update() to display + update_embedded() to capture frames.
+    Records 300 frames at 60 FPS with ``start_recording`` / ``stop_recording``
+    / ``save_recording``. Each frame is both displayed with ``update()`` and
+    captured with ``update_embedded()``; leave out ``update()`` if you only
+    want the video file.
+
+    Needs ffmpeg. The result is written to ``nanopy-output/bouncing_ball.mp4``
+    in the current working directory.
     """
     # Create canvas
     canvas = Canvas("Bouncing Ball", 600, 400)
@@ -126,9 +144,13 @@ def example_bouncing_ball_with_export() -> None:
 
 
 def example_rotating_square() -> None:
-    """Example: Export a rotating square animation
+    """Export a rotating square animation to MP4 at 30 FPS.
 
-    Shows the animation window while recording.
+    The same recipe as ``mp4_bouncing_ball`` with a smaller frame budget, so it
+    is the quickest way to check that your ffmpeg installation works.
+
+    Needs ffmpeg. The result is written to ``nanopy-output/rotating_square.mp4``
+    in the current working directory.
     """
     canvas = Canvas("Rotating Square", 500, 500)
     pen = Writer(canvas)
@@ -175,7 +197,16 @@ def example_rotating_square() -> None:
 
 
 def example_with_cleanup() -> None:
-    """Example showing how to use MovieWriter directly for advanced control"""
+    """Drive a MovieWriter yourself instead of letting the canvas own it.
+
+    Creates the ``MovieWriter``, feeds it the image returned by
+    ``update_embedded()`` with ``add_frame``, and reports ``frame_count()`` and
+    ``get_duration()`` afterwards. Use this when you want to decide per frame
+    whether it ends up in the video.
+
+    Needs ffmpeg. The result is written to ``nanopy-output/advanced_export.mp4``
+    in the current working directory.
+    """
     canvas = Canvas("Advanced Recording", 400, 300)
     pen = Writer(canvas)
 
@@ -208,10 +239,16 @@ def example_with_cleanup() -> None:
 
 
 def example_with_audio() -> None:
-    """Example: Star animation with audio track
+    """Export a 10-second star animation with an audio track.
 
-    Creates a 10-second animation with background music.
-    Uses the short preview audio clip packaged with the demo.
+    Records at 240 FPS and then muxes in the short preview clip packaged with
+    the demos through ``MovieWriter.save_with_audio``. All motion is expressed
+    per second rather than per frame, so the animation looks the same at any
+    FPS.
+
+    Needs ffmpeg. The result is written to
+    ``nanopy-output/star_animation_with_audio.mp4`` in the current working
+    directory.
     """
     # Setup
     FPS = 240
@@ -356,13 +393,50 @@ MovieWriter supports several useful methods:
 """
 
 
+_EXAMPLES: dict[str, tuple[str, Callable[[], None]]] = {
+    "bouncing-ball": (
+        "export a bouncing ball animation",
+        example_bouncing_ball_with_export,
+    ),
+    "rotating-square": (
+        "export a rotating square animation",
+        example_rotating_square,
+    ),
+    "advanced": (
+        "use MovieWriter directly for advanced recording control",
+        example_with_cleanup,
+    ),
+    "audio": (
+        "export a star animation with the packaged audio preview",
+        example_with_audio,
+    ),
+}
+
+
+def _build_argument_parser() -> argparse.ArgumentParser:
+    """Build the command-line interface for selecting an export example."""
+    parser = argparse.ArgumentParser(
+        description="Run one of NaNoPy's MP4 export examples.",
+        epilog=f"Generated videos are saved under: {OUTPUT_DIRECTORY}",
+    )
+    subparsers = parser.add_subparsers(
+        dest="example",
+        metavar="EXAMPLE",
+        required=True,
+        title="examples",
+    )
+    for name, (description, runner) in _EXAMPLES.items():
+        example_parser = subparsers.add_parser(name, help=description)
+        example_parser.set_defaults(example_runner=runner)
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    """Parse CLI arguments and run the selected MP4 export example."""
+    arguments = _build_argument_parser().parse_args(argv)
+    runner = cast("Callable[[], None]", arguments.example_runner)
+    runner()
+
+
 if __name__ == "__main__":
-    print("MP4 Export Examples")
-    print("=" * 50)
-    print("\nUncomment one of the function calls below to run an example:")
-    print("  - example_bouncing_ball_with_export()")
-    print("  - example_rotating_square()")
-    print("  - example_with_cleanup()")
-    print("  - example_with_audio()")
-    print(f"\nEach will save an MP4 file under: {OUTPUT_DIRECTORY}")
-    example_with_audio()
+    main()
