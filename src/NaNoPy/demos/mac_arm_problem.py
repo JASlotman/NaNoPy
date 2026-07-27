@@ -1,4 +1,4 @@
-from NaNoPy import Canvas, Writer, Color
+from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:

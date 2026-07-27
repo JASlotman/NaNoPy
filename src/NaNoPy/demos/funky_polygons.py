@@ -1,5 +1,7 @@
-from NaNoPy import Canvas, Writer, Color
 from time import sleep
+
+from NaNoPy import Canvas, Color, Writer
+
 
 def demo() -> None:
     screen = Canvas("funky_polygons.py", 400, 400)
@@ -11,6 +13,7 @@ def demo() -> None:
 
     screen.update()
     sleep(3)
+
 
 if __name__ == "__main__":
     demo()

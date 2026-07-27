@@ -1,5 +1,6 @@
-from NaNoPy import Canvas, Writer, Color
 import random as rnd
+
+from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:
@@ -12,8 +13,7 @@ def demo() -> None:
     stars = []
     particles = []  # List to store trailing particles
 
-    for i in range(500):
-        stars.append((rnd.randint(0, x_size), rnd.randint(0, y_size)))
+    stars.extend((rnd.randint(0, x_size), rnd.randint(0, y_size)) for _ in range(500))
 
     while screen.running():
         for x in range(x_size):
@@ -21,10 +21,9 @@ def demo() -> None:
                 pen.draw_pixel(stars[i][0], stars[i][1], Color.white)
 
             # Add new particles at the star's position
-            for _ in range(5):  # Add 5 particles each frame
-                particles.append(
-                    [x, y, rnd.uniform(-1, 0), rnd.uniform(-0.5, 0.5), rnd.randint(5, 300)]
-                )  # [x, y, x_velocity, y_velocity, lifetime]
+            particles.extend(
+                [x, y, rnd.uniform(-1, 0), rnd.uniform(-0.5, 0.5), rnd.randint(5, 300)] for _ in range(5)
+            )  # [x, y, x_velocity, y_velocity, lifetime]
 
             # Update and draw particles
             i = 0

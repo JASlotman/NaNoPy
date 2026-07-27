@@ -1,4 +1,4 @@
-from NaNoPy import Canvas, Writer, Color
+from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:
@@ -7,10 +7,6 @@ def demo() -> None:
 
     screen = Canvas("screen1", x_size, y_size, xpos=50, ypos=50)
     pen = Writer(screen)
-
-    # help(canvas)
-    # help(pen)
-    # help(color)
 
     green = Color.green
     green_mid = Color.custom(r=0, g=255, a=150)
@@ -32,9 +28,9 @@ def demo() -> None:
     pen.draw_polygon(202, 250, 25, 6, green_light, True)
 
     # closed and open splines
-    pen.draw_spline([400, 500, 500, 400], [200, 200, 300, 300], Color.red, True, True)
-    pen.draw_spline([600, 700, 700, 600], [200, 200, 300, 300], green_blue, True, False)
-    pen.draw_spline([400, 500, 600, 700], [100, 50, 100, 50], Color.yellow, False, False)
+    pen.draw_spline([400, 500, 500, 400], [200, 200, 300, 300], Color.red, True, fill_color=Color.orange)
+    pen.draw_spline([600, 700, 700, 600], [200, 200, 300, 300], green_blue, True, filled=False)
+    pen.draw_spline([400, 500, 600, 700], [100, 50, 100, 50], Color.yellow, False, filled=False)
 
     # red points at spline anchors
     pen.draw_circle(400, 200, 5, Color.red, True)

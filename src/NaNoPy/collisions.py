@@ -1,133 +1,237 @@
-
-from itertools import combinations, product, chain
 from collections import defaultdict
-from typing import Iterator, Iterable, Optional
-from math import floor
-from typing import Callable
+from collections.abc import Callable, Iterable, Iterator
+from decimal import Decimal
+from fractions import Fraction
+from itertools import combinations, product, zip_longest
+from math import isfinite
+from operator import index as operator_index
+from typing import TypeAlias, TypeVar
 
-def _calc_chunk_id(x:float, y:float, gridsize:float) -> tuple[int,int]:
-    """
-    Function for calculating a unique chunk-id from a particle position. 
-    Makes use of the fact that tuples can act as dictionary keys.
-    """
 
-    return floor(x / gridsize), floor(y / gridsize)
+class _MissingCoordinate:
+    """Sentinel used to detect unequal coordinate iterable lengths."""
 
-def _get_chunk_id_neighbors(chunk_id:tuple[int,int]) -> Iterator[tuple[int,int]]:
-    """
-    Function for getting all neighbors of a chunk_id. Also returns chunks 
-    outside of the screen, but that should not matter. Would have to clip 
-    the ranges using min and max statements to avoid that. 
-    """
 
+_MISSING_COORDINATE = _MissingCoordinate()
+_SupportedNumber: TypeAlias = int | float | Decimal | Fraction
+_GridSizeT = TypeVar("_GridSizeT", bound=_SupportedNumber)
+_PairCallback = TypeVar("_PairCallback", bound=Callable[[int, int], object])
+
+
+def _validate_gridsize(gridsize: _GridSizeT) -> _GridSizeT:
+    """Validate and return a grid size without changing its numeric type."""
+    try:
+        is_positive = bool(gridsize > 0)
+
+        if isinstance(gridsize, float):
+            is_finite_value = isfinite(gridsize)
+        elif isinstance(gridsize, Decimal):
+            is_finite_value = gridsize.is_finite()
+        else:
+            is_finite_value = True
+    except (ArithmeticError, TypeError, ValueError) as exc:
+        raise ValueError("gridsize must be a finite number greater than zero") from exc
+
+    if not is_positive or not is_finite_value:
+        raise ValueError("gridsize must be a finite number greater than zero")
+
+    return gridsize
+
+
+def _iter_indexed_points(
+    xs: Iterable[_SupportedNumber],
+    ys: Iterable[_SupportedNumber],
+    *,
+    label: str,
+) -> Iterator[tuple[int, _SupportedNumber, _SupportedNumber]]:
+    """Consume coordinate iterables once and reject unequal lengths.
+
+    ``zip_longest`` retains support for one-shot generators while avoiding the
+    silent truncation of ordinary ``zip``.
+    """
+    coordinates = zip_longest(xs, ys, fillvalue=_MISSING_COORDINATE)
+    for index, (x, y) in enumerate(coordinates):
+        if isinstance(x, _MissingCoordinate) or isinstance(y, _MissingCoordinate):
+            raise ValueError(f"{label} x and y coordinate iterables must have equal lengths")  # noqa: TRY004
+        yield index, x, y
+
+
+def _floor_cell_coordinate(coordinate: _SupportedNumber, gridsize: _SupportedNumber) -> int:
+    """Floor ``coordinate / gridsize`` without lossy float coercion.
+
+    A plain ``floor(coordinate / gridsize)`` is insufficient for large integers
+    and for exact values close to a cell boundary: the division can round into
+    the neighboring cell before ``floor`` sees it. Integer division and exact
+    ``as_integer_ratio`` arithmetic avoid that error. The final branch retains
+    compatibility with custom numeric types that offer neither protocol.
+    """
+    if isinstance(coordinate, int) and isinstance(gridsize, int):
+        integer_coordinate = operator_index(coordinate)
+        integer_gridsize = operator_index(gridsize)
+        return integer_coordinate // integer_gridsize
+
+    coordinate_numerator, coordinate_denominator = coordinate.as_integer_ratio()
+    gridsize_numerator, gridsize_denominator = gridsize.as_integer_ratio()
+
+    # Cross multiplication preserves the exact quotient. All supported ratio
+    # providers return integers with positive denominators, and gridsize has
+    # already been validated as positive.
+    return (coordinate_numerator * gridsize_denominator) // (coordinate_denominator * gridsize_numerator)
+
+
+def _calc_chunk_id(x: _SupportedNumber, y: _SupportedNumber, gridsize: _SupportedNumber) -> tuple[int, int]:
+    """Map a point to its grid cell using floor division semantics."""
+    return _floor_cell_coordinate(x, gridsize), _floor_cell_coordinate(y, gridsize)
+
+
+def _get_chunk_id_neighbors(chunk_id: tuple[int, int]) -> Iterator[tuple[int, int]]:
+    """Yield a cell and all eight cells directly adjacent to it."""
     i_range = range(chunk_id[0] - 1, chunk_id[0] + 2)
     j_range = range(chunk_id[1] - 1, chunk_id[1] + 2)
-
     yield from product(i_range, j_range)
 
+
 def get_close_pairs(
-        xs_A:Iterable[float],
-        ys_A:Iterable[float],
-        gridsize:float,
-        xs_B:Optional[Iterable[float]]=None,
-        ys_B:Optional[Iterable[float]]=None
-        ) -> Iterator[tuple[int,int]]:
-    """
-    Yields all possible ordered pairs of particles in adjacent grid cells. If 
-    xs_B and ys_B are supplied, only form pairs of type AB. 
+    xs_a: Iterable[_SupportedNumber],
+    ys_a: Iterable[_SupportedNumber],
+    gridsize: _SupportedNumber,
+    xs_b: Iterable[_SupportedNumber] | None = None,
+    ys_b: Iterable[_SupportedNumber] | None = None,
+) -> Iterator[tuple[int, int]]:
+    """Return candidate pairs from the same or directly adjacent grid cells.
 
-    Output if no xs_B or ys_B supplied: Iterator of tuples[i,j], where i is the 
-    index of the first particle and j is the index of the second particle in the 
-    input iterable. 
+    This is a broad-phase spatial query, not a Euclidean-distance test. A cell
+    is ``(floor(x / gridsize), floor(y / gridsize))`` and its eight surrounding
+    cells are considered adjacent.
 
-    Output if xs_B and ys_B are both supplied: Iterator of tuples[i,j], where i
-    is the index of the A-type particle and j is the index of the B-type 
-    particle in their respective input iterables. 
-    """
+    With only A coordinates, each unordered AA pair is yielded exactly once as
+    ``(lower_index, higher_index)``. When both B coordinate iterables are
+    supplied, ordered ``(A_index, B_index)`` pairs are yielded instead. The x
+    and y iterables for each particle set must have equal lengths; one-shot
+    iterables and generators are supported and consumed exactly once. Numeric
+    values are not coerced to float, so mutually compatible exact types such as
+    large integers, ``Decimal``, and ``Fraction`` retain their precision.
 
-    if xs_B is None or ys_B is None:
-        pairlist_iterator = get_close_AA_pairs(xs_A,ys_A,gridsize)
-    else:
-        pairlist_iterator = get_close_AB_pairs(xs_A,ys_A,xs_B,ys_B,gridsize)
+    Args:
+        xs_a: X coordinates for particle set A.
+        ys_a: Y coordinates for particle set A.
+        gridsize: Finite, positive width and height of every grid cell.
+        xs_b: Optional X coordinates for particle set B.
+        ys_b: Optional Y coordinates for particle set B.
 
-    yield from pairlist_iterator
-
-def get_close_AB_pairs(
-        xs_A:Iterable[float],
-        ys_A:Iterable[float],
-        xs_B:Iterable[float],
-        ys_B:Iterable[float],
-        gridsize:float
-        ) -> Iterator[tuple[int,int]]:
-    """
-    Yields all possible ordered pairs of type AB of particles in adjacent grid 
-    cells. 
-
-    Output: Iterator of tuples[i,j], where i is the index of the A-type particle
-    and j is the index of the B-type particle in their respective iterable. 
-    """
-
-    particle_dictionary:dict[tuple[int,int], list[int]] = defaultdict(list)
-    pairlist:list[tuple[int,int]] = []
-
-    for j, (x,y) in enumerate(zip(xs_B,ys_B)):
-        own_chunk_id = _calc_chunk_id(x, y, gridsize)
-        particle_dictionary[own_chunk_id].append(j)
-    
-    for i, (x,y) in enumerate(zip(xs_A,ys_A)):
-        own_chunk_id = _calc_chunk_id(x, y, gridsize)
-        chunks = _get_chunk_id_neighbors(own_chunk_id)
-        for chunck in chunks:
-            pairlist.extend( [(i,j) for j in particle_dictionary[chunck]] ) 
-
-    yield from pairlist
-
-def get_close_AA_pairs(
-        xs_A:Iterable[float], 
-        ys_A:Iterable[float], 
-        gridsize:float
-        ) -> Iterator[tuple[int,int]]:
+    Raises:
+        ValueError: If ``gridsize`` is not finite and positive, only one B
+            iterable is supplied, or an x/y coordinate pair has unequal
+            lengths.
 
     """
-    Yields all possible ordered pairs particles in adjacent grid cells. 
+    # Validate once at this generic public boundary, then dispatch directly to
+    # a validation-free iterator. The specialized public entry points below
+    # perform the same validation for callers that use them directly.
+    validated_gridsize = _validate_gridsize(gridsize)
 
-    Output: Iterator of tuples[i,j], where i is the index of the A-type particle
-    and j is the index of the B-type particle in their respective iterable. 
-    """
+    if (xs_b is None) != (ys_b is None):
+        raise ValueError("xs_b and ys_b must be provided together")
 
-    particle_dictionary:dict[tuple[int,int], list[int]] = defaultdict(list)
+    if xs_b is None or ys_b is None:
+        return _iter_close_aa_pairs_validated(xs_a, ys_a, validated_gridsize)
 
-    for i, (x, y) in enumerate(zip(xs_A, ys_A)):
-        own_chunk_id = _calc_chunk_id(x, y, gridsize)
-        for neighbor_id in _get_chunk_id_neighbors(own_chunk_id):
-            particle_dictionary[neighbor_id].append(i)
+    return _iter_close_ab_pairs_validated(xs_a, ys_a, xs_b, ys_b, validated_gridsize)
 
-    pairs = set().union(chain.from_iterable(combinations(subset,2) for subset in particle_dictionary.values()))
 
-    yield from pairs
+def get_close_ab_pairs(
+    xs_a: Iterable[_SupportedNumber],
+    ys_a: Iterable[_SupportedNumber],
+    xs_b: Iterable[_SupportedNumber],
+    ys_b: Iterable[_SupportedNumber],
+    gridsize: _SupportedNumber,
+) -> Iterator[tuple[int, int]]:
+    """Validate ``gridsize`` and return AB candidates in neighboring cells."""
+    validated_gridsize = _validate_gridsize(gridsize)
+    return _iter_close_ab_pairs_validated(xs_a, ys_a, xs_b, ys_b, validated_gridsize)
+
+
+def _iter_close_ab_pairs_validated(
+    xs_a: Iterable[_SupportedNumber],
+    ys_a: Iterable[_SupportedNumber],
+    xs_b: Iterable[_SupportedNumber],
+    ys_b: Iterable[_SupportedNumber],
+    gridsize: _SupportedNumber,
+) -> Iterator[tuple[int, int]]:
+    """Yield AB candidates after the public caller has validated ``gridsize``."""
+    particles_by_chunk: dict[tuple[int, int], list[int]] = defaultdict(list)
+
+    for j, x, y in _iter_indexed_points(xs_b, ys_b, label="B"):
+        particles_by_chunk[_calc_chunk_id(x, y, gridsize)].append(j)
+
+    # Consume and validate both A coordinate iterables before yielding any
+    # pairs, so a late length mismatch cannot produce partially applied work.
+    particles_a = [(i, _calc_chunk_id(x, y, gridsize)) for i, x, y in _iter_indexed_points(xs_a, ys_a, label="A")]
+
+    for i, own_chunk_id in particles_a:
+        for chunk_id in _get_chunk_id_neighbors(own_chunk_id):
+            for j in particles_by_chunk.get(chunk_id, ()):
+                yield i, j
+
+
+def get_close_aa_pairs(
+    xs_a: Iterable[_SupportedNumber],
+    ys_a: Iterable[_SupportedNumber],
+    gridsize: _SupportedNumber,
+) -> Iterator[tuple[int, int]]:
+    """Validate ``gridsize`` and return each unordered AA candidate once."""
+    validated_gridsize = _validate_gridsize(gridsize)
+    return _iter_close_aa_pairs_validated(xs_a, ys_a, validated_gridsize)
+
+
+def _iter_close_aa_pairs_validated(
+    xs_a: Iterable[_SupportedNumber],
+    ys_a: Iterable[_SupportedNumber],
+    gridsize: _SupportedNumber,
+) -> Iterator[tuple[int, int]]:
+    """Yield AA candidates after the public caller has validated ``gridsize``."""
+    particles_by_chunk: dict[tuple[int, int], list[int]] = defaultdict(list)
+
+    for i, x, y in _iter_indexed_points(xs_a, ys_a, label="A"):
+        particles_by_chunk[_calc_chunk_id(x, y, gridsize)].append(i)
+
+    for chunk_id, own_indices in particles_by_chunk.items():
+        yield from combinations(own_indices, 2)
+
+        # Tuple ordering selects one half of the eight neighboring cells, so
+        # cross-cell pairs cannot be emitted twice.
+        for neighbor_id in _get_chunk_id_neighbors(chunk_id):
+            if neighbor_id <= chunk_id:
+                continue
+
+            neighbor_indices = particles_by_chunk.get(neighbor_id)
+            if not neighbor_indices:
+                continue
+
+            for i, j in product(own_indices, neighbor_indices):
+                yield (i, j) if i < j else (j, i)
+
 
 def apply_to_close_pairs(
-    xs_A:Iterable[float], 
-    ys_A:Iterable[float], 
-    gridsize:float, 
-    xs_B:Optional[Iterable[float]]=None, 
-    ys_B:Optional[Iterable[int]]=None
-    ) -> Callable[[Callable[[int, int], object]], None]:
+    xs_a: Iterable[_SupportedNumber],
+    ys_a: Iterable[_SupportedNumber],
+    gridsize: _SupportedNumber,
+    xs_b: Iterable[_SupportedNumber] | None = None,
+    ys_b: Iterable[_SupportedNumber] | None = None,
+) -> Callable[[_PairCallback], _PairCallback]:
+    """Apply a decorated function once to every candidate pair.
 
+    Omitting both B iterables applies the function to AA pairs. Supplying both
+    applies it to ordered AB pairs. Validation and cell semantics are identical
+    to :func:`get_close_pairs`. Pair processing happens immediately when Python
+    executes the decorated function definition; the original function is then
+    returned so it remains callable normally.
     """
-    If xs_B or xs_y is not supplied: Decorator that calls function `func` for 
-    all pairs of indices i, j such that (xs[i], ys[i]) is close to 
-    (xs[j], ys[j]). 
+    close_pairs = get_close_pairs(xs_a, ys_a, gridsize, xs_b, ys_b)
 
-    If xs_B and xs_y are both supplied: Decorator that calls function `func` for 
-    all pairs of indices i, j such that (xs_A[i], ys_A[i]) is close to 
-    (xs_B[j], ys_B[j]). 
-    """
-
-    close_pairs = get_close_pairs(xs_A, ys_A, gridsize, xs_B, ys_B)
-
-    def decorator(func:Callable[[int, int], object]) -> None:
+    def decorator(func: _PairCallback) -> _PairCallback:
         for i, j in close_pairs:
             func(i, j)
+        return func
 
     return decorator

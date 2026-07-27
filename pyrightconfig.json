@@ -1,0 +1,14 @@
+{
+    "include": ["src", "tests"],
+    "venvPath": ".",
+    "venv": ".venv",
+    "pythonVersion": "3.14",
+    "typeCheckingMode": "strict",
+    "reportMissingTypeStubs": "none",
+    "reportPrivateUsage": "none",
+    "reportUnknownArgumentType": "none",
+    "reportUnknownLambdaType": "none",
+    "reportUnknownMemberType": "none",
+    "reportUnknownParameterType": "none",
+    "reportUnknownVariableType": "none"
+}
