@@ -1,9 +1,25 @@
+"""Stress test: how much per-frame Python work a canvas can take.
+
+Run it with ``nanopy efficiency`` or::
+
+    from NaNoPy.demos import efficiency
+    efficiency()
+"""
+
 import random as rnd
 
 from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:
+    """Sweep a star with a particle trail across the screen, pixel by pixel.
+
+    Every frame redraws 500 background pixels plus a growing particle list,
+    which makes the per-frame cost of pure-Python drawing easy to feel.
+    Compare it with ``nerve``, which does similar work through numpy.
+
+    Close the window to stop.
+    """
     # This is a test file for the NaNoPy library.
     x_size = int(1920 / 2)
     y_size = int(1080 / 2)

@@ -1,9 +1,28 @@
+"""Beginner demo: draw randomly placed dots, one per frame.
+
+Run it with ``nanopy dots`` or::
+
+    from NaNoPy.demos import dots
+    dots()
+"""
+
 import random
 
 from NaNoPy import Canvas, Color, Writer
 
 
 def demo(hundreds: int = 2) -> None:
+    """Draw ``100 * hundreds`` random dots, one per frame.
+
+    A good first demo: it shows creating a ``Canvas`` and ``Writer``, random
+    colors via ``Color.custom``, and animating by calling ``screen.update()``
+    followed by ``screen.pause()``.
+
+    Args:
+        hundreds: How many hundreds of dots to draw (2 means 200 dots).
+
+    The window stays open once the animation finishes; close it to return.
+    """
     # Create the drawing window and basic tools
     x_size = 800
     y_size = 600

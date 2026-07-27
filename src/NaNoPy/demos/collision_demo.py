@@ -1,3 +1,18 @@
+"""Six ways to find colliding particles, from a double loop to grid helpers.
+
+Every variant simulates binding particles and draws the same picture, so you
+can compare both the code and the runtime. ``collision_benchmark`` runs them
+all in sequence and prints how long each one took.
+
+Run the benchmark with ``nanopy collision_benchmark`` or import the variant you
+want::
+
+    from NaNoPy.demos import collision_benchmark, collision_iterator_single
+
+    collision_iterator_single(n_steps=200, n=1000)
+    collision_benchmark()
+"""
+
 import math
 import random as rnd
 from collections.abc import Iterable
@@ -15,8 +30,8 @@ class Particle:
     y: int
     bound: bool = False
     stepsize: int = 4
-    p_unbind = 0.05
-    radius = 3
+    p_unbind: float = 0.05
+    radius: int = 3
     color_bound: Color = Color.red
     color_unbound: Color = Color.green
     particle_type: int = 0
@@ -110,6 +125,19 @@ def demo_double_for(
     ysize: int = 800,
     n: int = 2000,
 ) -> None:
+    """Baseline: compare every particle with every other particle.
+
+    The straightforward nested loop over all pairs. Correct, easy to read, and
+    quadratic: doubling ``n`` makes it roughly four times slower. Use it as the
+    reference the other variants are compared against.
+
+    Args:
+        n_steps: How many simulation steps to run.
+        xsize: Canvas width in pixels.
+        ysize: Canvas height in pixels.
+        n: Number of particles.
+
+    """
     screen = Canvas("test", xsize, ysize)
     pen = Writer(screen)
 
@@ -162,7 +190,19 @@ def demo_iterator_single(
     ysize: int = 800,
     n: int = 2000,
 ) -> None:
+    """Same simulation, but only nearby pairs are checked.
 
+    Uses ``get_close_pairs`` to iterate candidate pairs from a grid instead of
+    all pairs, and a ``Particle`` dataclass instead of parallel lists. This is
+    the version to copy for your own project.
+
+    Args:
+        n_steps: How many simulation steps to run.
+        xsize: Canvas width in pixels.
+        ysize: Canvas height in pixels.
+        n: Number of particles.
+
+    """
     maxdist = 5
     gridsize = ceil(1.5 * maxdist)
 
@@ -198,6 +238,19 @@ def demo_decorator_single(
     ysize: int = 800,
     n: int = 2000,
 ) -> None:
+    """Nearby pairs again, this time through the decorator helper.
+
+    ``@apply_to_close_pairs`` calls the decorated function once per candidate
+    pair, so you write the pair logic and NaNoPy owns the iteration. Same
+    result as ``collision_iterator_single``, different style.
+
+    Args:
+        n_steps: How many simulation steps to run.
+        xsize: Canvas width in pixels.
+        ysize: Canvas height in pixels.
+        n: Number of particles.
+
+    """
     screen = Canvas("test", xsize, ysize)
     pen = Writer(screen)
 
@@ -251,7 +304,19 @@ def demo_iterator_dual_ab(
     ysize: int = 800,
     n: int = 2000,
 ) -> None:
+    """Two particle species that only bind across groups.
 
+    ``get_close_pairs(..., xs_b=, ys_b=)`` pairs group A against group B, so
+    A-A and B-B pairs are never even considered. Each group has its own bound
+    and unbound colors.
+
+    Args:
+        n_steps: How many simulation steps to run.
+        xsize: Canvas width in pixels.
+        ysize: Canvas height in pixels.
+        n: Number of particles *per group*.
+
+    """
     maxdist = 5
     gridsize = ceil(1.5 * maxdist)
 
@@ -305,6 +370,18 @@ def demo_decorator_dual_ab(
     ysize: int = 800,
     n: int = 2000,
 ) -> None:
+    """Two species binding across groups, written with the decorator.
+
+    The ``xs_b``/``ys_b`` form of ``@apply_to_close_pairs``: index ``i`` refers
+    to group A and index ``j`` to group B inside the decorated function.
+
+    Args:
+        n_steps: How many simulation steps to run.
+        xsize: Canvas width in pixels.
+        ysize: Canvas height in pixels.
+        n: Number of particles *per group*.
+
+    """
     screen = Canvas("test", xsize, ysize)
     pen = Writer(screen)
 
@@ -385,7 +462,19 @@ def demo_iterator_dual_by_particle_type(
     ysize: int = 800,
     n: int = 2000,
 ) -> None:
+    """One mixed list of particles that decide themselves whether they may bind.
 
+    All particles live in a single list and carry a ``particle_type`` plus a
+    list of ``binding_partners``; the binding rule rejects pairs that are not
+    allowed. This scales to more than two species, unlike the A/B variants.
+
+    Args:
+        n_steps: How many simulation steps to run.
+        xsize: Canvas width in pixels.
+        ysize: Canvas height in pixels.
+        n: Number of particles *per species*.
+
+    """
     maxdist = 5
     gridsize = ceil(1.5 * maxdist)
 
@@ -436,10 +525,26 @@ def demo_iterator_dual_by_particle_type(
         screen.clear()
 
 
-if __name__ == "__main__":
-    n_steps = 500
+def demo(
+    n_steps: int = 500,
+    xsize: int = 800,
+    ysize: int = 800,
+    n: int = 500,
+) -> None:
+    """Run every collision variant in turn and print how long each one took.
 
-    kwargs = {"n_steps": n_steps, "xsize": 800, "ysize": 800, "n": n_steps}
+    The variants all simulate the same thing, so the printed timings show what
+    the pair-selection strategy costs. Each variant opens its own window; close
+    it to skip ahead to the next one.
+
+    Args:
+        n_steps: How many simulation steps to run per variant.
+        xsize: Canvas width in pixels.
+        ysize: Canvas height in pixels.
+        n: Number of particles per variant.
+
+    """
+    kwargs = {"n_steps": n_steps, "xsize": xsize, "ysize": ysize, "n": n}
     demos = [
         demo_double_for,
         demo_iterator_single,
@@ -449,13 +554,17 @@ if __name__ == "__main__":
         demo_iterator_dual_by_particle_type,
     ]
 
-    for demo in demos:
+    for runner in demos:
         start = perf_counter()
         try:
-            demo(**kwargs)
+            runner(**kwargs)
             elapsed = perf_counter() - start
-            print(f"method {demo.__name__!s} took {elapsed:.3f} seconds for {n_steps} timesteps")
+            print(f"method {runner.__name__!s} took {elapsed:.3f} seconds for {n_steps} timesteps")
         finally:
             # Each benchmark owns one canvas. Release it before the next demo
             # reuses the "test" name and initializes a fresh mainloop runtime.
             NNP.stop()
+
+
+if __name__ == "__main__":
+    demo()

@@ -1,3 +1,11 @@
+"""Particles that random-walk inside a closed spline.
+
+Run it with ``nanopy blobby`` or::
+
+    from NaNoPy.demos import blobby
+    blobby()
+"""
+
 import math
 import random as rnd
 
@@ -5,6 +13,13 @@ from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:
+    """Keep particles trapped inside a blob drawn as a closed spline.
+
+    Each particle proposes a random step and only takes it when the target
+    point is still inside the spline (``Writer.spln.get_inside``).
+
+    Close the window to stop.
+    """
     x_size = 800
     y_size = 600
 

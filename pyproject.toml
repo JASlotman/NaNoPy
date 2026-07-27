@@ -29,11 +29,44 @@ interactive = [
     "ipython"
 ]
 
+[dependency-groups]
+# Test tooling. Install with `uv sync --group dev`.
+dev = [
+    "pytest",
+    "pytest-cov",
+]
+
+[project.scripts]
+# Both spellings install the same command, so `nanopy dots` and `NaNoPy dots`
+# work regardless of how the package name is remembered.
+nanopy = "NaNoPy.cli:main"
+NaNoPy = "NaNoPy.cli:main"
+
 [project.urls]
 Homepage = "https://erasmusoic.nl"
 
 [tool.setuptools.package-data]
 "NaNoPy.demos" = ["*.ipynb", "resources/*.mp3"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# `--cov` writes the Cobertura XML that SonarQube reads; `junit.xml` gives it the
+# per-test execution results.
+addopts = "--cov --cov-report=xml --cov-report=term-missing --junitxml=junit.xml"
+
+[tool.coverage.run]
+source = ["src/NaNoPy"]
+branch = true
+omit = [
+  "*/__pycache__/*",
+  "src/NaNoPy/demos/*",
+]
+
+[tool.coverage.report]
+exclude_also = [
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+]
 
 [tool.ruff]
 # Ruff is code formater and linter by UV.
@@ -60,6 +93,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "src/NaNoPy/__init__.py" = ["ANN401"]
+"src/NaNoPy/cli.py" = ["T201"]  # A command-line interface reports through stdout.
 "src/NaNoPy/demos/**" = [
   "ANN401", "ARG", "ERA001", "EXE002", "INP001", "PLW0602", "PLW0603", "S311", "T201",
 ]
