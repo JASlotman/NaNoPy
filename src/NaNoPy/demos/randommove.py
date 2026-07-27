@@ -1,9 +1,24 @@
+"""Random-walking dots labelled with their own coordinates.
+
+Run it with ``python -m NaNoPy.demos.randommove`` or::
+
+    from NaNoPy.demos import randommove
+    randommove()
+"""
+
 import random
 
 from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:
+    """Random-walk ten dots and label each with its frame and position.
+
+    Shows a bounded random walk plus ``draw_string`` and ``draw_line``, which
+    makes it handy for checking what your simulation is actually doing.
+
+    Close the window to stop.
+    """
     x_size = 800
     y_size = 400
 

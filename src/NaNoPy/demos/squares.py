@@ -1,7 +1,23 @@
+"""Reference sheet of rectangles, polygons, and splines.
+
+Run it with ``python -m NaNoPy.demos.squares`` or::
+
+    from NaNoPy.demos import squares
+    squares()
+"""
+
 from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:
+    """Draw a static comparison sheet of NaNoPy's shape primitives.
+
+    Compares outlined against filled shapes, four alpha levels of the same
+    green, and open against closed splines with their anchor points marked in
+    red and green.
+
+    The window stays open until you close it.
+    """
     x_size = 800
     y_size = 400
 
