@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "NaNoPy"
-version = "1.7.42"
+version = "1.8.42"
 authors = [
   { name="Johan Slotman", email="j.slotman@erasmusmc.nl" },
   { name="Bart Geverts", email="b.geverts@erasmusmc.nl"},
@@ -21,7 +21,7 @@ dependencies = [
     "Numpy",
     "PySDL2",
     "pysdl2-dll",
-    "Pillow>=12.3",
+    "Pillow>=13.0",
 ]
 
 [project.optional-dependencies]
