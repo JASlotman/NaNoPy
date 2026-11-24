@@ -11,8 +11,7 @@ from operator import index as operator_index
 from pathlib import Path
 from typing import BinaryIO
 
-from PIL import Image
-
+from NaNoPy.classes.frame import Frame
 from NaNoPy.constants import DEFAULT_CODEC
 
 
@@ -20,8 +19,8 @@ class MovieWriter:
     """Encode animation frames with one long-lived FFmpeg process.
 
     FFmpeg starts when the first frame establishes the video dimensions. Each
-    subsequent frame is converted to RGBA and written directly to FFmpeg's stdin,
-    so recordings do not retain a frame list or create a temporary PNG sequence.
+    subsequent frame is written directly to FFmpeg's stdin as RGBA bytes, so
+    recordings do not retain a frame list or create a temporary PNG sequence.
 
     Args:
         output_path: Path where the encoded video will be saved.
@@ -93,12 +92,12 @@ class MovieWriter:
         if self._process is not None:
             self._finalize_video()
 
-    def add_frame(self, frame: Image.Image) -> None:
-        """Write one Pillow image to the active FFmpeg stream."""
+    def add_frame(self, frame: Frame) -> None:
+        """Write one frame to the active FFmpeg stream."""
         if not self.is_recording:
             raise RuntimeError("Recording not started. Call start_recording() first.")
-        if not isinstance(frame, Image.Image):  # pyright: ignore[reportUnnecessaryIsInstance]
-            raise TypeError("Frame must be a PIL Image")
+        if not isinstance(frame, Frame):  # pyright: ignore[reportUnnecessaryIsInstance]
+            raise TypeError("Frame must be a NaNoPy Frame")
 
         if self._frame_size is None:
             self._start_ffmpeg(frame.size)
@@ -106,8 +105,7 @@ class MovieWriter:
         elif frame.size != self._frame_size:
             raise ValueError(f"Frame size changed from {self._frame_size} to {frame.size}. All frames in a recording must have identical dimensions.")
 
-        rgba_frame = frame if frame.mode == "RGBA" else frame.convert("RGBA")
-        self._write_bytes(rgba_frame.tobytes())
+        self._write_bytes(frame.tobytes())
         self._frame_count += 1
 
     def _start_ffmpeg(self, frame_size: tuple[int, int]) -> None:

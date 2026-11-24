@@ -1,12 +1,11 @@
 import sys
 from collections.abc import Callable
 
-from PIL import Image
-
 from NaNoPy import Canvas, Writer
+from NaNoPy.classes.frame import Frame, validate_png_level
 from NaNoPy.constants import DEFAULT_CODEC
 
-FrameResult = Image.Image | bool | None
+FrameResult = Frame | bool | None
 FrameCallback = Callable[[Canvas, Writer, int], FrameResult]
 
 
@@ -19,6 +18,7 @@ def loop(
     record_mp4: str | None = None,
     fps: int = 30,
     codec: str = DEFAULT_CODEC,
+    png_level: int | None = None,
 ) -> Callable[[FrameCallback], None]:
     """Decorator for running an animation loop in a Jupyter notebook environment.
 
@@ -45,6 +45,11 @@ def loop(
                                     Defaults to None (no recording).
         fps (int, optional): Frames per second for the output MP4 video. Defaults to 30.
         codec (str, optional): FFmpeg video encoder. Defaults to lossless H.265.
+        png_level (int, optional): zlib compression level (0-9) for the PNG frames shown in the
+                                   notebook. Lower is faster to encode, higher gives smaller
+                                   output; see the ``PNG_LEVEL_*`` constants in
+                                   ``NaNoPy.constants``. Defaults to None, which uses
+                                   ``DEFAULT_PNG_LEVEL`` (fast). Does not affect recorded video.
 
     Returns:
         Callable: A decorator function that takes the user's rendering function.
@@ -70,6 +75,10 @@ def loop(
     except ImportError as exc:
         raise RuntimeError("Notebook embedding requires the 'interactive' project extra.") from exc
 
+    # Validate before opening a window so a bad level cannot leak a canvas.
+    if png_level is not None:
+        png_level = validate_png_level(png_level)
+
     screen = Canvas("Jupyter_Internal", x_size, y_size)
     pen = Writer(screen)
 
@@ -92,14 +101,16 @@ def loop(
                 im = func(screen, pen, i)
 
                 if embedded:
-                    if isinstance(im, Image.Image):
+                    if isinstance(im, Frame):
+                        if png_level is not None:
+                            im.png_level = png_level
                         display(im)
                         # An image produced by update_embedded() was already
                         # captured; a separately returned image was not.
                         if movie_writer and movie_writer.is_recording and movie_writer.frame_count() == frames_before:
                             movie_writer.add_frame(im)
                     else:
-                        frame = screen.update_embedded()
+                        frame = screen.update_embedded(png_level=png_level)
                         display(frame)
                         # Frame is automatically captured in update_embedded()
                 else:

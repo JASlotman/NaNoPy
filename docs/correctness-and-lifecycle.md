@@ -55,7 +55,7 @@ Closing a window is normal control flow, not an exception. `Canvas.update()`
 returns `False` when close processing stops the loop. Any `clear()` or Writer
 drawing calls left later in that same animation iteration become safe no-ops,
 so the common `while canvas.running(): ... update(); clear()` pattern exits
-quietly. `update_embedded()` returns a black final image without reading a
+quietly. `update_embedded()` returns a black final `Frame` without reading a
 destroyed renderer. Independent mainloops route all window-scoped events by
 SDL window ID, so they neither close one another's windows nor deliver another
 window's keyboard, text, mouse, drop, or user events to the wrong listeners.

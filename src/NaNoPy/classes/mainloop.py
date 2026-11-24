@@ -3,7 +3,6 @@ import threading
 import warnings
 from typing import TYPE_CHECKING
 
-from PIL import Image
 from sdl2 import (
     SDL_BLENDMODE_BLEND,
     SDL_DROPBEGIN,
@@ -53,6 +52,7 @@ from sdl2 import (
 )
 from sdl2.sdlgfx import gfxPrimitivesSetFont
 
+from NaNoPy.classes.frame import Frame, validate_png_level
 from NaNoPy.classes.keylistener import KeyListener
 from NaNoPy.classes.listener import Listener
 from NaNoPy.classes.moviewriter import MovieWriter
@@ -151,10 +151,10 @@ class Mainloop:
             raise RuntimeError("Canvas is closed and can no longer be rendered.")
 
     @staticmethod
-    def _closed_canvas_image(canvas: "CanvasNaive") -> Image.Image:
+    def _closed_canvas_image(canvas: "CanvasNaive", png_level: int) -> Frame:
         """Return a deterministic frame without consulting destroyed SDL data."""
         size = getattr(canvas, "_window_size_cache", None) or (1, 1)
-        return Image.new("RGBA", size, (0, 0, 0, 255))
+        return Frame.black(*size, png_level=png_level)
 
     def _owns_window_id(self, window_id: int) -> bool:
         """Return whether an SDL window ID belongs to this mainloop."""
@@ -240,32 +240,33 @@ class Mainloop:
 
         return self._handle_events()
 
-    def update_embedded(self, canvas: "CanvasNaive") -> Image.Image:
-        if Image is None:
-            raise RuntimeError("Embedded rendering requires Pillow to be installed")
+    def update_embedded(self, canvas: "CanvasNaive", png_level: int | None = None) -> Frame:
+        # Validate up front: the capture fallback below turns any error into a
+        # warning and a black frame, which would hide a bad argument.
+        level = validate_png_level(png_level)
 
         if not self._canvas_is_active(canvas):
-            return self._closed_canvas_image(canvas)
+            return self._closed_canvas_image(canvas, level)
 
         if self.multiple_windows and canvas._reload_fonts:
             gfxPrimitivesSetFont(None, 0, 0)
             canvas._reload_fonts = False
 
         if not self._handle_events():
-            return self._closed_canvas_image(canvas)
+            return self._closed_canvas_image(canvas, level)
 
         # Event handlers may close canvases. Re-read the validated renderer
         # instead of retaining a native pointer across event dispatch.
         if not self._canvas_is_active(canvas):
-            return self._closed_canvas_image(canvas)
+            return self._closed_canvas_image(canvas, level)
         ren = canvas.renderer
 
         x_size, y_size = canvas.get_window_size()
 
         try:
             # RGBA32 is defined in byte order, so this stays portable across
-            # CPU endianness. Copy renderer data directly into Pillow instead
-            # of encoding and then decoding a PNG for every frame.
+            # CPU endianness. Wrap the renderer's pixel buffer in a Frame directly
+            # instead of encoding and then decoding a PNG for every frame.
             pitch = x_size * 4
             pixels = (ctypes.c_ubyte * (pitch * y_size))()
             result = SDL_RenderReadPixels(
@@ -285,20 +286,12 @@ class Mainloop:
                     detail = _UNKNOWN_SDL_ERROR
                 raise RuntimeError(f"SDL_RenderReadPixels failed: {detail}")
 
-            img = Image.frombytes(
-                "RGBA",
-                (x_size, y_size),
-                bytes(pixels),
-                "raw",
-                "RGBA",
-                pitch,
-                1,
-            )
+            img = Frame.from_buffer(pixels, x_size, y_size, png_level=level)
 
         except Exception as exc:  # noqa: BLE001 - capture must degrade safely
             warnings.warn(f"Failed to save frame: {exc}", RuntimeWarning, stacklevel=2)
             # Return black image on error
-            return Image.new("RGBA", (x_size, y_size), (0, 0, 0, 255))
+            return Frame.black(x_size, y_size, png_level=level)
 
         # Keep encoder failures outside the rendering fallback. A broken FFmpeg
         # pipe must reach the caller instead of looking like a recoverable image

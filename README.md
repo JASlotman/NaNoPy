@@ -46,6 +46,9 @@ python -m NaNoPy.demos.dots
 - [Correctness and lifecycle guarantees](docs/correctness-and-lifecycle.md)
   documents SDL initialization and cleanup, color representation, collision
   candidate selection, and the public drawing coordinate system.
+- [Embedded rendering and PNG compression](docs/embedded-rendering.md)
+  explains `Frame`, notebook display and video capture, and how to trade PNG
+  encode time against file size with `png_level`.
 
 The packaged demo audio preview is derived from
 ["Preview sound" by envirOmaniac2](https://freesound.org/people/envirOmaniac2/sounds/467494/).

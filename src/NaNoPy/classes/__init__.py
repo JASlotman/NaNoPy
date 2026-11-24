@@ -1,5 +1,6 @@
 from NaNoPy.classes.canvas import CanvasNaive
 from NaNoPy.classes.color import Color
+from NaNoPy.classes.frame import Frame
 from NaNoPy.classes.keylistener import KeyListener
 from NaNoPy.classes.listener import Listener
 from NaNoPy.classes.mainloop import Mainloop
@@ -10,6 +11,7 @@ from NaNoPy.classes.writer import WriterNaive
 __all__ = [
     "CanvasNaive",
     "Color",
+    "Frame",
     "KeyListener",
     "Listener",
     "Mainloop",

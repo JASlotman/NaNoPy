@@ -18,8 +18,7 @@ from sdl2 import (
 from NaNoPy.constants import DEFAULT_CODEC, RENDER_FLAGS
 
 if TYPE_CHECKING:
-    from PIL.Image import Image
-
+    from NaNoPy.classes.frame import Frame
     from NaNoPy.classes.keylistener import KeyListener
     from NaNoPy.classes.listener import Listener
     from NaNoPy.classes.mainloop import Mainloop
@@ -136,9 +135,14 @@ class CanvasNaive:
         """Present the canvas and return ``False`` once its window closes."""
         return self.NNP.update(self)
 
-    def update_embedded(self) -> Image:
-        """Capture the canvas, returning a black final frame after closure."""
-        return self.NNP.update_embedded(self)
+    def update_embedded(self, png_level: int | None = None) -> Frame:
+        """Capture the canvas as a ``Frame``, returning a black final frame after closure.
+
+        ``png_level`` is the zlib level (0-9) used if the frame is displayed in a notebook:
+        lower is faster to encode, higher gives smaller output. ``None`` uses
+        ``DEFAULT_PNG_LEVEL``; see the ``PNG_LEVEL_*`` constants in ``NaNoPy.constants``.
+        """
+        return self.NNP.update_embedded(self, png_level)
 
     def clear(self) -> bool:
         """Clear the canvas, returning ``False`` after its window closes."""

@@ -1,7 +1,7 @@
 import warnings
 from typing import Any
 
-from NaNoPy.classes import CanvasNaive, Color, Mainloop, Spline, WriterNaive
+from NaNoPy.classes import CanvasNaive, Color, Frame, Mainloop, Spline, WriterNaive
 from NaNoPy.collisions import apply_to_close_pairs, get_close_pairs
 
 NNP = Mainloop()
@@ -87,6 +87,7 @@ __all__ = [
     "NNP",
     "Canvas",
     "Color",
+    "Frame",
     "Mainloop",
     "Spline",
     "Writer",

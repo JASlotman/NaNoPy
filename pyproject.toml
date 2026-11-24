@@ -11,7 +11,7 @@ authors = [
 ]
 description = "A Graphical pySDL2 based engine for Nanobiology Erasmus MC/TU Delft"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -21,7 +21,6 @@ dependencies = [
     "Numpy",
     "PySDL2",
     "pysdl2-dll",
-    "Pillow>=13.0",
 ]
 
 [project.optional-dependencies]
@@ -34,6 +33,7 @@ interactive = [
 dev = [
     "pytest",
     "pytest-cov",
+    "ruff",
 ]
 
 [project.scripts]
