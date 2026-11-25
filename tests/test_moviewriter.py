@@ -9,8 +9,7 @@ from unittest.mock import patch
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 
-from PIL import Image
-
+from NaNoPy.classes.frame import Frame
 from NaNoPy.classes.moviewriter import MovieWriter
 
 
@@ -124,7 +123,7 @@ class MovieWriterTests(unittest.TestCase):
             process = FakeProcess()
             writer, popen_calls = self.make_started_writer(output, process)
 
-            writer.add_frame(Image.new("RGBA", (2, 2)))
+            writer.add_frame(Frame.black(2, 2))
             command, options = popen_calls[0]
 
             self.assertIn(";not-a-command", command[-1])
@@ -139,8 +138,8 @@ class MovieWriterTests(unittest.TestCase):
             writer, popen_calls = self.make_started_writer(output, process, fps=12)
 
             self.assertEqual(popen_calls, [])
-            first = Image.new("RGBA", (2, 1), (1, 2, 3, 4))
-            second = Image.new("L", (2, 1), 9)
+            first = Frame.from_buffer(bytes((1, 2, 3, 4)) * 2, 2, 1)
+            second = Frame.from_buffer(bytes((9, 8, 7, 6)) * 2, 2, 1)
             writer.add_frame(first)
             writer.add_frame(second)
 
@@ -157,7 +156,7 @@ class MovieWriterTests(unittest.TestCase):
             self.assertNotEqual(Path(command[-1]), output)
             self.assertEqual(output.read_bytes(), b"existing")
 
-            expected = first.tobytes() + second.convert("RGBA").tobytes()
+            expected = first.tobytes() + second.tobytes()
             self.assertEqual(bytes(process.stdin.data), expected)
             self.assertEqual(writer.frame_count(), 2)
             self.assertAlmostEqual(writer.get_duration(), 2 / 12)
@@ -173,13 +172,25 @@ class MovieWriterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             process = FakeProcess()
             writer, _ = self.make_started_writer(Path(directory, "movie.mp4"), process)
-            writer.add_frame(Image.new("RGBA", (2, 2)))
-            mismatched_frame = Image.new("RGBA", (3, 2))
+            writer.add_frame(Frame.black(2, 2))
+            mismatched_frame = Frame.black(3, 2)
 
             with self.assertRaisesRegex(ValueError, "Frame size changed"):
                 writer.add_frame(mismatched_frame)
 
             self.assertEqual(writer.frame_count(), 1)
+            writer.clear()
+
+    def test_add_frame_rejects_objects_that_are_not_frames(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            process = FakeProcess()
+            writer, popen_calls = self.make_started_writer(Path(directory, "movie.mp4"), process)
+
+            with self.assertRaisesRegex(TypeError, "NaNoPy Frame"):
+                writer.add_frame(b"\x00" * 16)  # type: ignore[arg-type]
+
+            self.assertEqual(popen_calls, [], "a rejected frame must not start FFmpeg")
+            self.assertEqual(writer.frame_count(), 0)
             writer.clear()
 
     def test_clear_aborts_staging_without_touching_existing_output(self) -> None:
@@ -188,7 +199,7 @@ class MovieWriterTests(unittest.TestCase):
             output.write_bytes(b"keep me")
             process = FakeProcess()
             writer, popen_calls = self.make_started_writer(output, process)
-            writer.add_frame(Image.new("RGBA", (2, 2)))
+            writer.add_frame(Frame.black(2, 2))
             staging = Path(popen_calls[0][0][-1])
             self.assertTrue(staging.exists())
 
@@ -206,7 +217,7 @@ class MovieWriterTests(unittest.TestCase):
             output.write_bytes(b"keep me")
             process = FakeProcess(return_code=1, stderr=b"encoder exploded")
             writer, popen_calls = self.make_started_writer(output, process)
-            writer.add_frame(Image.new("RGBA", (2, 2)))
+            writer.add_frame(Frame.black(2, 2))
             staging = Path(popen_calls[0][0][-1])
 
             with self.assertRaisesRegex(RuntimeError, "encoder exploded"):
@@ -221,7 +232,7 @@ class MovieWriterTests(unittest.TestCase):
             output.write_bytes(b"keep me")
             process = TimeoutProcess()
             writer, popen_calls = self.make_started_writer(output, process)
-            writer.add_frame(Image.new("RGBA", (2, 2)))
+            writer.add_frame(Frame.black(2, 2))
             staging = Path(popen_calls[0][0][-1])
 
             with self.assertRaisesRegex(RuntimeError, "encoding timed out"):
@@ -239,7 +250,7 @@ class MovieWriterTests(unittest.TestCase):
             audio.write_bytes(b"audio")
             process = FakeProcess()
             writer, _ = self.make_started_writer(output, process)
-            writer.add_frame(Image.new("RGBA", (2, 2)))
+            writer.add_frame(Frame.black(2, 2))
             writer.stop_recording()
             stream_path = writer._stream_path
             assert stream_path is not None
@@ -270,7 +281,7 @@ class MovieWriterTests(unittest.TestCase):
             audio.write_bytes(b"audio")
             process = FakeProcess()
             writer, _ = self.make_started_writer(output, process)
-            writer.add_frame(Image.new("RGBA", (2, 2)))
+            writer.add_frame(Frame.black(2, 2))
             writer.stop_recording()
             stream_path = writer._stream_path
             assert stream_path is not None
@@ -293,7 +304,7 @@ class MovieWriterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             process = FakeProcess()
             writer, _ = self.make_started_writer(Path(directory, "movie.mp4"), process)
-            writer.add_frame(Image.new("RGBA", (2, 2)))
+            writer.add_frame(Frame.black(2, 2))
             with self.assertRaisesRegex(ValueError, "already encoded"):
                 writer.save(codec="libx264")
             writer.clear()
@@ -318,7 +329,7 @@ class MovieWriterTests(unittest.TestCase):
         with (
             patch.object(writer, "_create_staging_path", side_effect=PermissionError("denied")),
         ):
-            frame = Image.new("RGBA", (2, 2))
+            frame = Frame.black(2, 2)
             with self.assertRaisesRegex(RuntimeError, "Unable to prepare"):
                 writer.add_frame(frame)
 
@@ -333,7 +344,7 @@ class MovieWriterTests(unittest.TestCase):
                 os.chdir(first)
                 process = FakeProcess()
                 writer, _ = self.make_started_writer(Path("movie.mp4"), process)
-                writer.add_frame(Image.new("RGBA", (2, 2)))
+                writer.add_frame(Frame.black(2, 2))
                 os.chdir(second)
                 result = writer.save()
             finally:

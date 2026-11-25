@@ -1,3 +1,11 @@
+"""Particles carried along by a flowing spline channel.
+
+Run it with ``nanopy splines`` or::
+
+    from NaNoPy.demos import splines
+    splines()
+"""
+
 import random as rnd
 
 import numpy as np
@@ -6,6 +14,14 @@ from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:
+    """Move particles through a wobbling channel made of two splines.
+
+    Extends the random walk with a flow term: how much the spline moved
+    between two frames is added to the particles, so they are dragged along
+    with the channel instead of only diffusing.
+
+    Close the window to stop.
+    """
     x_size = 800
     y_size = 400
 

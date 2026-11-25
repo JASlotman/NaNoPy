@@ -1,9 +1,25 @@
+"""Ball that reacts to where its window sits on the screen.
+
+Run it with ``nanopy ball_window`` or::
+
+    from NaNoPy.demos import ball_window
+    ball_window()
+"""
+
 import math
 
 from NaNoPy import Canvas, Color, Writer
 
 
 def demo() -> None:
+    """Bounce a gray ball inside a window you can drag around.
+
+    The ball is tracked in *screen* coordinates, so dragging the window with
+    the mouse throws the ball around. Shows ``Canvas.get_window_pos``,
+    gravity, and bouncing off the floor and walls.
+
+    Close the window to stop.
+    """
     x_size = 300
     y_size = 300
 

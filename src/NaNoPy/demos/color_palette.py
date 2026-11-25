@@ -1,3 +1,11 @@
+"""Overview of every named color NaNoPy ships with.
+
+Run it with ``nanopy color_palette`` or::
+
+    from NaNoPy.demos import color_palette
+    color_palette()
+"""
+
 from math import ceil
 
 from NaNoPy import Canvas, Color, Writer
